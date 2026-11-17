@@ -2438,7 +2438,12 @@
 
           <!-- Action Toolbar: Copy to WA, Print, Filter -->
           <div class="mt-6 pt-5 border-t border-cream-100 flex flex-wrap items-center justify-between gap-3">
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <button @click="openAddManualShoppingModal" 
+                      class="px-4 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span>+ Tambah Belanja Stok</span>
+              </button>
               <button @click="copyShoppingListToWA" 
                       class="px-4 py-2.5 rounded-xl text-xs font-bold bg-sage-600 hover:bg-sage-700 text-white shadow-xs transition flex items-center gap-1.5">
                 <i data-lucide="share-2" class="w-4 h-4"></i>
@@ -2473,13 +2478,19 @@
           <div class="w-16 h-16 mx-auto rounded-3xl bg-cream-100 flex items-center justify-center text-taupe-400">
             <i data-lucide="shopping-basket" class="w-8 h-8"></i>
           </div>
-          <h3 class="text-base font-bold text-espresso-900">Belum Ada Menu Masak Terjadwal untuk Siklus Ini</h3>
+          <h3 class="text-base font-bold text-espresso-900">Belum Ada Daftar Belanja untuk Siklus Ini</h3>
           <p class="text-xs text-taupe-500 max-w-md mx-auto">
-            Silakan atur menu terlebih dahulu di menu <strong>Isi Menu</strong> untuk periode Sabtu sampai Jumat agar daftar belanja otomatis dihitung.
+            Daftar belanja otomatis terisi dari menu yang diatur di <strong>Isi Menu</strong>, atau Anda bisa langsung menambahkan belanja stok manual untuk kebutuhan dapur.
           </p>
-          <button @click="setTab('isi')" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 text-white">
-            Atur Menu Sekarang
-          </button>
+          <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button @click="setTab('isi')" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-taupe-700 hover:bg-taupe-800 text-white shadow-xs cursor-pointer">
+              Atur Menu Masak
+            </button>
+            <button @click="openAddManualShoppingModal" class="px-5 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs cursor-pointer flex items-center gap-1.5">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>+ Tambah Belanja Stok</span>
+            </button>
+          </div>
         </div>
 
         <!-- Categorized Shopping List Sections (Grouped by Market Section) -->
@@ -2518,13 +2529,28 @@
 
                 <div class="flex-grow min-w-0">
                   <div class="flex items-center justify-between gap-2">
-                    <span class="text-xs font-bold"
-                          :class="isItemChecked(ing.id) ? 'line-through text-taupe-400' : 'text-espresso-900'">
-                      {{ ing.name }}
-                    </span>
-                    <span class="text-xs font-bold text-espresso-800 bg-cream-100 px-2.5 py-0.5 rounded-full border border-cream-200 whitespace-nowrap">
-                      {{ ing.qtyText }}
-                    </span>
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <span class="text-xs font-bold truncate"
+                            :class="isItemChecked(ing.id) ? 'line-through text-taupe-400' : 'text-espresso-900'">
+                        {{ ing.name }}
+                      </span>
+                      <span v-if="ing.isManual" class="inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200 flex-shrink-0">
+                        <span>📦</span>
+                        <span>Stok</span>
+                      </span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                      <span class="text-xs font-bold text-espresso-800 bg-cream-100 px-2.5 py-0.5 rounded-full border border-cream-200 whitespace-nowrap">
+                        {{ ing.qtyText }}
+                      </span>
+                      <button v-if="ing.isManual" 
+                              type="button" 
+                              @click.stop="confirmDeleteManualShopping(ing.id)" 
+                              title="Hapus belanja stok ini" 
+                              class="w-7 h-7 rounded-lg bg-cream-100 hover:bg-red-50 text-taupe-400 hover:text-red-500 flex items-center justify-center transition border border-cream-200 cursor-pointer">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
                   </div>
 
                   <!-- Pantry Stock Hint Badge -->
@@ -2535,9 +2561,9 @@
                     </span>
                   </div>
 
-                  <!-- Days & Dishes that use this ingredient -->
-                  <div class="mt-1 text-[10px] text-taupe-500 line-clamp-2 leading-relaxed">
-                    <span class="text-taupe-400">Untuk menu:</span> {{ ing.usedInDishes.join(', ') }}
+                  <!-- Days & Dishes that use this ingredient or note -->
+                  <div v-if="ing.usedInDishes && ing.usedInDishes.length > 0" class="mt-1 text-[10px] text-taupe-500 line-clamp-2 leading-relaxed">
+                    <span class="text-taupe-400">{{ ing.isManual ? 'Keperluan:' : 'Untuk menu:' }}</span> {{ ing.usedInDishes.join(', ') }}
                   </div>
                 </div>
 
@@ -3292,14 +3318,14 @@
           <!-- Quick Unit Badges -->
           <div>
             <label class="block text-[11px] font-semibold text-taupe-500 mb-1">Satuan Populer:</label>
-            <div class="flex flex-wrap gap-1.5">
-              <button v-for="u in ['gram', 'kg', 'siung', 'butir', 'sdm', 'sdt', 'bungkus', 'ikat', 'batang', 'ml', 'liter']" :key="u"
+            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-cream-50/70 rounded-xl border border-cream-100">
+              <button v-for="u in STANDARD_UNITS" :key="u"
                       type="button"
                       @click="modalPantryStock.form.unit = u"
                       class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer"
                       :class="modalPantryStock.form.unit === u
                         ? 'bg-emerald-700 text-white border-emerald-700'
-                        : 'bg-cream-100 text-espresso-800 border-cream-200 hover:bg-cream-200'">
+                        : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
                 {{ u }}
               </button>
             </div>
@@ -3381,13 +3407,13 @@
                    class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
             <div class="mt-2">
               <label class="block text-[11px] font-semibold text-taupe-500 mb-1">Satuan Populer:</label>
-              <div class="flex flex-wrap gap-1.5">
-                <button v-for="u in ['gram', 'kg', 'siung', 'butir', 'buah', 'ikat', 'batang', 'lembar', 'sdm', 'sdt', 'bungkus', 'ml', 'liter']"
+              <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-cream-50/70 rounded-xl border border-cream-100">
+                <button v-for="u in STANDARD_UNITS"
                         :key="u"
                         type="button"
                         @click="modalMasterIngredient.form.unit = u"
                         class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer"
-                        :class="modalMasterIngredient.form.unit === u ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-cream-100 text-espresso-800 border-cream-200 hover:bg-cream-200'">
+                        :class="modalMasterIngredient.form.unit === u ? 'bg-emerald-700 text-white border-emerald-700' : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
                   {{ u }}
                 </button>
               </div>
@@ -3432,6 +3458,99 @@
       </div>
     </div>
 
+
+    <!-- ======================================================== -->
+    <!-- MODAL 7: TAMBAH / EDIT BELANJA STOK MANUAL               -->
+    <!-- ======================================================== -->
+    <div v-if="modalManualShopping.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-md w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📦</span>
+            <div>
+              <h3 class="font-bold text-base text-espresso-900">
+                {{ modalManualShopping.isEdit ? 'Edit Belanja Stok' : 'Tambah Belanja Stok Manual' }}
+              </h3>
+              <p class="text-[11px] text-taupe-500">Catat keperluan belanja stok di luar menu masak terjadwal</p>
+            </div>
+          </div>
+          <button @click="modalManualShopping.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <label class="block text-taupe-500 font-semibold mb-1">Nama Barang / Bahan Belanja *</label>
+            <input type="text"
+                   v-model="modalManualShopping.form.name"
+                   placeholder="Misal: Minyak Goreng, Beras, Sabun Cuci..."
+                   class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[42px]">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-taupe-500 font-semibold mb-1">Jumlah</label>
+              <input type="text"
+                     v-model="modalManualShopping.form.qty"
+                     placeholder="Misal: 2 atau 500"
+                     class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
+            </div>
+            <div>
+              <label class="block text-taupe-500 font-semibold mb-1">Satuan</label>
+              <input type="text"
+                     v-model="modalManualShopping.form.unit"
+                     list="standard-units"
+                     placeholder="Pilih / ketik satuan"
+                     class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
+            </div>
+          </div>
+
+          <!-- Quick Standard Units Pills -->
+          <div>
+            <label class="block text-[11px] font-semibold text-taupe-500 mb-1">Pilih Satuan Populer:</label>
+            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-cream-50/70 rounded-xl border border-cream-100">
+              <button v-for="u in STANDARD_UNITS" :key="u" type="button"
+                      @click="modalManualShopping.form.unit = u"
+                      class="px-2 py-1 rounded-lg text-[11px] font-semibold transition border cursor-pointer"
+                      :class="modalManualShopping.form.unit === u ? 'bg-caramel-600 text-white border-caramel-600' : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                {{ u }}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-taupe-500 font-semibold mb-1">Departemen / Grup Belanja</label>
+            <select v-model="modalManualShopping.form.group"
+                    class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
+              <option v-for="grp in groceryGroups" :key="grp.name" :value="grp.name">
+                {{ grp.icon }} {{ grp.name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-taupe-500 font-semibold mb-1">Catatan Tambahan (Opsional)</label>
+            <input type="text"
+                   v-model="modalManualShopping.form.note"
+                   placeholder="Misal: Stok bulanan, titipan suami, dll"
+                   class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 text-espresso-900 min-h-[42px]">
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-cream-100 flex items-center justify-end gap-3">
+          <button type="button" @click="modalManualShopping.show = false"
+                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[44px] cursor-pointer">
+            Batal
+          </button>
+          <button type="button" @click="saveManualShoppingModal"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs min-h-[44px] flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>{{ modalManualShopping.isEdit ? 'Simpan Perubahan' : 'Tambah ke Belanja' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ======================================================== -->
     <!-- MODAL CONFIRMATION: DIALOG KONFIRMASI UNIVERSAL          -->
@@ -3682,8 +3801,8 @@
 
         // Standardized Cooking Units
         const STANDARD_UNITS = [
-          'gram', 'kg', 'siung', 'butir', 'buah', 'ikat', 'batang', 'lembar',
-          'sdm', 'sdt', 'papan', 'kotak', 'bungkus', 'sachet', 'ml', 'liter', 'ruas', 'secukupnya'
+          'gram', 'potong', 'Sdm', 'Sdt', 'Ikat', 'Buah', 'Pcs', 'Siung',
+          'Lembar', 'Butir', 'Batang', 'ml', 'sachet', 'bungkus', 'helai', 'cm', 'papan', 'porsi'
         ];
 
         // Master Library of Common Ingredients with Standard Units & Groups
@@ -4010,6 +4129,21 @@
           onConfirm: null
         });
 
+        // Manual Shopping Items for Stock
+        const manualShoppingItems = ref([]);
+        const modalManualShopping = ref({
+          show: false,
+          isEdit: false,
+          form: {
+            id: '',
+            name: '',
+            qty: '',
+            unit: 'gram',
+            group: 'Bumbu',
+            note: ''
+          }
+        });
+
         const deletedPackageIds = ref((() => {
           try {
             const stored = JSON.parse(localStorage.getItem('seleraku_deleted_packages') || '[]');
@@ -4117,9 +4251,11 @@
             } else {
               masterIngredients.value = [];
             }
-            if (masterIngredients.value.length > 0) {
-              localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
-            }
+            localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+
+            const storedManualShopping = localStorage.getItem('seleraku_manual_shopping');
+            manualShoppingItems.value = storedManualShopping ? JSON.parse(storedManualShopping) : [];
+            localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -4153,11 +4289,16 @@
               packages: packages.value,
               deletedPackageIds: deletedPackageIds.value,
               deletedFoodIds: deletedFoodIds.value,
+              deletedMasterIds: deletedMasterIds.value,
+              deletedPantryIds: deletedPantryIds.value,
+              deletedManualStockIds: deletedManualStockIds.value,
+              deletedMealDates: deletedMealDates.value,
               mealPlans: mealPlans.value,
               checkedItems: checkedItems.value,
               manualStocks: manualStocks.value,
               pantryStocks: pantryStocks.value,
               masterIngredients: masterIngredients.value,
+              manualShoppingItems: manualShoppingItems.value,
               updatedAt: lastLocalUpdate
             };
 
@@ -4268,6 +4409,10 @@
                     data.masterIngredients.filter(m => m && m.id && !deletedMasterIds.value.includes(m.id))
                   );
                 }
+                if (data.manualShoppingItems && Array.isArray(data.manualShoppingItems)) {
+                  manualShoppingItems.value = data.manualShoppingItems;
+                  localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
+                }
 
                 localStorage.setItem('seleraku_last_updated', data.updatedAt);
                 lastLocalUpdate = data.updatedAt;
@@ -4284,6 +4429,7 @@
               localStorage.setItem('seleraku_manual_stocks', JSON.stringify(manualStocks.value));
               localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
               localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+              localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
               localStorage.setItem('seleraku_data_version', DATA_VERSION);
 
               if (activeTab.value !== 'isi' || !isDraftDirty.value) {
@@ -4328,6 +4474,10 @@
         };
         const saveMasterIngredients = () => {
           localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+          triggerSyncServer();
+        };
+        const saveManualShopping = () => {
+          localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
           triggerSyncServer();
         };
 
@@ -6349,7 +6499,26 @@
             };
           });
 
-          return result;
+          const manualItems = (manualShoppingItems.value || []).map(m => {
+            const unitStr = (m.unit || '').trim();
+            const qtyStr = (m.qty !== undefined && m.qty !== null && String(m.qty).trim() !== '') ? `${m.qty} ${unitStr}`.trim() : unitStr || 'Secukupnya';
+            const pantryMatch = getPantryStockForIngredient(m.name);
+            const pantryStockText = pantryMatch ? `${pantryMatch.qty} ${pantryMatch.unit}` : '';
+            return {
+              id: 'manual_' + m.id,
+              name: m.name,
+              unit: m.unit || '',
+              group: normalizeIngredientGroup(m.group, m.name),
+              qtyText: qtyStr,
+              usedInDishes: m.note ? [m.note] : ['Stok Manual'],
+              pantryStockText,
+              isManual: true,
+              manualId: m.id,
+              note: m.note || ''
+            };
+          });
+
+          return [...result, ...manualItems];
         });
 
         const getIngredientsInGroup = (groupName) => {
@@ -6425,6 +6594,81 @@
 
         const printShoppingList = () => {
           window.print();
+        };
+
+        const openAddManualShoppingModal = () => {
+          modalManualShopping.value = {
+            show: true,
+            isEdit: false,
+            form: {
+              id: 'mshop_' + Date.now(),
+              name: '',
+              qty: '',
+              unit: 'gram',
+              group: 'Bumbu',
+              note: ''
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const saveManualShoppingModal = () => {
+          const { id, name, qty, unit, group, note } = modalManualShopping.value.form;
+          const trimmedName = (name || '').trim();
+          if (!trimmedName) {
+            showToast('Nama bahan atau barang belanja wajib diisi!', 'error');
+            return;
+          }
+          const trimmedUnit = (unit || 'gram').trim();
+          const trimmedGroup = normalizeIngredientGroup(group, trimmedName);
+          const safeId = id || ('mshop_' + Date.now());
+
+          const idx = manualShoppingItems.value.findIndex(item => item.id === safeId);
+          const newItem = {
+            id: safeId,
+            name: trimmedName,
+            qty: String(qty || '').trim(),
+            unit: trimmedUnit,
+            group: trimmedGroup,
+            note: (note || '').trim(),
+            updatedAt: new Date().toISOString()
+          };
+
+          if (idx >= 0) {
+            manualShoppingItems.value[idx] = newItem;
+          } else {
+            manualShoppingItems.value.push(newItem);
+          }
+
+          saveManualShopping();
+          modalManualShopping.value.show = false;
+          showToast(`"${trimmedName}" ditambahkan ke daftar belanja stok!`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmDeleteManualShopping = (itemIdOrIngId) => {
+          const realId = String(itemIdOrIngId).replace(/^manual_/, '');
+          const item = manualShoppingItems.value.find(i => i.id === realId);
+          const name = item?.name || 'barang belanja ini';
+
+          modalConfirm.value = {
+            show: true,
+            title: 'Hapus Belanja Stok?',
+            message: `Hapus "${name}" dari daftar belanja stok manual?`,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            onConfirm: () => {
+              manualShoppingItems.value = manualShoppingItems.value.filter(i => i.id !== realId);
+              delete checkedItems.value['manual_' + realId];
+              delete checkedItems.value[realId];
+              saveManualShopping();
+              saveCheckedItems();
+              modalConfirm.value.show = false;
+              showToast(`"${name}" dihapus dari daftar belanja.`);
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
         // --- 11. LIFECYCLE & WATCHERS ---
@@ -6653,7 +6897,12 @@
           resetShoppingChecks,
           checkAllShopping,
           copyShoppingListToWA,
-          printShoppingList
+          printShoppingList,
+          manualShoppingItems,
+          modalManualShopping,
+          openAddManualShoppingModal,
+          saveManualShoppingModal,
+          confirmDeleteManualShopping
         };
       }
     }).mount('#app');
