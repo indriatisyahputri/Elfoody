@@ -4110,14 +4110,16 @@
             if (storedMaster) {
               try {
                 const parsed = JSON.parse(storedMaster);
-                masterIngredients.value = Array.isArray(parsed) && parsed.length > 0 ? migrateMasterIngredientsGroups(parsed) : createInitialMasterIngredients();
+                masterIngredients.value = Array.isArray(parsed) ? migrateMasterIngredientsGroups(parsed) : [];
               } catch (e) {
-                masterIngredients.value = createInitialMasterIngredients();
+                masterIngredients.value = [];
               }
             } else {
-              masterIngredients.value = createInitialMasterIngredients();
+              masterIngredients.value = [];
             }
-            localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+            if (masterIngredients.value.length > 0) {
+              localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+            }
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -4133,7 +4135,7 @@
         const syncStatus = ref('local'); // 'local' | 'syncing' | 'synced'
 
         // 24/7 Global Cloud Database (Works anywhere on Netlify, iPhone, Husband's phone, PC)
-        const CLOUD_SYNC_URL = 'https://kvdb.io/KHq6qXC8FpLdPUZ1F8CCbm/seleraku_data';
+        const CLOUD_SYNC_URL = 'https://kvdb.io/KHq6qXC8FpLdPUZ1F8CCbm/elfoody_data';
         const LOCAL_SYNC_URL = '/api/sync';
 
         let syncTimer = null;
@@ -4149,6 +4151,8 @@
             const payload = {
               foodItems: foodItems.value,
               packages: packages.value,
+              deletedPackageIds: deletedPackageIds.value,
+              deletedFoodIds: deletedFoodIds.value,
               mealPlans: mealPlans.value,
               checkedItems: checkedItems.value,
               manualStocks: manualStocks.value,
@@ -4222,111 +4226,68 @@
               const remoteFoods = Array.isArray(data.foodItems) ? data.foodItems : [];
               const remoteMealPlans = (data.mealPlans && typeof data.mealPlans === 'object') ? data.mealPlans : {};
 
-              // --- 1. SMART MERGE PACKAGES (Never lose local or cloud packages, exclude deleted) ---
-              let hasNewLocalPackages = false;
-              const pkgMap = new Map();
-              remotePackages
-                .filter(p => p && p.id && !deletedPackageIds.value.includes(p.id))
-                .forEach(p => { if (p && p.id) pkgMap.set(p.id, p); });
-              packages.value
-                .filter(p => p && p.id && !deletedPackageIds.value.includes(p.id))
-                .forEach(p => {
-                  if (p && p.id && !pkgMap.has(p.id)) {
-                    hasNewLocalPackages = true;
-                    pkgMap.set(p.id, p);
-                  }
+              if (Array.isArray(data.deletedFoodIds)) {
+                data.deletedFoodIds.forEach(id => {
+                  if (id && !deletedFoodIds.value.includes(id)) deletedFoodIds.value.push(id);
                 });
-              packages.value = Array.from(pkgMap.values());
-
-              // --- 2. SMART MERGE FOOD ITEMS (Never lose local or cloud dishes, exclude deleted) ---
-              let hasNewLocalFoods = false;
-              const foodMap = new Map();
-              remoteFoods
-                .filter(f => f && f.id && !deletedFoodIds.value.includes(f.id))
-                .forEach(f => { if (f && f.id) foodMap.set(f.id, f); });
-              foodItems.value
-                .filter(f => f && f.id && !deletedFoodIds.value.includes(f.id))
-                .forEach(f => {
-                  if (f && f.id && !foodMap.has(f.id)) {
-                    hasNewLocalFoods = true;
-                    foodMap.set(f.id, f);
-                  }
+                localStorage.setItem('seleraku_deleted_foods', JSON.stringify(deletedFoodIds.value));
+              }
+              if (Array.isArray(data.deletedPackageIds)) {
+                data.deletedPackageIds.forEach(id => {
+                  if (id && !deletedPackageIds.value.includes(id)) deletedPackageIds.value.push(id);
                 });
-              foodItems.value = migrateFoodIngredientsGroups(Array.from(foodMap.values()));
+                localStorage.setItem('seleraku_deleted_packages', JSON.stringify(deletedPackageIds.value));
+              }
 
-              // --- 3. SMART MERGE MEAL PLANS (Merge schedules across dates, exclude deleted dates) ---
-              const mergedPlans = { ...remoteMealPlans };
-              (deletedMealDates.value || []).forEach(d => {
-                delete mergedPlans[d];
-              });
-              Object.keys(mealPlans.value || {}).forEach(dateKey => {
-                if (!deletedMealDates.value.includes(dateKey) && mealPlans.value[dateKey]) {
-                  mergedPlans[dateKey] = mealPlans.value[dateKey];
+              if (remoteTs >= localTs) {
+                // Remote is authoritative: adopt remote state directly
+                packages.value = remotePackages.filter(p => p && p.id && !deletedPackageIds.value.includes(p.id));
+                foodItems.value = migrateFoodIngredientsGroups(
+                  remoteFoods.filter(f => f && f.id && !deletedFoodIds.value.includes(f.id))
+                );
+
+                const mergedPlans = { ...remoteMealPlans };
+                (deletedMealDates.value || []).forEach(d => { delete mergedPlans[d]; });
+                mealPlans.value = mergedPlans;
+
+                if (data.checkedItems && typeof data.checkedItems === 'object') {
+                  checkedItems.value = data.checkedItems;
                 }
-              });
-              mealPlans.value = mergedPlans;
+                if (data.manualStocks && typeof data.manualStocks === 'object') {
+                  const rStocks = { ...data.manualStocks };
+                  (deletedManualStockIds.value || []).forEach(delId => { delete rStocks[delId]; });
+                  manualStocks.value = rStocks;
+                }
+                if (data.pantryStocks && typeof data.pantryStocks === 'object') {
+                  const rPantry = { ...data.pantryStocks };
+                  (deletedPantryIds.value || []).forEach(delId => { delete rPantry[delId]; });
+                  pantryStocks.value = migratePantryStocksGroups(rPantry);
+                }
+                if (data.masterIngredients && Array.isArray(data.masterIngredients)) {
+                  masterIngredients.value = migrateMasterIngredientsGroups(
+                    data.masterIngredients.filter(m => m && m.id && !deletedMasterIds.value.includes(m.id))
+                  );
+                }
 
-              // --- 4. MERGE STOCKS & OTHER COLLECTIONS (Exclude deleted stocks) ---
-              if (data.checkedItems && typeof data.checkedItems === 'object') {
-                checkedItems.value = { ...data.checkedItems, ...checkedItems.value };
-              }
-              if (data.manualStocks && typeof data.manualStocks === 'object') {
-                const remoteStocks = { ...data.manualStocks };
-                (deletedManualStockIds.value || []).forEach(delId => {
-                  delete remoteStocks[delId];
-                });
-                manualStocks.value = { ...remoteStocks, ...manualStocks.value };
-                (deletedManualStockIds.value || []).forEach(delId => {
-                  delete manualStocks.value[delId];
-                });
-              }
-              if (data.pantryStocks && typeof data.pantryStocks === 'object') {
-                const remotePantry = { ...data.pantryStocks };
-                (deletedPantryIds.value || []).forEach(delId => {
-                  delete remotePantry[delId];
-                });
-                pantryStocks.value = migratePantryStocksGroups({ ...remotePantry, ...pantryStocks.value });
-                (deletedPantryIds.value || []).forEach(delId => {
-                  delete pantryStocks.value[delId];
-                });
-              }
-              if (data.masterIngredients && Array.isArray(data.masterIngredients) && data.masterIngredients.length > 0) {
-                const masterMap = new Map();
-                data.masterIngredients
-                  .filter(m => m && m.id && !deletedMasterIds.value.includes(m.id))
-                  .forEach(m => { masterMap.set(m.id, m); });
-                (masterIngredients.value || [])
-                  .filter(m => m && m.id && !deletedMasterIds.value.includes(m.id))
-                  .forEach(m => {
-                    if (m && m.id && !masterMap.has(m.id)) {
-                      masterMap.set(m.id, m);
-                    }
-                  });
-                masterIngredients.value = migrateMasterIngredientsGroups(Array.from(masterMap.values()));
-                localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+                localStorage.setItem('seleraku_last_updated', data.updatedAt);
+                lastLocalUpdate = data.updatedAt;
+              } else {
+                // Local is strictly newer than remote: keep local edits and push to cloud
+                triggerSyncServer();
               }
 
-              // Persist merged state to local storage
+              // Persist state to local storage
               localStorage.setItem('seleraku_food_items', JSON.stringify(foodItems.value));
               localStorage.setItem('seleraku_packages', JSON.stringify(packages.value));
               localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
               localStorage.setItem('seleraku_shopping_checked', JSON.stringify(checkedItems.value));
               localStorage.setItem('seleraku_manual_stocks', JSON.stringify(manualStocks.value));
               localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
+              localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
               localStorage.setItem('seleraku_data_version', DATA_VERSION);
-
-              const newestTs = Math.max(remoteTs, localTs);
-              const newestIso = new Date(newestTs || Date.now()).toISOString();
-              localStorage.setItem('seleraku_last_updated', newestIso);
-              lastLocalUpdate = newestIso;
 
               if (activeTab.value !== 'isi' || !isDraftDirty.value) {
                 loadDayIntoDraft(selectedDate.value);
-              }
-
-              // If local had unique packages/foods that the cloud didn't have, immediately sync back to cloud!
-              if (hasNewLocalPackages || hasNewLocalFoods || localTs > remoteTs) {
-                triggerSyncServer();
               }
 
               syncStatus.value = 'synced';
