@@ -70,6 +70,7 @@ Aplikasi web modern berbasis Single Page Application (SPA) untuk merencanakan me
   - 🌿 *Rempah*
   - 🍶 *Sauce*
   - 🌾 *Tepung*
+  - 🍜 *Instan*
   - 🧺 *Lainnya*
   - 🍮 *Dessert*
 - **Fitur Praktis Saat Belanja**:

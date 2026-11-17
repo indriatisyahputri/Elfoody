@@ -3778,6 +3778,7 @@
           { name: 'Rempah', icon: '🌿' },
           { name: 'Sauce', icon: '🍶' },
           { name: 'Tepung', icon: '🌾' },
+          { name: 'Instan', icon: '🍜' },
           { name: 'Lainnya', icon: '🧺' },
           { name: 'Dessert', icon: '🍮' },
         ];
@@ -3796,6 +3797,11 @@
         const TEPUNG_KEYWORDS = [
           'tepung', 'terigu', 'maizena', 'tapioka', 'kanji', 'panir', 'tepung aci',
           'sagu', 'baking powder', 'soda kue', 'ragi'
+        ];
+        const INSTAN_KEYWORDS = [
+          'mie instan', 'mi instan', 'indomie', 'sedap', 'sedaap', 'sarimi', 'supermi',
+          'samyang', 'bihun instan', 'bubur instan', 'spaghetti instan', 'pasta instan',
+          'pop mie', 'cup noodle', 'makaroni instan', 'instan', 'instant'
         ];
         const DESSERT_KEYWORDS = ['agar', 'jelly', 'puding', 'pudding', 'coklat', 'cokelat', 'es krim', 'dessert'];
 
@@ -3922,6 +3928,7 @@
           // 2. Synonyms / aliases for standard groups
           if (low === 'sauce' || low === 'saus' || low === 'saos' || low === 'sauces') return 'Sauce';
           if (low === 'tepung' || low === 'tepung-tepungan' || low === 'flour') return 'Tepung';
+          if (low === 'instan' || low === 'instant' || low === 'makanan instan' || low === 'mie instan') return 'Instan';
           if (low === 'desert') return 'Dessert';
           if (low === 'buah-buahan' || low === 'buah buahan') return 'Buah Buahan';
           if (low === 'daging & unggas') return 'Daging & Unggas';
@@ -3929,6 +3936,10 @@
 
           // 3. Fallback deductions ONLY for unassigned or legacy merged groups
           if (itemLow.includes('racik')) return 'Bumbu';
+
+          if (INSTAN_KEYWORDS.some(k => itemLow.includes(k))) {
+            return 'Instan';
+          }
 
           if (TEPUNG_KEYWORDS.some(k => itemLow.includes(k)) || /(^|\s)aci(\s|$)/.test(itemLow)) {
             return 'Tepung';
