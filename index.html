@@ -368,6 +368,78 @@
               </div>
             </div>
 
+            <!-- RINGKASAN GIZI HARIAN (OTOMATIS DARI BAHAN RESEP) -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-cream-50 via-white to-sage-50/40 border border-cream-200 shadow-2xs space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-cream-200/70">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-9 h-9 rounded-xl bg-caramel-50 border border-caramel-200 flex items-center justify-center text-lg flex-shrink-0">
+                    📊
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <h3 class="text-xs sm:text-sm font-bold text-espresso-900">Ringkasan Gizi Harian</h3>
+                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-100 text-espresso-700 border border-cream-200">Per Orang</span>
+                    </div>
+                    <p class="text-[10px] sm:text-[11px] text-taupe-500">Otomatis dihitung dari takaran bahan Menu Bekal + Makan Malam</p>
+                  </div>
+                </div>
+                <button type="button" @click="openNutritionTargetModal"
+                        class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                  <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-caramel-600"></i>
+                  <span>Atur Target</span>
+                </button>
+              </div>
+
+              <!-- Main Kalori Progress Bar -->
+              <div class="p-3.5 rounded-xl bg-white border border-cream-200/90 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-base">🔥</span>
+                    <span class="text-xs font-bold text-espresso-900">Total Energi / Kalori</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-sm sm:text-base font-extrabold text-espresso-900">{{ todayNutrition.kalori }}</span>
+                    <span class="text-[11px] text-taupe-500 font-semibold">/ {{ nutritionTargets.kalori }} kkal</span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                          :class="getNutritionStatusBadge(todayNutrition.kalori, NUTRITION_METRICS[0]).cls">
+                      {{ getNutritionStatusBadge(todayNutrition.kalori, NUTRITION_METRICS[0]).text }}
+                    </span>
+                  </div>
+                </div>
+                <div class="w-full h-2.5 rounded-full bg-cream-200/80 overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-500"
+                       :class="getNutritionBarClass(todayNutrition.kalori, NUTRITION_METRICS[0])"
+                       :style="{ width: Math.min(100, getNutritionPercent(todayNutrition.kalori, 'kalori')) + '%' }"></div>
+                </div>
+              </div>
+
+              <!-- 6 Macro & Limit Progress Grid (2 cols on iPhone 11/11 Pro, 3 cols on desktop) -->
+              <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div v-for="m in NUTRITION_METRICS.slice(1)" :key="m.key"
+                     class="p-2.5 sm:p-3 rounded-xl bg-white border border-cream-200/80 space-y-1.5">
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-[11px] font-bold text-espresso-800 flex items-center gap-1 truncate">
+                      <span>{{ m.icon }}</span>
+                      <span class="truncate">{{ m.label }}</span>
+                    </span>
+                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0"
+                          :class="getNutritionStatusBadge(todayNutrition[m.key], m).cls">
+                      {{ m.isMaxLimit ? (getNutritionPercent(todayNutrition[m.key], m.key) > 100 ? 'Tinggi!' : getNutritionPercent(todayNutrition[m.key], m.key) + '%') : getNutritionPercent(todayNutrition[m.key], m.key) + '%' }}
+                    </span>
+                  </div>
+                  <div class="flex items-baseline justify-between text-[11px]">
+                    <span class="font-extrabold text-espresso-900">{{ todayNutrition[m.key] }} <span class="font-semibold text-[10px] text-taupe-500">{{ m.unit }}</span></span>
+                    <span class="text-[10px] text-taupe-400">{{ m.isMaxLimit ? 'maks ' : '/ ' }}{{ nutritionTargets[m.key] }}{{ m.unit }}</span>
+                  </div>
+                  <div class="w-full h-1.5 rounded-full bg-cream-200/80 overflow-hidden">
+                    <div class="h-full rounded-full transition-all duration-500"
+                         :class="getNutritionBarClass(todayNutrition[m.key], m)"
+                         :style="{ width: Math.min(100, getNutritionPercent(todayNutrition[m.key], m.key)) + '%' }"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- 2 Daily Meal Slots: Bekal & Makan Malam -->
             <div class="space-y-6">
               <div v-for="slot in mealSlots" :key="slot.id"
@@ -388,6 +460,10 @@
                         <span v-if="getMealForSlot(currentDate, slot.id)"
                               class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sage-100 text-sage-800 border border-sage-200">
                           {{ getDishCount(getMealForSlot(currentDate, slot.id)) }} Hidangan
+                        </span>
+                        <span v-if="getMealForSlot(currentDate, slot.id) && calculateSlotNutrition(getMealForSlot(currentDate, slot.id)).kalori > 0"
+                              class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-caramel-50 text-caramel-800 border border-caramel-200">
+                          🔥 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id)).kalori }} kkal • P {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id)).protein }}g
                         </span>
                       </div>
                       <div class="text-[11px] text-taupe-500">
@@ -444,6 +520,14 @@
                           <div v-if="f.portion || f.notes" class="text-[11px] text-espresso-600 line-clamp-1">
                             {{ f.portion || 'Porsi Keluarga' }}
                             <span v-if="f.notes"> • {{ f.notes }}</span>
+                          </div>
+                          <!-- Mini Nutrition Strip per Dish -->
+                          <div v-if="calculateFoodNutrition(f).perPortion.kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
+                            <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateFoodNutrition(f).perPortion.kalori }} kkal</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">K {{ calculateFoodNutrition(f).perPortion.karbo }}g</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80">P {{ calculateFoodNutrition(f).perPortion.protein }}g</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">L {{ calculateFoodNutrition(f).perPortion.lemak }}g</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200/80">S {{ calculateFoodNutrition(f).perPortion.serat }}g</span>
                           </div>
                           <!-- Ingredients preview pills -->
                           <div v-if="(f.ingredients || []).length > 0" class="flex flex-wrap gap-1 pt-1 border-t border-cream-200/60">
@@ -682,6 +766,31 @@
                     - Belum diisi -
                   </div>
 
+                </div>
+              </div>
+
+              <!-- Daily Nutrition Mini Bar on Week Card -->
+              <div v-if="calculateDayNutrition(day.dateStr).kalori > 0"
+                   class="mx-4 mb-3 p-2.5 rounded-2xl bg-gradient-to-r from-cream-50 to-sage-50/40 border border-cream-200 space-y-1.5">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="font-bold text-espresso-900">🔥 {{ calculateDayNutrition(day.dateStr).kalori }} <span class="font-normal text-taupe-500">/ {{ nutritionTargets.kalori }} kkal</span></span>
+                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full border"
+                        :class="getNutritionStatusBadge(calculateDayNutrition(day.dateStr).kalori, NUTRITION_METRICS[0]).cls">
+                    {{ getNutritionPercent(calculateDayNutrition(day.dateStr).kalori, 'kalori') }}%
+                  </span>
+                </div>
+                <div class="w-full h-1.5 rounded-full bg-cream-200 overflow-hidden">
+                  <div class="h-full rounded-full"
+                       :class="getNutritionBarClass(calculateDayNutrition(day.dateStr).kalori, NUTRITION_METRICS[0])"
+                       :style="{ width: Math.min(100, getNutritionPercent(calculateDayNutrition(day.dateStr).kalori, 'kalori')) + '%' }"></div>
+                </div>
+                <div class="flex flex-wrap gap-1 text-[9px] font-bold text-espresso-700">
+                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">K {{ calculateDayNutrition(day.dateStr).karbo }}g</span>
+                  <span class="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">P {{ calculateDayNutrition(day.dateStr).protein }}g</span>
+                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">L {{ calculateDayNutrition(day.dateStr).lemak }}g</span>
+                  <span class="bg-sage-50 text-sage-800 px-1.5 py-0.5 rounded border border-sage-200">S {{ calculateDayNutrition(day.dateStr).serat }}g</span>
+                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">G {{ calculateDayNutrition(day.dateStr).gula }}g</span>
+                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">Na {{ calculateDayNutrition(day.dateStr).natrium }}mg</span>
                 </div>
               </div>
 
@@ -951,6 +1060,14 @@
                       </div>
                       <p class="text-xs text-taupe-500 line-clamp-2">{{ pkg.description }}</p>
                       
+                      <!-- Package Nutrition Mini Strip -->
+                      <div v-if="calculatePackageNutrition(pkg).kalori > 0" class="mt-2 flex flex-wrap gap-1 text-[9.5px] font-bold">
+                        <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200">🔥 {{ calculatePackageNutrition(pkg).kalori }} kkal</span>
+                        <span class="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">P {{ calculatePackageNutrition(pkg).protein }}g</span>
+                        <span class="px-1.5 py-0.5 rounded-md bg-cream-50 text-espresso-700 border border-cream-200">K {{ calculatePackageNutrition(pkg).karbo }}g</span>
+                        <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200">S {{ calculatePackageNutrition(pkg).serat }}g</span>
+                      </div>
+
                       <!-- Mini preview of package items -->
                       <div class="mt-3 pt-2.5 border-t border-cream-100 space-y-1 text-xs">
                         <div v-for="cat in nutritionCategories" :key="cat.id" class="flex items-center gap-1.5 text-espresso-800">
@@ -1148,6 +1265,33 @@
 
             <!-- Bottom Save / Apply Meal Bar -->
             <div class="mt-6 pt-5 border-t border-cream-100 space-y-4">
+              <!-- Live Draft Daily Nutrition Preview -->
+              <div class="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-cream-50 via-white to-sage-50/40 border border-cream-200 space-y-2.5">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 text-xs font-bold text-espresso-900">
+                    <span>📊</span>
+                    <span>Estimasi Gizi Harian ({{ formatShortDate(selectedDate) }})</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-extrabold text-caramel-700">🔥 {{ draftDayNutrition.total.kalori }} / {{ nutritionTargets.kalori }} kkal ({{ getNutritionPercent(draftDayNutrition.total.kalori, 'kalori') }}%)</span>
+                    <button type="button" @click="openNutritionTargetModal" class="text-[10px] font-bold text-taupe-600 hover:text-espresso-900 underline cursor-pointer">Target</button>
+                  </div>
+                </div>
+                <div class="w-full h-2 rounded-full bg-cream-200 overflow-hidden">
+                  <div class="h-full rounded-full transition-all duration-300"
+                       :class="getNutritionBarClass(draftDayNutrition.total.kalori, NUTRITION_METRICS[0])"
+                       :style="{ width: Math.min(100, getNutritionPercent(draftDayNutrition.total.kalori, 'kalori')) + '%' }"></div>
+                </div>
+                <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-[10px]">
+                  <div v-for="m in NUTRITION_METRICS.slice(1)" :key="m.key"
+                       class="px-2 py-1.5 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                    <span class="text-[9px] text-taupe-500 font-semibold truncate">{{ m.icon }} {{ m.short }}</span>
+                    <span class="font-extrabold text-espresso-900" :class="m.isMaxLimit && getNutritionPercent(draftDayNutrition.total[m.key], m.key) > 100 ? 'text-red-600' : ''">
+                      {{ draftDayNutrition.total[m.key] }}<span class="font-normal text-[9px] text-taupe-500">{{ m.unit }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                 <div v-for="slot in mealSlots" :key="slot.id"
                      class="px-3.5 py-2.5 rounded-xl bg-cream-50/90 border border-cream-200 flex items-center justify-between gap-2">
@@ -1419,6 +1563,51 @@
                     <i data-lucide="link" class="w-3 h-3"></i>
                     <span>+ Tambah link resep</span>
                   </button>
+                </div>
+              </div>
+
+              <!-- Auto-Calculated Nutrition Panel per Portion -->
+              <div class="mb-2.5 p-2.5 rounded-xl bg-gradient-to-br from-cream-50/90 to-white border border-cream-200/90 space-y-1.5">
+                <div class="flex items-center justify-between gap-1.5">
+                  <div class="flex items-center gap-1 text-[11px] font-extrabold text-espresso-900">
+                    <span>🔥</span>
+                    <span v-if="calculateFoodNutrition(item).matchedCount > 0">{{ calculateFoodNutrition(item).perPortion.kalori }} kkal</span>
+                    <span v-else class="text-taupe-400 font-semibold">Belum terhitung</span>
+                  </div>
+                  <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-white text-taupe-600 border border-cream-200">
+                    Per porsi (÷{{ calculateFoodNutrition(item).servings }})
+                  </span>
+                </div>
+                <div v-if="calculateFoodNutrition(item).matchedCount > 0" class="grid grid-cols-3 gap-1 text-[10px]">
+                  <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
+                    <span class="text-taupe-500">Karbo</span>
+                    <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.karbo }}g</span>
+                  </div>
+                  <div class="px-1.5 py-1 rounded-lg bg-emerald-50/70 border border-emerald-200/70 flex items-center justify-between">
+                    <span class="text-emerald-700">Prot</span>
+                    <span class="font-bold text-emerald-900">{{ calculateFoodNutrition(item).perPortion.protein }}g</span>
+                  </div>
+                  <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
+                    <span class="text-taupe-500">Lemak</span>
+                    <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.lemak }}g</span>
+                  </div>
+                  <div class="px-1.5 py-1 rounded-lg bg-sage-50/70 border border-sage-200/70 flex items-center justify-between">
+                    <span class="text-sage-700">Serat</span>
+                    <span class="font-bold text-sage-900">{{ calculateFoodNutrition(item).perPortion.serat }}g</span>
+                  </div>
+                  <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
+                       :class="calculateFoodNutrition(item).perPortion.gula >= 15 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
+                    <span class="text-taupe-500">Gula</span>
+                    <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.gula }}g</span>
+                  </div>
+                  <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
+                       :class="calculateFoodNutrition(item).perPortion.natrium >= 700 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
+                    <span class="text-taupe-500">Na</span>
+                    <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.natrium }}mg</span>
+                  </div>
+                </div>
+                <div v-else class="text-[10px] text-taupe-400 italic">
+                  Tambahkan bahan &amp; takaran agar gizi otomatis dihitung.
                 </div>
               </div>
 
@@ -1729,6 +1918,48 @@
                 {{ pkg.name }}
               </h3>
               <p class="text-xs text-taupe-500 mb-4">{{ pkg.description }}</p>
+
+              <!-- Total Kandungan Gizi Paket (Per Porsi) -->
+              <div class="mb-3.5 p-3 rounded-2xl bg-gradient-to-br from-cream-50 via-white to-sage-50/40 border border-cream-200 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 text-xs font-extrabold text-espresso-900">
+                    <span>🔥</span>
+                    <span>{{ calculatePackageNutrition(pkg).kalori }} kkal</span>
+                    <span class="text-[10px] font-medium text-taupe-500">/ porsi paket</span>
+                  </div>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-caramel-50 text-caramel-800 border border-caramel-200">
+                    {{ getNutritionPercent(calculatePackageNutrition(pkg).kalori, 'kalori') }}% AKG
+                  </span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5 text-[10px]">
+                  <div class="px-2 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
+                    <span class="text-taupe-500">Karbo</span>
+                    <span class="font-bold text-espresso-900">{{ calculatePackageNutrition(pkg).karbo }}g</span>
+                  </div>
+                  <div class="px-2 py-1 rounded-lg bg-emerald-50/80 border border-emerald-200/80 flex items-center justify-between">
+                    <span class="text-emerald-700">Prot</span>
+                    <span class="font-bold text-emerald-900">{{ calculatePackageNutrition(pkg).protein }}g</span>
+                  </div>
+                  <div class="px-2 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
+                    <span class="text-taupe-500">Lemak</span>
+                    <span class="font-bold text-espresso-900">{{ calculatePackageNutrition(pkg).lemak }}g</span>
+                  </div>
+                  <div class="px-2 py-1 rounded-lg bg-sage-50/80 border border-sage-200/80 flex items-center justify-between">
+                    <span class="text-sage-700">Serat</span>
+                    <span class="font-bold text-sage-900">{{ calculatePackageNutrition(pkg).serat }}g</span>
+                  </div>
+                  <div class="px-2 py-1 rounded-lg border flex items-center justify-between"
+                       :class="calculatePackageNutrition(pkg).gula >= 25 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
+                    <span class="text-taupe-500">Gula</span>
+                    <span class="font-bold">{{ calculatePackageNutrition(pkg).gula }}g</span>
+                  </div>
+                  <div class="px-2 py-1 rounded-lg border flex items-center justify-between"
+                       :class="calculatePackageNutrition(pkg).natrium >= 1000 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
+                    <span class="text-taupe-500">Na</span>
+                    <span class="font-bold">{{ calculatePackageNutrition(pkg).natrium }}mg</span>
+                  </div>
+                </div>
+              </div>
 
               <!-- 6 Pillars Breakdown -->
               <div class="space-y-2.5 pt-3 border-t border-cream-100">
@@ -3046,6 +3277,69 @@
             </div>
           </div>
 
+          <!-- LIVE AUTO-CALCULATED NUTRITION PREVIEW IN MODAL FOOD -->
+          <div class="p-3.5 rounded-2xl bg-gradient-to-br from-emerald-50/60 via-white to-cream-50 border border-emerald-200/80 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-espresso-900 flex items-center gap-1.5">
+                  <span>📊</span>
+                  <span>Estimasi Gizi Otomatis (Per Porsi)</span>
+                </div>
+                <div class="text-[10px] text-taupe-500">
+                  {{ modalFoodNutritionPreview.matchedCount }}/{{ modalFoodNutritionPreview.totalIngredients }} bahan terdeteksi otomatis (TKPI)
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-extrabold text-caramel-700">🔥 {{ modalFoodNutritionPreview.perPortion.kalori }} kkal</div>
+                <div class="text-[9.5px] text-taupe-500">Total resep: {{ modalFoodNutritionPreview.totalRecipe.kalori }} kkal</div>
+              </div>
+            </div>
+
+            <!-- Servings Divisor Picker -->
+            <div class="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-cream-200">
+              <span class="text-[11px] font-bold text-espresso-800">Takaran bahan ini untuk berapa porsi?</span>
+              <div class="flex items-center gap-1">
+                <button v-for="sv in [1, 2, 3, 4, 6]" :key="sv" type="button"
+                        @click="modalFood.form.nutritionServings = sv"
+                        class="px-2 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer"
+                        :class="Number(modalFood.form.nutritionServings) === sv ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                  {{ sv }}
+                </button>
+                <input type="number" min="1" max="50" step="1" inputmode="numeric"
+                       v-model.number="modalFood.form.nutritionServings"
+                       class="w-12 px-1.5 py-1 rounded-lg bg-cream-50 border border-cream-300 text-xs font-bold text-center text-espresso-900">
+              </div>
+            </div>
+
+            <!-- 6 Nutrient Live Breakdown -->
+            <div class="grid grid-cols-3 gap-1.5 text-[10px]">
+              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                <span class="text-taupe-500">🍚 Karbo</span>
+                <span class="font-extrabold text-espresso-900 text-xs">{{ modalFoodNutritionPreview.perPortion.karbo }}g</span>
+              </div>
+              <div class="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col">
+                <span class="text-emerald-700">🍗 Protein</span>
+                <span class="font-extrabold text-emerald-900 text-xs">{{ modalFoodNutritionPreview.perPortion.protein }}g</span>
+              </div>
+              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                <span class="text-taupe-500">🥑 Lemak</span>
+                <span class="font-extrabold text-espresso-900 text-xs">{{ modalFoodNutritionPreview.perPortion.lemak }}g</span>
+              </div>
+              <div class="p-2 rounded-xl bg-sage-50/70 border border-sage-200/80 flex flex-col">
+                <span class="text-sage-700">🥦 Serat</span>
+                <span class="font-extrabold text-sage-900 text-xs">{{ modalFoodNutritionPreview.perPortion.serat }}g</span>
+              </div>
+              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                <span class="text-taupe-500">🍬 Gula</span>
+                <span class="font-extrabold text-espresso-900 text-xs">{{ modalFoodNutritionPreview.perPortion.gula }}g</span>
+              </div>
+              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                <span class="text-taupe-500">🧂 Natrium</span>
+                <span class="font-extrabold text-espresso-900 text-xs">{{ modalFoodNutritionPreview.perPortion.natrium }}mg</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <div class="pt-4 border-t border-cream-100 flex items-center justify-end gap-3">
@@ -3157,6 +3451,40 @@
                 Belum ada menu yang dipilih untuk {{ cat.label }}.
               </div>
 
+            </div>
+          </div>
+
+          <!-- Live Package Nutrition Preview -->
+          <div class="p-3.5 rounded-2xl bg-gradient-to-br from-cream-50 via-white to-sage-50/40 border border-cream-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-espresso-900">📊 Total Gizi Paket Ini (Per Porsi)</span>
+              <span class="text-xs font-extrabold text-caramel-700">🔥 {{ modalPackageNutritionPreview.kalori }} kkal ({{ getNutritionPercent(modalPackageNutritionPreview.kalori, 'kalori') }}% AKG)</span>
+            </div>
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 text-[10px]">
+              <div class="p-1.5 rounded-lg bg-white border border-cream-200 text-center">
+                <div class="text-[9px] text-taupe-500">Karbo</div>
+                <div class="font-bold text-espresso-900">{{ modalPackageNutritionPreview.karbo }}g</div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-center">
+                <div class="text-[9px] text-emerald-700">Prot</div>
+                <div class="font-bold text-emerald-900">{{ modalPackageNutritionPreview.protein }}g</div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-white border border-cream-200 text-center">
+                <div class="text-[9px] text-taupe-500">Lemak</div>
+                <div class="font-bold text-espresso-900">{{ modalPackageNutritionPreview.lemak }}g</div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-sage-50 border border-sage-200 text-center">
+                <div class="text-[9px] text-sage-700">Serat</div>
+                <div class="font-bold text-sage-900">{{ modalPackageNutritionPreview.serat }}g</div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-white border border-cream-200 text-center">
+                <div class="text-[9px] text-taupe-500">Gula</div>
+                <div class="font-bold text-espresso-900">{{ modalPackageNutritionPreview.gula }}g</div>
+              </div>
+              <div class="p-1.5 rounded-lg bg-white border border-cream-200 text-center">
+                <div class="text-[9px] text-taupe-500">Na</div>
+                <div class="font-bold text-espresso-900">{{ modalPackageNutritionPreview.natrium }}mg</div>
+              </div>
             </div>
           </div>
         </div>
@@ -3462,6 +3790,53 @@
                    placeholder="Contoh: Kupas bersih, potong dadu, atau beli di warung"
                    class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 text-espresso-900 min-h-[42px]">
           </div>
+
+          <!-- Optional Custom Nutrition Override per 100g (for packaged/instan items) -->
+          <div class="p-3 rounded-2xl bg-cream-50/90 border border-cream-200 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div class="text-[11px] font-bold text-espresso-800">📊 Nilai Gizi per 100g/ml (Opsional)</div>
+              <span v-if="modalMasterAutoNutritionPreview" class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Auto TKPI: {{ modalMasterAutoNutritionPreview.kalori }} kkal
+              </span>
+            </div>
+            <p class="text-[10px] text-taupe-500 leading-relaxed">
+              Kosongkan untuk hitung otomatis dari database gizi Indonesia (TKPI), atau isi manual jika ingin mengikuti label kemasan.
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Kalori (kkal)</label>
+                <input type="number" step="0.1" v-model="modalMasterIngredient.form.nutrition.kalori" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.kalori : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Karbo (g)</label>
+                <input type="number" step="0.1" v-model="modalMasterIngredient.form.nutrition.karbo" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.karbo : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Protein (g)</label>
+                <input type="number" step="0.1" v-model="modalMasterIngredient.form.nutrition.protein" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.protein : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Lemak (g)</label>
+                <input type="number" step="0.1" v-model="modalMasterIngredient.form.nutrition.lemak" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.lemak : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Serat (g)</label>
+                <input type="number" step="0.1" v-model="modalMasterIngredient.form.nutrition.serat" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.serat : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Gula (g)</label>
+                <input type="number" step="0.1" v-model="modalMasterIngredient.form.nutrition.gula" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.gula : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Natrium (mg)</label>
+                <input type="number" step="1" v-model="modalMasterIngredient.form.nutrition.natrium" :placeholder="modalMasterAutoNutritionPreview ? modalMasterAutoNutritionPreview.natrium : '0'" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+              <div>
+                <label class="block text-[10px] text-taupe-500 font-semibold mb-0.5">Gram / 1 {{ modalMasterIngredient.form.unit || 'unit' }}</label>
+                <input type="number" step="1" v-model="modalMasterIngredient.form.gramPerUnit" placeholder="Auto" class="w-full px-2.5 py-1.5 rounded-lg bg-white border border-cream-200 text-xs font-semibold text-espresso-900">
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="pt-4 border-t border-cream-100 flex items-center justify-end gap-3">
@@ -3571,6 +3946,90 @@
                   class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs min-h-[44px] flex items-center gap-1.5 cursor-pointer">
             <i data-lucide="check" class="w-4 h-4"></i>
             <span>{{ modalManualShopping.isEdit ? 'Simpan Perubahan' : 'Tambah ke Belanja' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 8: PENGATURAN TARGET GIZI HARIAN                   -->
+    <!-- ======================================================== -->
+    <div v-if="modalNutritionTarget.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-md w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-3"></div>
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">🎯</span>
+            <div>
+              <h3 class="font-bold text-base text-espresso-900">Target Gizi Harian</h3>
+              <p class="text-[11px] text-taupe-500">Sesuaikan acuan AKG harian per orang sesuai kebutuhan Anda</p>
+            </div>
+          </div>
+          <button @click="modalNutritionTarget.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <!-- Preset Profiles -->
+          <div class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-espresso-800">Pilih Preset Cepat:</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button v-for="preset in NUTRITION_TARGET_PRESETS" :key="preset.id"
+                      type="button"
+                      @click="applyNutritionPreset(preset)"
+                      class="p-2.5 rounded-xl border text-left transition active:scale-95 cursor-pointer bg-cream-50/80 hover:bg-cream-100 border-cream-200">
+                <div class="font-bold text-[11px] text-espresso-900 leading-tight">{{ preset.label }}</div>
+                <div class="text-[9.5px] text-taupe-500 mt-0.5">{{ preset.values.kalori }} kkal • P {{ preset.values.protein }}g</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Editable Inputs for 7 Nutrients -->
+          <div class="grid grid-cols-2 gap-3 pt-2 border-t border-cream-100">
+            <div v-for="m in NUTRITION_METRICS" :key="m.key" :class="m.key === 'kalori' ? 'col-span-2' : ''">
+              <label class="block text-[11px] font-bold text-espresso-800 mb-1">
+                {{ m.icon }} {{ m.label }} ({{ m.unit }}) <span v-if="m.isMaxLimit" class="text-[9.5px] font-semibold text-rose-600">• Batas Maks</span>
+              </label>
+              <input type="number" inputmode="numeric" v-model.number="modalNutritionTarget.form[m.key]"
+                     class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-bold text-espresso-900 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[42px]">
+            </div>
+          </div>
+          <!-- Default Porsi Keluarga untuk Resep Tanpa Catatan Porsi -->
+          <div class="p-3 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="text-[11px] font-bold text-espresso-900">🍽️ Default Pembagi Porsi Resep</div>
+                <div class="text-[10px] text-taupe-500">Berapa orang yang makan dari 1 resep masakan?</div>
+              </div>
+              <div class="flex items-center gap-1">
+                <button v-for="sv in [1, 2, 3, 4]" :key="sv" type="button"
+                        @click="modalNutritionTarget.form.defaultRecipeServings = sv"
+                        class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer"
+                        :class="Number(modalNutritionTarget.form.defaultRecipeServings) === sv ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                  {{ sv }}
+                </button>
+              </div>
+            </div>
+            <p class="text-[10px] text-taupe-600 leading-relaxed">
+              Misal Anda biasa masak untuk <strong>2 orang</strong> (Ibu &amp; Suami), pilih <strong>2</strong> agar nilai gizi per orang langsung akurat otomatis.
+            </p>
+          </div>
+
+          <p class="text-[10px] text-taupe-500 leading-relaxed bg-cream-50 p-2.5 rounded-xl border border-cream-200">
+            💡 <strong>Acuan Kemenkes RI (GGL):</strong> Batas konsumsi harian anjuran adalah Gula maks <strong>50 g</strong> (4 sdm) dan Natrium maks <strong>2.000 mg</strong> (1 sdt garam).
+          </p>
+        </div>
+
+        <div class="pt-4 border-t border-cream-100 flex items-center justify-end gap-3">
+          <button type="button" @click="modalNutritionTarget.show = false"
+                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[44px] cursor-pointer">
+            Batal
+          </button>
+          <button type="button" @click="saveNutritionTargetModal"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs min-h-[44px] flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Simpan Target Gizi</span>
           </button>
         </div>
       </div>
@@ -3834,6 +4293,541 @@
           'gram', 'potong', 'Sdm', 'Sdt', 'Ikat', 'Buah', 'Pcs', 'Siung',
           'Lembar', 'Butir', 'Batang', 'ml', 'sachet', 'bungkus', 'helai', 'cm', 'papan', 'porsi'
         ];
+
+
+        // --- NUTRITION METRICS, TARGETS & INDONESIAN TKPI DATABASE (PER 100G) ---
+        const NUTRITION_METRICS = [
+          { key: 'kalori', label: 'Kalori', short: 'Kal', unit: 'kkal', icon: '🔥', isMaxLimit: false, barColor: 'bg-caramel-500' },
+          { key: 'karbo', label: 'Karbohidrat', short: 'Karbo', unit: 'g', icon: '🍚', isMaxLimit: false, barColor: 'bg-amber-500' },
+          { key: 'protein', label: 'Protein', short: 'Prot', unit: 'g', icon: '🍗', isMaxLimit: false, barColor: 'bg-emerald-600' },
+          { key: 'lemak', label: 'Lemak', short: 'Lemak', unit: 'g', icon: '🥑', isMaxLimit: false, barColor: 'bg-orange-400' },
+          { key: 'serat', label: 'Serat', short: 'Serat', unit: 'g', icon: '🥦', isMaxLimit: false, barColor: 'bg-sage-600' },
+          { key: 'gula', label: 'Gula', short: 'Gula', unit: 'g', icon: '🍬', isMaxLimit: true, barColor: 'bg-rose-400' },
+          { key: 'natrium', label: 'Natrium', short: 'Na', unit: 'mg', icon: '🧂', isMaxLimit: true, barColor: 'bg-sky-500' }
+        ];
+
+        const DEFAULT_NUTRITION_TARGETS = {
+          kalori: 2000,
+          karbo: 275,
+          protein: 60,
+          lemak: 65,
+          serat: 30,
+          gula: 50,
+          natrium: 2000,
+          defaultRecipeServings: 2
+        };
+
+        const NUTRITION_TARGET_PRESETS = [
+          { id: 'akg', label: 'Dewasa Umum (AKG)', desc: 'Standar Kemenkes RI', values: { kalori: 2000, karbo: 275, protein: 60, lemak: 65, serat: 30, gula: 50, natrium: 2000 } },
+          { id: 'diet', label: 'Defisit / Diet', desc: 'Tinggi protein, rendah gula', values: { kalori: 1500, karbo: 165, protein: 80, lemak: 45, serat: 30, gula: 30, natrium: 1800 } },
+          { id: 'aktif', label: 'Aktif / Olahraga', desc: 'Energi & protein ekstra', values: { kalori: 2400, karbo: 300, protein: 110, lemak: 75, serat: 35, gula: 50, natrium: 2000 } },
+          { id: 'busui', label: 'Ibu Hamil / Menyusui', desc: 'Nutrisi ekstra keluarga', values: { kalori: 2350, karbo: 325, protein: 80, lemak: 70, serat: 32, gula: 50, natrium: 2000 } }
+        ];
+
+        const DEFAULT_UNIT_GRAMS = {
+          gram: 1, gr: 1, g: 1,
+          kg: 1000, kilogram: 1000,
+          ml: 1, cc: 1,
+          liter: 1000, l: 1000,
+          sdm: 15, 'sendok makan': 15,
+          sdt: 5, 'sendok teh': 5,
+          potong: 80, ptg: 80,
+          ikat: 150, ikt: 150,
+          buah: 100, bh: 100,
+          pcs: 50, biji: 50, satuan: 50,
+          siung: 6,
+          lembar: 10, lbr: 10,
+          butir: 55, btr: 55,
+          batang: 20, btg: 20,
+          sachet: 15, sct: 15,
+          bungkus: 80, bks: 80, pack: 100, pak: 100,
+          helai: 15,
+          cm: 5, ruas: 15,
+          papan: 200,
+          porsi: 120,
+          kotak: 200, kaleng: 155, botol: 150, gelas: 200, cup: 200, cangkir: 150, centong: 60, mangkok: 150, ekor: 100,
+          secukupnya: 5
+        };
+
+        // Comprehensive Indonesian Ingredient Nutrition Database (per 100g / 100ml, TKPI & USDA)
+        const NUTRITION_DB_PER_100G = [
+          // --- KARBOHIDRAT & BIJI-BIJIAN ---
+          { keys: ['nasi putih', 'nasi uduk', 'nasi kuning', 'nasi liwet', 'nasi'], kalori: 130, karbo: 28.2, protein: 2.7, lemak: 0.3, serat: 0.4, gula: 0.1, natrium: 1, unitGrams: { porsi: 150, mangkok: 150, bungkus: 150 } },
+          { keys: ['nasi merah', 'beras merah'], kalori: 111, karbo: 23, protein: 2.6, lemak: 0.9, serat: 1.8, gula: 0.4, natrium: 5, unitGrams: { porsi: 150 } },
+          { keys: ['beras putih', 'beras'], kalori: 360, karbo: 79, protein: 6.8, lemak: 0.7, serat: 1.3, gula: 0.1, natrium: 5, unitGrams: { gelas: 180, cangkir: 160, cup: 160, porsi: 75 } },
+          { keys: ['kentang', 'potato'], kalori: 77, karbo: 17.5, protein: 2, lemak: 0.1, serat: 2.2, gula: 0.8, natrium: 6, unitGrams: { buah: 150, pcs: 150, potong: 60 } },
+          { keys: ['ubi jalar', 'ubi ungu', 'ubi cilembu', 'ubi'], kalori: 86, karbo: 20.1, protein: 1.6, lemak: 0.1, serat: 3, gula: 4.2, natrium: 55, unitGrams: { buah: 150, potong: 80 } },
+          { keys: ['singkong', 'ketela'], kalori: 160, karbo: 38.1, protein: 1.4, lemak: 0.3, serat: 1.8, gula: 1.7, natrium: 14, unitGrams: { potong: 80, buah: 200 } },
+          { keys: ['jagung manis', 'jagung pipil', 'jagung'], kalori: 86, karbo: 19, protein: 3.2, lemak: 1.2, serat: 2.7, gula: 3.2, natrium: 15, unitGrams: { buah: 150, bonggol: 150, potong: 60 } },
+          { keys: ['roti tawar gandum', 'roti gandum'], kalori: 247, karbo: 41, protein: 13, lemak: 3.4, serat: 7, gula: 5.5, natrium: 400, unitGrams: { lembar: 30, pcs: 30, potong: 30 } },
+          { keys: ['roti tawar', 'roti'], kalori: 265, karbo: 49, protein: 9, lemak: 3.2, serat: 2.7, gula: 5, natrium: 490, unitGrams: { lembar: 30, pcs: 30, potong: 30 } },
+          { keys: ['oatmeal', 'oat', 'quaker'], kalori: 389, karbo: 66.3, protein: 16.9, lemak: 6.9, serat: 10.6, gula: 1, natrium: 2, unitGrams: { sdm: 10, porsi: 40 } },
+          { keys: ['mie instan goreng', 'indomie goreng', 'mie goreng instan'], kalori: 450, karbo: 63, protein: 9.5, lemak: 17.5, serat: 3, gula: 7, natrium: 1150, unitGrams: { bungkus: 85, pcs: 85, porsi: 85 } },
+          { keys: ['mie instan', 'mi instan', 'indomie', 'mie sedap', 'mie sedaap', 'sarimi', 'supermi', 'samyang', 'pop mie'], kalori: 435, karbo: 62, protein: 9, lemak: 16.5, serat: 2.8, gula: 4.5, natrium: 1350, unitGrams: { bungkus: 75, pcs: 75, porsi: 75 } },
+          { keys: ['mie telur', 'mie kuning', 'mie basah', 'mie keriting', 'mie'], kalori: 350, karbo: 70, protein: 11, lemak: 2.5, serat: 3, gula: 1.5, natrium: 180, unitGrams: { bungkus: 100, porsi: 80, keping: 65 } },
+          { keys: ['bihun instan'], kalori: 355, karbo: 76, protein: 6.5, lemak: 2.5, serat: 2, gula: 3, natrium: 1100, unitGrams: { bungkus: 60, porsi: 60 } },
+          { keys: ['bihun', 'soun', 'sohun', 'vermicelli'], kalori: 360, karbo: 82, protein: 4.5, lemak: 0.5, serat: 1.8, gula: 0.5, natrium: 20, unitGrams: { bungkus: 70, keping: 50, porsi: 60 } },
+          { keys: ['kwetiau'], kalori: 190, karbo: 42, protein: 3.5, lemak: 0.8, serat: 1.2, gula: 0.5, natrium: 35, unitGrams: { bungkus: 200, porsi: 100 } },
+          { keys: ['spaghetti', 'makaroni', 'pasta', 'fusilli', 'penne'], kalori: 371, karbo: 74.7, protein: 13, lemak: 1.5, serat: 3.2, gula: 2.7, natrium: 6, unitGrams: { bungkus: 225, porsi: 80 } },
+          { keys: ['kulit pangsit', 'kulit dumpling', 'kulit dimsum', 'kulit lumpia'], kalori: 290, karbo: 58, protein: 9.5, lemak: 1.5, serat: 2, gula: 1, natrium: 420, unitGrams: { lembar: 10, pcs: 10, bungkus: 200 } },
+
+          // --- PROTEIN HEWANI ---
+          { keys: ['ayam dada potong', 'ayam potong'], kalori: 165, karbo: 0, protein: 28, lemak: 4.5, serat: 0, gula: 0, natrium: 74, unitGrams: { potong: 60, pcs: 60, porsi: 100 } },
+          { keys: ['ayam dada tanpa tulang', 'ayam dada fillet', 'dada ayam', 'ayam fillet', 'fillet ayam', 'ayam dada', 'ayam giling'], kalori: 165, karbo: 0, protein: 31, lemak: 3.6, serat: 0, gula: 0, natrium: 74, unitGrams: { potong: 180, pcs: 180, centong: 60, porsi: 100 } },
+          { keys: ['paha ayam', 'ayam paha'], kalori: 209, karbo: 0, protein: 26, lemak: 10.9, serat: 0, gula: 0, natrium: 84, unitGrams: { potong: 110, pcs: 110 } },
+          { keys: ['ayam sayap tengah', 'sayap tengah', 'ayam sayap', 'sayap ayam', 'chicken wing'], kalori: 203, karbo: 0, protein: 24, lemak: 11.5, serat: 0, gula: 0, natrium: 82, unitGrams: { potong: 28, pcs: 28, buah: 28 } },
+          { keys: ['ati ampela', 'hati ayam', 'ampela'], kalori: 167, karbo: 0.9, protein: 24.5, lemak: 6.5, serat: 0, gula: 0, natrium: 78, unitGrams: { pasang: 60, potong: 40, pcs: 40 } },
+          { keys: ['ceker ayam', 'ceker'], kalori: 215, karbo: 0.2, protein: 19.4, lemak: 14.6, serat: 0, gula: 0, natrium: 67, unitGrams: { pcs: 35, potong: 35 } },
+          { keys: ['daging ayam', 'ayam kampung', 'ayam broiler', 'ayam negeri', 'ayam'], kalori: 190, karbo: 0, protein: 27, lemak: 8.5, serat: 0, gula: 0, natrium: 78, unitGrams: { potong: 100, pcs: 100, ekor: 800, porsi: 100 } },
+          { keys: ['daging sapi cincang', 'sapi giling', 'daging giling'], kalori: 250, karbo: 0, protein: 26, lemak: 15, serat: 0, gula: 0, natrium: 75, unitGrams: { porsi: 100, sdm: 20 } },
+          { keys: ['iga sapi', 'buntut sapi', 'sandung lamur', 'tetelan'], kalori: 280, karbo: 0, protein: 22, lemak: 21, serat: 0, gula: 0, natrium: 72, unitGrams: { potong: 100, pcs: 100 } },
+          { keys: ['daging sapi', 'sapi has dalam', 'tenderloin', 'sirloin', 'beef', 'sapi'], kalori: 215, karbo: 0, protein: 26.5, lemak: 11.5, serat: 0, gula: 0, natrium: 68, unitGrams: { potong: 80, pcs: 80, porsi: 100 } },
+          { keys: ['daging kambing', 'kambing'], kalori: 143, karbo: 0, protein: 27, lemak: 3, serat: 0, gula: 0, natrium: 86, unitGrams: { potong: 80 } },
+          { keys: ['ikan salmon', 'salmon'], kalori: 208, karbo: 0, protein: 20.4, lemak: 13.4, serat: 0, gula: 0, natrium: 59, unitGrams: { potong: 120, pcs: 120, fillet: 120 } },
+          { keys: ['ikan kembung', 'kembung'], kalori: 167, karbo: 0, protein: 21.3, lemak: 8.5, serat: 0, gula: 0, natrium: 90, unitGrams: { ekor: 100, potong: 100, pcs: 100 } },
+          { keys: ['ikan tuna', 'tuna'], kalori: 132, karbo: 0, protein: 28, lemak: 1.3, serat: 0, gula: 0, natrium: 47, unitGrams: { potong: 100, kaleng: 140 } },
+          { keys: ['ikan tongkol', 'tongkol', 'cakalang'], kalori: 111, karbo: 0, protein: 24, lemak: 1, serat: 0, gula: 0, natrium: 65, unitGrams: { potong: 80, ekor: 200 } },
+          { keys: ['ikan lele', 'lele'], kalori: 105, karbo: 0, protein: 18, lemak: 2.9, serat: 0, gula: 0, natrium: 50, unitGrams: { ekor: 120, potong: 120 } },
+          { keys: ['ikan patin', 'ikan dori', 'dori', 'patin'], kalori: 132, karbo: 0, protein: 17, lemak: 6.6, serat: 0, gula: 0, natrium: 55, unitGrams: { potong: 100, fillet: 120 } },
+          { keys: ['ikan gurame', 'ikan nila', 'ikan mujair', 'ikan kakap', 'ikan bandeng', 'ikan'], kalori: 128, karbo: 0, protein: 21, lemak: 4.5, serat: 0, gula: 0, natrium: 65, unitGrams: { ekor: 150, potong: 100, pcs: 100 } },
+          { keys: ['ikan teri', 'teri medan', 'teri nasi', 'teri'], kalori: 170, karbo: 0, protein: 33.4, lemak: 3, serat: 0, gula: 0, natrium: 1450, unitGrams: { sdm: 15, bungkus: 50 } },
+          { keys: ['ikan asin', 'cumi asin', 'peda', 'jambal'], kalori: 193, karbo: 0, protein: 42, lemak: 1.5, serat: 0, gula: 0, natrium: 2400, unitGrams: { potong: 40, ekor: 40 } },
+          { keys: ['udang', 'ebi', 'shrimp'], kalori: 99, karbo: 0.2, protein: 24, lemak: 0.3, serat: 0, gula: 0, natrium: 111, unitGrams: { ekor: 15, pcs: 15, porsi: 100 } },
+          { keys: ['cumi', 'sotong', 'squid'], kalori: 92, karbo: 3.1, protein: 15.6, lemak: 1.4, serat: 0, gula: 0, natrium: 44, unitGrams: { ekor: 80, potong: 50 } },
+          { keys: ['kerang', 'scallop', 'kepiting', 'rajungan'], kalori: 86, karbo: 3.6, protein: 14.7, lemak: 1, serat: 0, gula: 0, natrium: 280, unitGrams: { porsi: 100 } },
+          { keys: ['telur puyuh'], kalori: 158, karbo: 0.4, protein: 13.1, lemak: 11.1, serat: 0, gula: 0.4, natrium: 141, unitGrams: { butir: 10, pcs: 10, buah: 10 } },
+          { keys: ['telur asin', 'telur bebek'], kalori: 185, karbo: 1.4, protein: 13, lemak: 13.8, serat: 0, gula: 0.9, natrium: 680, unitGrams: { butir: 65, pcs: 65 } },
+          { keys: ['putih telur'], kalori: 52, karbo: 0.7, protein: 10.9, lemak: 0.2, serat: 0, gula: 0.7, natrium: 166, unitGrams: { butir: 33 } },
+          { keys: ['telur ayam', 'telur', 'egg'], kalori: 155, karbo: 1.1, protein: 12.6, lemak: 10.6, serat: 0, gula: 1.1, natrium: 124, unitGrams: { butir: 55, pcs: 55, buah: 55 } },
+          { keys: ['bakso sapi', 'bakso ayam', 'bakso ikan', 'bakso'], kalori: 202, karbo: 11, protein: 13.5, lemak: 11.5, serat: 0.5, gula: 1, natrium: 680, unitGrams: { butir: 20, pcs: 20, buah: 20, bungkus: 200 } },
+          { keys: ['sosis sapi', 'sosis ayam', 'sosis', 'kanzler'], kalori: 290, karbo: 4.5, protein: 13, lemak: 24.5, serat: 0, gula: 1.5, natrium: 890, unitGrams: { batang: 40, pcs: 40, buah: 40, bungkus: 200 } },
+          { keys: ['nugget ayam', 'nugget', 'chicken nugget', 'karage', 'katsu'], kalori: 280, karbo: 16, protein: 15, lemak: 17.5, serat: 0.9, gula: 1, natrium: 580, unitGrams: { pcs: 25, potong: 30, bungkus: 250 } },
+          { keys: ['kornet', 'corned beef'], kalori: 240, karbo: 2, protein: 18, lemak: 18, serat: 0, gula: 0.5, natrium: 960, unitGrams: { sdm: 20, sachet: 50, kaleng: 198 } },
+          { keys: ['sarden kaleng', 'sarden'], kalori: 185, karbo: 3.5, protein: 18, lemak: 10.5, serat: 0.5, gula: 2.5, natrium: 520, unitGrams: { kaleng: 155, potong: 45 } },
+          { keys: ['abon sapi', 'abon ayam', 'abon'], kalori: 420, karbo: 28, protein: 27, lemak: 22, serat: 1, gula: 15, natrium: 850, unitGrams: { sdm: 12, bungkus: 100 } },
+
+          // --- PROTEIN NABATI ---
+          { keys: ['tempe'], kalori: 193, karbo: 9.4, protein: 19, lemak: 10.8, serat: 4.5, gula: 0.5, natrium: 9, unitGrams: { papan: 200, potong: 50, pcs: 50, bungkus: 200 } },
+          { keys: ['tahu sutera', 'tofu', 'egg tofu', 'sapo tahu'], kalori: 62, karbo: 2.5, protein: 6.5, lemak: 3.2, serat: 0.3, gula: 0.5, natrium: 45, unitGrams: { bungkus: 140, potong: 45, pcs: 55 } },
+          { keys: ['tahu putih', 'tahu kuning', 'tahu pong', 'tahu sumedang', 'tahu'], kalori: 76, karbo: 1.9, protein: 8.1, lemak: 4.8, serat: 0.3, gula: 0.6, natrium: 7, unitGrams: { potong: 55, buah: 55, pcs: 55, bungkus: 250 } },
+          { keys: ['oncom'], kalori: 187, karbo: 22.6, protein: 13, lemak: 6, serat: 4, gula: 1, natrium: 18, unitGrams: { papan: 150, potong: 50 } },
+          { keys: ['sinti bumbu kacang', 'bumbu kacang', 'bumbu pecel', 'sinti'], kalori: 490, karbo: 35, protein: 16, lemak: 32, serat: 5, gula: 18, natrium: 950, unitGrams: { bungkus: 50, sachet: 50, sdm: 18 } },
+          { keys: ['kacang tanah'], kalori: 567, karbo: 16.1, protein: 25.8, lemak: 49.2, serat: 8.5, gula: 4.7, natrium: 18, unitGrams: { sdm: 15, bungkus: 100 } },
+          { keys: ['kacang merah', 'kacang jogo'], kalori: 127, karbo: 22.8, protein: 8.7, lemak: 0.5, serat: 6.4, gula: 0.3, natrium: 2, unitGrams: { sdm: 15, porsi: 80 } },
+          { keys: ['kacang hijau'], kalori: 105, karbo: 19.2, protein: 7, lemak: 0.4, serat: 7.6, gula: 2, natrium: 2, unitGrams: { sdm: 15, porsi: 80 } },
+          { keys: ['edamame', 'kedelai'], kalori: 121, karbo: 8.9, protein: 11.9, lemak: 5.2, serat: 5.2, gula: 2.2, natrium: 6, unitGrams: { porsi: 80 } },
+
+          // --- SAYUR MAYUR ---
+          { keys: ['bayam', 'spinach'], kalori: 23, karbo: 3.6, protein: 2.9, lemak: 0.4, serat: 2.2, gula: 0.4, natrium: 79, unitGrams: { ikat: 150, porsi: 100 } },
+          { keys: ['kangkung'], kalori: 19, karbo: 3.1, protein: 2.6, lemak: 0.2, serat: 2.1, gula: 0.5, natrium: 113, unitGrams: { ikat: 150, porsi: 100 } },
+          { keys: ['brokoli', 'broccoli'], kalori: 34, karbo: 6.6, protein: 2.8, lemak: 0.4, serat: 2.6, gula: 1.7, natrium: 33, unitGrams: { buah: 250, bonggol: 250, potong: 40, porsi: 100 } },
+          { keys: ['kembang kol', 'bunga kol', 'cauliflower'], kalori: 25, karbo: 5, protein: 1.9, lemak: 0.3, serat: 2, gula: 1.9, natrium: 30, unitGrams: { buah: 300, potong: 40 } },
+          { keys: ['wortel', 'carrot'], kalori: 41, karbo: 9.6, protein: 0.9, lemak: 0.2, serat: 2.8, gula: 4.7, natrium: 69, unitGrams: { buah: 75, batang: 75, pcs: 75, potong: 30 } },
+          { keys: ['buncis', 'baby buncis'], kalori: 31, karbo: 7, protein: 1.8, lemak: 0.2, serat: 2.7, gula: 3.3, natrium: 6, unitGrams: { ikat: 120, buah: 8, batang: 8, porsi: 80 } },
+          { keys: ['kacang panjang'], kalori: 47, karbo: 8.4, protein: 2.8, lemak: 0.4, serat: 3.6, gula: 2.5, natrium: 4, unitGrams: { ikat: 150, batang: 15, helai: 15 } },
+          { keys: ['pakcoy', 'bok choy', 'pokcoy', 'sawi hijau', 'caisim', 'sawi putih', 'sawi'], kalori: 16, karbo: 2.5, protein: 1.5, lemak: 0.2, serat: 1.5, gula: 1.1, natrium: 65, unitGrams: { ikat: 150, bonggol: 120, lembar: 25, helai: 25 } },
+          { keys: ['kol', 'kubis', 'cabbage'], kalori: 25, karbo: 5.8, protein: 1.3, lemak: 0.1, serat: 2.5, gula: 3.2, natrium: 18, unitGrams: { lembar: 25, buah: 400, potong: 100 } },
+          { keys: ['selada', 'lettuce'], kalori: 15, karbo: 2.9, protein: 1.4, lemak: 0.2, serat: 1.3, gula: 0.8, natrium: 28, unitGrams: { lembar: 15, ikat: 120, helai: 15 } },
+          { keys: ['tomat', 'tomato'], kalori: 18, karbo: 3.9, protein: 0.9, lemak: 0.2, serat: 1.2, gula: 2.6, natrium: 5, unitGrams: { buah: 90, pcs: 90, potong: 45 } },
+          { keys: ['timun', 'mentimun', 'ketimun', 'cucumber'], kalori: 15, karbo: 3.6, protein: 0.7, lemak: 0.1, serat: 0.5, gula: 1.7, natrium: 2, unitGrams: { buah: 150, pcs: 150, potong: 40 } },
+          { keys: ['taoge', 'toge', 'tauge', 'kecambah'], kalori: 30, karbo: 5.9, protein: 3, lemak: 0.2, serat: 1.8, gula: 4.1, natrium: 6, unitGrams: { bungkus: 100, porsi: 60 } },
+          { keys: ['terong', 'terung', 'eggplant'], kalori: 25, karbo: 5.9, protein: 1, lemak: 0.2, serat: 3, gula: 3.5, natrium: 2, unitGrams: { buah: 150, potong: 50 } },
+          { keys: ['labu siam', 'jipang', 'manisa'], kalori: 19, karbo: 4.5, protein: 0.8, lemak: 0.1, serat: 1.7, gula: 1.7, natrium: 2, unitGrams: { buah: 180, potong: 80 } },
+          { keys: ['oyong', 'gambas'], kalori: 20, karbo: 4.4, protein: 1.2, lemak: 0.2, serat: 1.5, gula: 1.5, natrium: 3, unitGrams: { buah: 180 } },
+          { keys: ['pare', 'paria'], kalori: 17, karbo: 3.7, protein: 1, lemak: 0.2, serat: 2.8, gula: 1.2, natrium: 5, unitGrams: { buah: 150 } },
+          { keys: ['jamur enoki', 'jamur tiram', 'jamur kancing', 'jamur kuping', 'jamur shiitake', 'jamur'], kalori: 28, karbo: 5.3, protein: 3.1, lemak: 0.3, serat: 2.3, gula: 1.5, natrium: 8, unitGrams: { bungkus: 100, porsi: 80, pcs: 20 } },
+          { keys: ['paprika'], kalori: 31, karbo: 6, protein: 1, lemak: 0.3, serat: 2.1, gula: 4.2, natrium: 4, unitGrams: { buah: 120, potong: 40 } },
+          { keys: ['putren', 'jagung muda', 'baby corn'], kalori: 26, karbo: 5.4, protein: 2.5, lemak: 0.1, serat: 2.2, gula: 2.2, natrium: 12, unitGrams: { buah: 15, pcs: 15, bungkus: 100 } },
+          { keys: ['daun singkong', 'daun katuk', 'daun pepaya'], kalori: 50, karbo: 8.5, protein: 5.5, lemak: 0.8, serat: 4.2, gula: 0.5, natrium: 15, unitGrams: { ikat: 120 } },
+          { keys: ['daun bawang', 'bawang daun', 'prei'], kalori: 32, karbo: 7.3, protein: 1.8, lemak: 0.2, serat: 2.6, gula: 2.3, natrium: 16, unitGrams: { batang: 15, helai: 15, ikat: 50 } },
+          { keys: ['seledri', 'sledri', 'celery'], kalori: 16, karbo: 3, protein: 0.7, lemak: 0.2, serat: 1.6, gula: 1.3, natrium: 80, unitGrams: { batang: 15, helai: 10, ikat: 40 } },
+          { keys: ['kemangi'], kalori: 23, karbo: 2.7, protein: 3.2, lemak: 0.6, serat: 1.6, gula: 0.3, natrium: 4, unitGrams: { ikat: 30, helai: 2, lembar: 2 } },
+          { keys: ['petai', 'pete'], kalori: 124, karbo: 16.9, protein: 8, lemak: 2, serat: 4, gula: 2, natrium: 12, unitGrams: { papan: 40, butir: 3 } },
+          { keys: ['nangka muda', 'gori', 'rebung'], kalori: 35, karbo: 7.5, protein: 1.8, lemak: 0.3, serat: 2.5, gula: 2, natrium: 5, unitGrams: { bungkus: 200, potong: 60 } },
+          { keys: ['kacang polong', 'kapri'], kalori: 81, karbo: 14.5, protein: 5.4, lemak: 0.4, serat: 5.7, gula: 5.7, natrium: 5, unitGrams: { sdm: 15, porsi: 60 } },
+
+          // --- BUAH-BUAHAN ---
+          { keys: ['daun pisang'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 0, unitGrams: { lembar: 0, helai: 0, ikat: 0 } },
+          { keys: ['pisang', 'banana'], kalori: 89, karbo: 22.8, protein: 1.1, lemak: 0.3, serat: 2.6, gula: 12.2, natrium: 1, unitGrams: { buah: 110, pcs: 110, potong: 60 } },
+          { keys: ['apel', 'apple'], kalori: 52, karbo: 13.8, protein: 0.3, lemak: 0.2, serat: 2.4, gula: 10.4, natrium: 1, unitGrams: { buah: 150, pcs: 150, potong: 50 } },
+          { keys: ['semangka', 'watermelon'], kalori: 30, karbo: 7.6, protein: 0.6, lemak: 0.2, serat: 0.4, gula: 6.2, natrium: 1, unitGrams: { potong: 150, porsi: 150, buah: 1000 } },
+          { keys: ['pepaya', 'papaya'], kalori: 43, karbo: 10.8, protein: 0.5, lemak: 0.3, serat: 1.7, gula: 7.8, natrium: 8, unitGrams: { potong: 120, porsi: 120 } },
+          { keys: ['melon'], kalori: 34, karbo: 8.2, protein: 0.8, lemak: 0.2, serat: 0.9, gula: 7.9, natrium: 16, unitGrams: { potong: 120, porsi: 120 } },
+          { keys: ['jeruk manis', 'jeruk sunkist', 'jeruk', 'orange'], kalori: 47, karbo: 11.8, protein: 0.9, lemak: 0.1, serat: 2.4, gula: 9.4, natrium: 0, unitGrams: { buah: 130, pcs: 130 } },
+          { keys: ['jeruk nipis', 'jeruk limau', 'lemon'], kalori: 29, karbo: 9.3, protein: 1.1, lemak: 0.3, serat: 2.8, gula: 2.5, natrium: 2, unitGrams: { buah: 45, potong: 20, sdm: 15 } },
+          { keys: ['alpukat', 'avocado'], kalori: 160, karbo: 8.5, protein: 2, lemak: 14.7, serat: 6.7, gula: 0.7, natrium: 7, unitGrams: { buah: 150, potong: 75 } },
+          { keys: ['mangga', 'mango'], kalori: 60, karbo: 15, protein: 0.8, lemak: 0.4, serat: 1.6, gula: 13.7, natrium: 1, unitGrams: { buah: 200, potong: 100 } },
+          { keys: ['buah naga', 'dragon fruit'], kalori: 60, karbo: 13, protein: 1.2, lemak: 0.4, serat: 3, gula: 9.8, natrium: 0, unitGrams: { buah: 250, potong: 100 } },
+          { keys: ['anggur', 'grape'], kalori: 69, karbo: 18.1, protein: 0.7, lemak: 0.2, serat: 0.9, gula: 15.5, natrium: 2, unitGrams: { butir: 5, porsi: 100 } },
+          { keys: ['pir', 'pear'], kalori: 57, karbo: 15.2, protein: 0.4, lemak: 0.1, serat: 3.1, gula: 9.8, natrium: 1, unitGrams: { buah: 160 } },
+          { keys: ['nanas', 'pineapple'], kalori: 50, karbo: 13.1, protein: 0.5, lemak: 0.1, serat: 1.4, gula: 9.9, natrium: 1, unitGrams: { potong: 80, buah: 400 } },
+          { keys: ['stroberi', 'strawberry'], kalori: 32, karbo: 7.7, protein: 0.7, lemak: 0.3, serat: 2, gula: 4.9, natrium: 1, unitGrams: { buah: 15, pcs: 15, porsi: 100 } },
+          { keys: ['jambu biji', 'jambu air', 'salak', 'kelengkeng'], kalori: 68, karbo: 14.3, protein: 2.5, lemak: 0.9, serat: 5.4, gula: 8.9, natrium: 2, unitGrams: { buah: 100 } },
+          { keys: ['kelapa parut', 'kelapa'], kalori: 354, karbo: 15.2, protein: 3.3, lemak: 33.5, serat: 9, gula: 6.2, natrium: 20, unitGrams: { sdm: 10, butir: 300, bungkus: 150 } },
+
+          // --- MINYAK, LEMAK, SANTAN & DAIRY ---
+          { keys: ['minyak goreng', 'minyak sayur', 'minyak kelapa', 'minyak sawit', 'minyak'], kalori: 884, karbo: 0, protein: 0, lemak: 100, serat: 0, gula: 0, natrium: 0, unitGrams: { sdm: 13.5, sdt: 4.5, ml: 0.92, secukupnya: 10 } },
+          { keys: ['minyak zaitun', 'olive oil'], kalori: 884, karbo: 0, protein: 0, lemak: 100, serat: 0, gula: 0, natrium: 2, unitGrams: { sdm: 13.5, sdt: 4.5, ml: 0.92 } },
+          { keys: ['minyak wijen', 'sesame oil'], kalori: 884, karbo: 0, protein: 0, lemak: 100, serat: 0, gula: 0, natrium: 0, unitGrams: { sdm: 13.5, sdt: 4.5, ml: 0.92 } },
+          { keys: ['mentega', 'butter', 'unsalted butter'], kalori: 717, karbo: 0.1, protein: 0.9, lemak: 81.1, serat: 0, gula: 0.1, natrium: 643, unitGrams: { sdm: 14, sdt: 5, potong: 15 } },
+          { keys: ['margarin', 'blueband', 'blue band'], kalori: 717, karbo: 0.7, protein: 0.2, lemak: 80, serat: 0, gula: 0, natrium: 750, unitGrams: { sdm: 14, sdt: 5, sachet: 200 } },
+          { keys: ['santan instan', 'santan kara', 'santan kental', 'kara', 'santan'], kalori: 230, karbo: 5.5, protein: 2.3, lemak: 23.8, serat: 2.2, gula: 3.3, natrium: 15, unitGrams: { sachet: 65, bungkus: 65, kotak: 200, sdm: 15, ml: 1 } },
+          { keys: ['susu kental manis', 'skm', 'kental manis'], kalori: 321, karbo: 54.4, protein: 7.9, lemak: 8.7, serat: 0, gula: 54.4, natrium: 127, unitGrams: { sachet: 38, sdm: 20, sdt: 7 } },
+          { keys: ['susu full cream', 'susu uht', 'susu cair', 'susu segar', 'susu'], kalori: 61, karbo: 4.8, protein: 3.2, lemak: 3.3, serat: 0, gula: 4.8, natrium: 43, unitGrams: { ml: 1.03, kotak: 250, gelas: 200, sdm: 15 } },
+          { keys: ['keju cheddar', 'keju mozzarella', 'keju parut', 'keju slice', 'keju', 'cheese'], kalori: 350, karbo: 3.1, protein: 22.9, lemak: 27.5, serat: 0, gula: 0.5, natrium: 650, unitGrams: { lembar: 20, potong: 25, sdm: 10, kotak: 160 } },
+          { keys: ['yoghurt', 'yogurt'], kalori: 61, karbo: 4.7, protein: 3.5, lemak: 3.3, serat: 0, gula: 4.7, natrium: 46, unitGrams: { sdm: 15, cup: 120, botol: 200 } },
+          { keys: ['cooking cream', 'whipping cream', 'krim kental'], kalori: 340, karbo: 2.8, protein: 2.1, lemak: 36, serat: 0, gula: 2.8, natrium: 38, unitGrams: { sdm: 15, ml: 1 } },
+
+          // --- TEPUNG ---
+          { keys: ['tepung terigu', 'terigu'], kalori: 364, karbo: 76.3, protein: 10.3, lemak: 1, serat: 2.7, gula: 0.3, natrium: 2, unitGrams: { sdm: 10, sdt: 3.5 } },
+          { keys: ['tepung maizena', 'maizena'], kalori: 381, karbo: 91.3, protein: 0.3, lemak: 0.1, serat: 0.9, gula: 0, natrium: 9, unitGrams: { sdm: 10, sdt: 3.5 } },
+          { keys: ['tepung tapioka', 'tapioka', 'tepung kanji', 'kanji', 'tepung sagu', 'sagu', 'tepung aci'], kalori: 358, karbo: 88.7, protein: 0.2, lemak: 0.02, serat: 0.9, gula: 3.3, natrium: 1, unitGrams: { sdm: 10, sdt: 3.5 } },
+          { keys: ['tepung beras', 'tepung ketan'], kalori: 366, karbo: 80.1, protein: 6, lemak: 1.4, serat: 2.4, gula: 0.1, natrium: 0, unitGrams: { sdm: 10, sdt: 3.5 } },
+          { keys: ['tepung panir', 'tepung roti', 'breadcrumb'], kalori: 395, karbo: 72, protein: 13.3, lemak: 5.3, serat: 4.5, gula: 6.2, natrium: 730, unitGrams: { sdm: 10 } },
+          { keys: ['tepung bumbu', 'tepung serbaguna', 'tepung sajiku', 'tepung kobe', 'tepung sasa', 'tepung'], kalori: 350, karbo: 75, protein: 9, lemak: 1.2, serat: 2, gula: 2, natrium: 1900, unitGrams: { bungkus: 75, sachet: 75, sdm: 10 } },
+
+          // --- SAUCE & KECAP ---
+          { keys: ['kecap manis'], kalori: 260, karbo: 60, protein: 4, lemak: 0.2, serat: 0.5, gula: 52, natrium: 2100, unitGrams: { sdm: 18, sdt: 6, sachet: 15, ml: 1.2 } },
+          { keys: ['kecap asin', 'soy sauce'], kalori: 53, karbo: 4.9, protein: 8.1, lemak: 0.1, serat: 0.8, gula: 0.4, natrium: 5493, unitGrams: { sdm: 16, sdt: 5.5, ml: 1.1 } },
+          { keys: ['kecap ikan', 'fish sauce'], kalori: 35, karbo: 3.6, protein: 5.1, lemak: 0, serat: 0, gula: 3.6, natrium: 7850, unitGrams: { sdm: 16, sdt: 5.5 } },
+          { keys: ['kecap inggris', 'worcestershire'], kalori: 78, karbo: 19.5, protein: 0, lemak: 0, serat: 0, gula: 10, natrium: 980, unitGrams: { sdm: 16, sdt: 5.5 } },
+          { keys: ['saus tiram', 'saori', 'oyster sauce'], kalori: 51, karbo: 10.9, protein: 1.4, lemak: 0.2, serat: 0.1, gula: 8.5, natrium: 2733, unitGrams: { sdm: 18, sdt: 6, sachet: 23 } },
+          { keys: ['saus teriyaki', 'teriyaki'], kalori: 89, karbo: 15.6, protein: 5.9, lemak: 0, serat: 0.1, gula: 14, natrium: 3800, unitGrams: { sdm: 18, sdt: 6, sachet: 22 } },
+          { keys: ['saus tomat', 'saos tomat', 'ketchup'], kalori: 112, karbo: 25.8, protein: 1.7, lemak: 0.3, serat: 0.3, gula: 22.8, natrium: 907, unitGrams: { sdm: 17, sdt: 5.5, sachet: 9 } },
+          { keys: ['saus sambal', 'saos sambal', 'saus pedas', 'saos pedas', 'sambal botol'], kalori: 105, karbo: 23, protein: 1.5, lemak: 0.5, serat: 1, gula: 17, natrium: 1250, unitGrams: { sdm: 17, sdt: 5.5, sachet: 9 } },
+          { keys: ['saus barbeque', 'saus bbq', 'bbq'], kalori: 172, karbo: 41, protein: 0.8, lemak: 0.6, serat: 0.9, gula: 33, natrium: 1027, unitGrams: { sdm: 17, sdt: 5.5 } },
+          { keys: ['saus bolognese', 'pasta tomat', 'bolognese'], kalori: 78, karbo: 12, protein: 2, lemak: 2.5, serat: 2, gula: 7, natrium: 460, unitGrams: { sdm: 17, bungkus: 250 } },
+          { keys: ['mayonaise', 'mayonnaise', 'mayo'], kalori: 680, karbo: 0.6, protein: 1, lemak: 75, serat: 0, gula: 0.6, natrium: 635, unitGrams: { sdm: 14, sdt: 5, sachet: 15 } },
+          { keys: ['chili oil', 'minyak cabai'], kalori: 720, karbo: 4, protein: 1.5, lemak: 78, serat: 1.5, gula: 0.5, natrium: 450, unitGrams: { sdm: 14, sdt: 4.5 } },
+
+          // --- BUMBU & REMPAH ---
+          { keys: ['bawang putih', 'baput', 'garlic'], kalori: 149, karbo: 33.1, protein: 6.4, lemak: 0.5, serat: 2.1, gula: 1, natrium: 17, unitGrams: { siung: 5, buah: 40, sdm: 10 } },
+          { keys: ['bawang merah', 'bamer', 'shallot'], kalori: 72, karbo: 16.8, protein: 2.5, lemak: 0.1, serat: 3.2, gula: 7.9, natrium: 12, unitGrams: { siung: 7, butir: 7, buah: 10 } },
+          { keys: ['bawang bombay', 'bombay', 'onion'], kalori: 40, karbo: 9.3, protein: 1.1, lemak: 0.1, serat: 1.7, gula: 4.2, natrium: 4, unitGrams: { buah: 110, pcs: 110, potong: 55 } },
+          { keys: ['bawang goreng'], kalori: 520, karbo: 42, protein: 6.5, lemak: 36, serat: 4, gula: 6, natrium: 240, unitGrams: { sdm: 8, sdt: 3, sachet: 15 } },
+          { keys: ['cabai rawit', 'cabe rawit', 'cabai merah', 'cabe merah', 'cabai hijau', 'cabe hijau', 'cabai keriting', 'cabai', 'cabe'], kalori: 40, karbo: 8.8, protein: 1.9, lemak: 0.4, serat: 1.5, gula: 5.3, natrium: 9, unitGrams: { buah: 5, pcs: 5, batang: 5 } },
+          { keys: ['garam', 'salt'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 38758, unitGrams: { sdm: 18, sdt: 6, secukupnya: 2 } },
+          { keys: ['gula merah', 'gula jawa', 'gula aren'], kalori: 375, karbo: 95, protein: 0.4, lemak: 0, serat: 0, gula: 88, natrium: 35, unitGrams: { sdm: 12, sdt: 4, keping: 30, potong: 25, buah: 50 } },
+          { keys: ['gula pasir', 'gula putih', 'gula', 'sugar'], kalori: 387, karbo: 100, protein: 0, lemak: 0, serat: 0, gula: 100, natrium: 1, unitGrams: { sdm: 12.5, sdt: 4, secukupnya: 4 } },
+          { keys: ['madu', 'honey'], kalori: 304, karbo: 82.4, protein: 0.3, lemak: 0, serat: 0.2, gula: 82.1, natrium: 4, unitGrams: { sdm: 21, sdt: 7, sachet: 20 } },
+          { keys: ['kaldu jamur', 'totole', 'kaldu ayam', 'kaldu sapi', 'royco', 'masako', 'penyedap', 'kaldu bubuk', 'kaldu'], kalori: 190, karbo: 28, protein: 12, lemak: 2, serat: 0, gula: 6, natrium: 18500, unitGrams: { sdm: 12, sdt: 4, sachet: 8, secukupnya: 3 } },
+          { keys: ['bumbu racik', 'bumbu instan', 'racik'], kalori: 220, karbo: 35, protein: 7, lemak: 5, serat: 3, gula: 8, natrium: 12500, unitGrams: { bungkus: 20, sachet: 20 } },
+          { keys: ['terasi'], kalori: 174, karbo: 3.5, protein: 30, lemak: 3.5, serat: 0, gula: 0, natrium: 5800, unitGrams: { sdt: 5, sachet: 4, potong: 5 } },
+          { keys: ['merica', 'lada', 'pepper'], kalori: 251, karbo: 64, protein: 10.4, lemak: 3.3, serat: 25.3, gula: 0.6, natrium: 20, unitGrams: { sdt: 2.5, sdm: 7, sachet: 4, secukupnya: 1 } },
+          { keys: ['ketumbar', 'coriander'], kalori: 298, karbo: 55, protein: 12.4, lemak: 17.8, serat: 41.9, gula: 0, natrium: 35, unitGrams: { sdt: 2.5, sdm: 7, sachet: 5 } },
+          { keys: ['kemiri', 'candlenut'], kalori: 636, karbo: 8, protein: 19, lemak: 63, serat: 4, gula: 1, natrium: 15, unitGrams: { butir: 4, buah: 4, pcs: 4 } },
+          { keys: ['jahe', 'ginger'], kalori: 80, karbo: 17.8, protein: 1.8, lemak: 0.8, serat: 2, gula: 1.7, natrium: 13, unitGrams: { cm: 5, ruas: 15, potong: 15 } },
+          { keys: ['kunyit', 'kunir', 'turmeric'], kalori: 70, karbo: 14, protein: 2, lemak: 1, serat: 4, gula: 1, natrium: 10, unitGrams: { cm: 5, ruas: 12, sdt: 3, sachet: 5 } },
+          { keys: ['lengkuas', 'laos', 'kencur'], kalori: 70, karbo: 15, protein: 1, lemak: 1, serat: 2, gula: 1, natrium: 15, unitGrams: { cm: 5, ruas: 15, potong: 15 } },
+          { keys: ['serai', 'sereh'], kalori: 99, karbo: 25.3, protein: 1.8, lemak: 0.5, serat: 2.5, gula: 0, natrium: 6, unitGrams: { batang: 15, pcs: 15 } },
+          { keys: ['daun salam', 'daun jeruk', 'daun pandan', 'kayu manis', 'cengkeh', 'pala', 'kapulaga', 'jintan', 'bunga lawang', 'pekak', 'temu kunci'], kalori: 20, karbo: 4, protein: 0.5, lemak: 0.2, serat: 1, gula: 0, natrium: 5, unitGrams: { lembar: 1, helai: 1, batang: 4, butir: 1, sdt: 2 } },
+          { keys: ['wijen', 'sesame'], kalori: 573, karbo: 23.4, protein: 17.7, lemak: 49.7, serat: 11.8, gula: 0.3, natrium: 11, unitGrams: { sdm: 9, sdt: 3 } },
+          { keys: ['asam jawa', 'asem jawa', 'asem'], kalori: 239, karbo: 62.5, protein: 2.8, lemak: 0.6, serat: 5.1, gula: 38.8, natrium: 28, unitGrams: { sdm: 15, sdt: 5, bungkus: 20 } },
+          { keys: ['cuka', 'vinegar'], kalori: 18, karbo: 0.04, protein: 0, lemak: 0, serat: 0, gula: 0.04, natrium: 2, unitGrams: { sdm: 15, sdt: 5 } },
+          { keys: ['air putih', 'air matang', 'air bersih', 'air es', 'air'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 0, unitGrams: { ml: 1, gelas: 200, liter: 1000, sdm: 15 } },
+
+          // --- DESSERT & LAINNYA ---
+          { keys: ['pudding mangga', 'pudding coklat', 'pudding cokelat', 'puding susu', 'pudding', 'puding'], kalori: 380, karbo: 82, protein: 3.5, lemak: 4.5, serat: 2, gula: 58, natrium: 180, unitGrams: { bungkus: 120, sachet: 120, porsi: 100 } },
+          { keys: ['agar-agar', 'agar', 'nutrijell', 'jelly'], kalori: 310, karbo: 76, protein: 2, lemak: 0.1, serat: 7.7, gula: 15, natrium: 100, unitGrams: { bungkus: 7, sachet: 15 } },
+          { keys: ['cokelat bubuk', 'coklat bubuk', 'cocoa'], kalori: 228, karbo: 57.9, protein: 19.6, lemak: 13.7, serat: 33.2, gula: 1.8, natrium: 21, unitGrams: { sdm: 7, sdt: 2.5 } },
+          { keys: ['cokelat', 'coklat', 'chocolate', 'meses'], kalori: 535, karbo: 59, protein: 6.5, lemak: 30, serat: 5, gula: 48, natrium: 60, unitGrams: { sdm: 12, potong: 20, batang: 50 } },
+          { keys: ['kerupuk', 'emping', 'krupuk'], kalori: 490, karbo: 66, protein: 5, lemak: 23, serat: 1, gula: 2, natrium: 680, unitGrams: { pcs: 10, buah: 10, bungkus: 40, porsi: 25 } },
+          { keys: ['nori', 'rumput laut'], kalori: 35, karbo: 5.1, protein: 5.8, lemak: 0.3, serat: 0.3, gula: 0.5, natrium: 48, unitGrams: { lembar: 3, sachet: 4.5, bungkus: 15 } },
+          { keys: ['french fries', 'kentang goreng'], kalori: 312, karbo: 41.4, protein: 3.4, lemak: 14.7, serat: 3.8, gula: 0.3, natrium: 210, unitGrams: { porsi: 100, bungkus: 500 } },
+          { keys: ['lobak', 'daikon'], kalori: 18, karbo: 4.1, protein: 0.6, lemak: 0.1, serat: 1.6, gula: 2.5, natrium: 21, unitGrams: { buah: 200, potong: 50 } },
+          { keys: ['micin', 'vetsin', 'sasa', 'ajinomoto', 'msg'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 12300, unitGrams: { sdt: 4, sdm: 12, secukupnya: 1 } },
+          { keys: ['soda kue', 'baking soda', 'baking powder'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 27360, unitGrams: { sdt: 4.6, sdm: 14 } },
+          { keys: ['chocolatos', 'bubuk chocolatos'], kalori: 430, karbo: 74, protein: 7, lemak: 12, serat: 3, gula: 48, natrium: 140, unitGrams: { sachet: 28, bungkus: 28, sdm: 15 } },
+          { keys: ['milo', 'bubuk milo'], kalori: 420, karbo: 68, protein: 12, lemak: 10, serat: 3.5, gula: 40, natrium: 150, unitGrams: { sachet: 22, bungkus: 22, sdm: 15 } },
+          { keys: ['oreo', 'biskuit'], kalori: 480, karbo: 70, protein: 4.5, lemak: 20, serat: 2.5, gula: 38, natrium: 380, unitGrams: { pcs: 11, buah: 11, bungkus: 123 } },
+          { keys: ['vla vanila', 'vla', 'fla', 'my vla'], kalori: 390, karbo: 88, protein: 2, lemak: 3, serat: 0, gula: 65, natrium: 180, unitGrams: { sachet: 60, bungkus: 60, sdm: 15 } }
+        ];
+
+        const emptyNutritionObj = () => ({
+          kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 0
+        });
+
+        const roundNutritionObj = (obj) => ({
+          kalori: Math.round(obj.kalori || 0),
+          karbo: Math.round((obj.karbo || 0) * 10) / 10,
+          protein: Math.round((obj.protein || 0) * 10) / 10,
+          lemak: Math.round((obj.lemak || 0) * 10) / 10,
+          serat: Math.round((obj.serat || 0) * 10) / 10,
+          gula: Math.round((obj.gula || 0) * 10) / 10,
+          natrium: Math.round(obj.natrium || 0)
+        });
+
+        const lookupIngredientNutrition = (ingName) => {
+          const low = (ingName || '').trim().toLowerCase();
+          if (!low) return null;
+
+          // 1. Check user's custom Master Ingredients nutrition first
+          const customMaster = (masterIngredients.value || []).find(m =>
+            (m.name || '').trim().toLowerCase() === low &&
+            m.nutrition &&
+            Object.values(m.nutrition).some(v => v !== '' && v !== null && v !== undefined && !isNaN(Number(v)))
+          );
+          if (customMaster && customMaster.nutrition) {
+            const n = customMaster.nutrition;
+            const customUnitGrams = {};
+            const gPerUnit = parseFloat(customMaster.gramPerUnit);
+            if (!isNaN(gPerUnit) && gPerUnit > 0 && customMaster.unit) {
+              customUnitGrams[customMaster.unit.trim().toLowerCase()] = gPerUnit;
+            }
+            return {
+              kalori: parseFloat(n.kalori) || 0,
+              karbo: parseFloat(n.karbo) || 0,
+              protein: parseFloat(n.protein) || 0,
+              lemak: parseFloat(n.lemak) || 0,
+              serat: parseFloat(n.serat) || 0,
+              gula: parseFloat(n.gula) || 0,
+              natrium: parseFloat(n.natrium) || 0,
+              unitGrams: customUnitGrams,
+              source: 'custom'
+            };
+          }
+
+          // 2. Built-in Indonesian TKPI database (longest keyword match wins)
+          let bestEntry = null;
+          let bestKeyLen = 0;
+          for (const entry of NUTRITION_DB_PER_100G) {
+            for (const key of entry.keys) {
+              if (low === key) {
+                return { ...entry, source: 'tkpi' };
+              }
+              if (low.includes(key) && key.length > bestKeyLen) {
+                // Prevent 'air' matching words like 'cair' or 'daun'
+                if (key === 'air' && !/(^|\s)air(\s|$)/.test(low)) continue;
+                if (key === 'kol' && !/(^|\s)kol(\s|$)/.test(low)) continue;
+                if (key === 'pir' && !/(^|\s)pir(\s|$)/.test(low)) continue;
+                if (key === 'mie' && low.includes('mi instan')) continue;
+                bestKeyLen = key.length;
+                bestEntry = entry;
+              }
+            }
+          }
+          return bestEntry ? { ...bestEntry, source: 'tkpi' } : null;
+        };
+
+        const convertIngredientToGrams = (qtyRaw, unitRaw, ingName, dbEntry) => {
+          const normUnit = (unitRaw || '').trim().toLowerCase();
+          const qtyStr = String(qtyRaw || '').trim().toLowerCase();
+          const parsedQty = parseIngredientQtyNumber(qtyRaw);
+
+          if (/secukupnya/i.test(qtyStr) || /secukupnya/i.test(normUnit) || parsedQty === null) {
+            if (dbEntry && dbEntry.unitGrams && dbEntry.unitGrams.secukupnya !== undefined) {
+              return dbEntry.unitGrams.secukupnya;
+            }
+            if (parsedQty === null && qtyStr === '') return 0;
+            return DEFAULT_UNIT_GRAMS.secukupnya;
+          }
+
+          let gramPerUnit = null;
+          if (dbEntry && dbEntry.unitGrams && dbEntry.unitGrams[normUnit] !== undefined) {
+            gramPerUnit = dbEntry.unitGrams[normUnit];
+          } else if (DEFAULT_UNIT_GRAMS[normUnit] !== undefined) {
+            gramPerUnit = DEFAULT_UNIT_GRAMS[normUnit];
+          } else if (normUnit === '') {
+            gramPerUnit = (dbEntry && dbEntry.unitGrams && (dbEntry.unitGrams.pcs || dbEntry.unitGrams.buah || dbEntry.unitGrams.potong)) || 50;
+          } else {
+            gramPerUnit = 50;
+          }
+
+          return Math.max(0, parsedQty * gramPerUnit);
+        };
+
+        const getFoodNutritionServings = (food) => {
+          if (!food || typeof food !== 'object') return 1;
+          const explicit = parseFloat(food.nutritionServings);
+          if (!isNaN(explicit) && explicit >= 1) {
+            return Math.min(50, Math.round(explicit * 10) / 10);
+          }
+          // Auto-parse from portion text like "4 Porsi Keluarga" or "2 porsi"
+          if (food.portion && typeof food.portion === 'string') {
+            const m = food.portion.match(/(\d+(?:[.,]\d+)?)/);
+            if (m) {
+              const num = parseFloat(m[1].replace(',', '.'));
+              if (!isNaN(num) && num >= 1 && num <= 30) return num;
+            }
+          }
+          if (food.batchMode === 'batch') {
+            const bs = parseInt(food.batchServings, 10);
+            if (!isNaN(bs) && bs >= 2) return bs;
+          }
+          const defServ = parseFloat(nutritionTargets.value?.defaultRecipeServings);
+          return (!isNaN(defServ) && defServ >= 1) ? defServ : 2;
+        };
+
+        const calculateIngredientNutrition = (ing) => {
+          const empty = { matched: false, grams: 0, ...emptyNutritionObj() };
+          if (!ing || !ing.name || !ing.name.trim()) return empty;
+          const db = lookupIngredientNutrition(ing.name);
+          if (!db) return empty;
+          const grams = convertIngredientToGrams(ing.qty, ing.unit, ing.name, db);
+          const factor = grams / 100;
+          return {
+            matched: true,
+            grams: Math.round(grams * 10) / 10,
+            kalori: db.kalori * factor,
+            karbo: db.karbo * factor,
+            protein: db.protein * factor,
+            lemak: db.lemak * factor,
+            serat: db.serat * factor,
+            gula: db.gula * factor,
+            natrium: db.natrium * factor
+          };
+        };
+
+        const calculateFoodNutrition = (food, _visitedIds = null) => {
+          const total = emptyNutritionObj();
+          if (!food || typeof food !== 'object') {
+            return { perPortion: emptyNutritionObj(), totalRecipe: emptyNutritionObj(), servings: 1, matchedCount: 0, totalIngredients: 0 };
+          }
+
+          const visited = _visitedIds || new Set();
+          if (food.id) visited.add(food.id);
+
+          const ings = Array.isArray(food.ingredients) ? food.ingredients.filter(i => i && i.name && i.name.trim()) : [];
+          let matchedCount = 0;
+
+          ings.forEach(ing => {
+            const res = calculateIngredientNutrition(ing);
+            if (res.matched) {
+              matchedCount++;
+              total.kalori += res.kalori;
+              total.karbo += res.karbo;
+              total.protein += res.protein;
+              total.lemak += res.lemak;
+              total.serat += res.serat;
+              total.gula += res.gula;
+              total.natrium += res.natrium;
+            }
+          });
+
+          // If this dish uses a shared base batch dish, add 1 batch portion of base ingredients
+          let extraIngredients = 0;
+          if (food.baseBatchId && !visited.has(food.baseBatchId)) {
+            const baseFood = getFoodItem(food.baseBatchId);
+            if (baseFood) {
+              const baseCalc = calculateFoodNutrition(baseFood, visited);
+              const baseDiv = Math.max(1, getFoodBatchConfig(baseFood).servings || 1);
+              total.kalori += baseCalc.totalRecipe.kalori / baseDiv;
+              total.karbo += baseCalc.totalRecipe.karbo / baseDiv;
+              total.protein += baseCalc.totalRecipe.protein / baseDiv;
+              total.lemak += baseCalc.totalRecipe.lemak / baseDiv;
+              total.serat += baseCalc.totalRecipe.serat / baseDiv;
+              total.gula += baseCalc.totalRecipe.gula / baseDiv;
+              total.natrium += baseCalc.totalRecipe.natrium / baseDiv;
+              if (baseCalc.matchedCount > 0) {
+                matchedCount += baseCalc.matchedCount;
+                extraIngredients += baseCalc.totalIngredients;
+              }
+            }
+          }
+
+          const servings = Math.max(1, getFoodNutritionServings(food));
+          const perPortionRaw = {
+            kalori: total.kalori / servings,
+            karbo: total.karbo / servings,
+            protein: total.protein / servings,
+            lemak: total.lemak / servings,
+            serat: total.serat / servings,
+            gula: total.gula / servings,
+            natrium: total.natrium / servings
+          };
+
+          return {
+            perPortion: roundNutritionObj(perPortionRaw),
+            totalRecipe: roundNutritionObj(total),
+            servings,
+            matchedCount,
+            totalIngredients: ings.length + extraIngredients
+          };
+        };
+
+        const calculateItemsNutrition = (itemsObj) => {
+          const sum = emptyNutritionObj();
+          if (!itemsObj || typeof itemsObj !== 'object') return roundNutritionObj(sum);
+          const uniqueFoodIds = new Set();
+          nutritionCategories.forEach(cat => {
+            const val = itemsObj[cat.id];
+            if (Array.isArray(val)) {
+              val.forEach(id => { if (id) uniqueFoodIds.add(id); });
+            } else if (typeof val === 'string' && val) {
+              uniqueFoodIds.add(val);
+            }
+          });
+          uniqueFoodIds.forEach(fid => {
+            const food = getFoodItem(fid);
+            if (food) {
+              const n = calculateFoodNutrition(food).perPortion;
+              sum.kalori += n.kalori;
+              sum.karbo += n.karbo;
+              sum.protein += n.protein;
+              sum.lemak += n.lemak;
+              sum.serat += n.serat;
+              sum.gula += n.gula;
+              sum.natrium += n.natrium;
+            }
+          });
+          return roundNutritionObj(sum);
+        };
+
+        const calculatePackageNutrition = (pkg) => {
+          if (!pkg || !pkg.items) return emptyNutritionObj();
+          return calculateItemsNutrition(pkg.items);
+        };
+
+        const calculateSlotNutrition = (slotObj) => {
+          if (!slotObj || !slotObj.items) return emptyNutritionObj();
+          return calculateItemsNutrition(slotObj.items);
+        };
+
+        const calculateDayNutrition = (dateStr) => {
+          const bekal = getMealForSlot(dateStr, 'bekal');
+          const malam = getMealForSlot(dateStr, 'malam');
+          const nB = calculateSlotNutrition(bekal);
+          const nM = calculateSlotNutrition(malam);
+          return roundNutritionObj({
+            kalori: nB.kalori + nM.kalori,
+            karbo: nB.karbo + nM.karbo,
+            protein: nB.protein + nM.protein,
+            lemak: nB.lemak + nM.lemak,
+            serat: nB.serat + nM.serat,
+            gula: nB.gula + nM.gula,
+            natrium: nB.natrium + nM.natrium
+          });
+        };
+
+        const getNutritionPercent = (val, key) => {
+          const target = Number((nutritionTargets.value || DEFAULT_NUTRITION_TARGETS)[key]) || 1;
+          return Math.round(((Number(val) || 0) / target) * 100);
+        };
+
+        const getNutritionBarClass = (val, metric) => {
+          const pct = getNutritionPercent(val, metric.key);
+          if (metric.isMaxLimit) {
+            if (pct > 100) return 'bg-red-500';
+            if (pct >= 80) return 'bg-amber-500';
+            return 'bg-emerald-500';
+          }
+          if (pct >= 85 && pct <= 115) return 'bg-emerald-500';
+          if (pct > 115) return 'bg-amber-500';
+          return metric.barColor || 'bg-caramel-500';
+        };
+
+        const getNutritionStatusBadge = (val, metric) => {
+          const pct = getNutritionPercent(val, metric.key);
+          if (metric.isMaxLimit) {
+            if (pct > 100) return { text: 'Melebihi Batas', cls: 'text-red-700 bg-red-50 border-red-200' };
+            if (pct >= 80) return { text: 'Mendekati Batas', cls: 'text-amber-700 bg-amber-50 border-amber-200' };
+            return { text: 'Aman', cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+          }
+          if (pct === 0) return { text: '0%', cls: 'text-taupe-500 bg-cream-100 border-cream-200' };
+          if (pct >= 85 && pct <= 115) return { text: `${pct}% Ideal`, cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
+          if (pct > 115) return { text: `${pct}% Tinggi`, cls: 'text-amber-700 bg-amber-50 border-amber-200' };
+          return { text: `${pct}%`, cls: 'text-espresso-700 bg-cream-100 border-cream-200' };
+        };
 
         // Master Library of Common Ingredients with Standard Units & Groups
         const DEFAULT_MASTER_INGREDIENTS = [
@@ -4164,6 +5158,13 @@
           onConfirm: null
         });
 
+        // Daily Nutrition Targets (Editable, synced to Cloud)
+        const nutritionTargets = ref({ ...DEFAULT_NUTRITION_TARGETS });
+        const modalNutritionTarget = ref({
+          show: false,
+          form: { ...DEFAULT_NUTRITION_TARGETS }
+        });
+
         // Manual Shopping Items for Stock
         const manualShoppingItems = ref([]);
         const modalManualShopping = ref({
@@ -4291,6 +5292,18 @@
             const storedManualShopping = localStorage.getItem('seleraku_manual_shopping');
             manualShoppingItems.value = storedManualShopping ? JSON.parse(storedManualShopping) : [];
             localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
+
+            const storedTargets = localStorage.getItem('seleraku_nutrition_targets');
+            if (storedTargets) {
+              try {
+                const parsedTargets = JSON.parse(storedTargets);
+                nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS, ...parsedTargets };
+              } catch (e) {
+                nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS };
+              }
+            } else {
+              nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS };
+            }
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -4334,6 +5347,7 @@
               pantryStocks: pantryStocks.value,
               masterIngredients: masterIngredients.value,
               manualShoppingItems: manualShoppingItems.value,
+              nutritionTargets: nutritionTargets.value,
               updatedAt: lastLocalUpdate
             };
 
@@ -4448,6 +5462,10 @@
                   manualShoppingItems.value = data.manualShoppingItems;
                   localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
                 }
+                if (data.nutritionTargets && typeof data.nutritionTargets === 'object') {
+                  nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS, ...data.nutritionTargets };
+                  localStorage.setItem('seleraku_nutrition_targets', JSON.stringify(nutritionTargets.value));
+                }
 
                 localStorage.setItem('seleraku_last_updated', data.updatedAt);
                 lastLocalUpdate = data.updatedAt;
@@ -4515,6 +5533,96 @@
           localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
           triggerSyncServer();
         };
+        const saveNutritionTargets = () => {
+          localStorage.setItem('seleraku_nutrition_targets', JSON.stringify(nutritionTargets.value));
+          triggerSyncServer();
+        };
+        const openNutritionTargetModal = () => {
+          modalNutritionTarget.value = {
+            show: true,
+            form: { ...DEFAULT_NUTRITION_TARGETS, ...nutritionTargets.value }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+        const applyNutritionPreset = (preset) => {
+          if (!preset || !preset.values) return;
+          modalNutritionTarget.value.form = {
+            ...preset.values,
+            defaultRecipeServings: modalNutritionTarget.value.form.defaultRecipeServings || nutritionTargets.value.defaultRecipeServings || 2
+          };
+        };
+        const saveNutritionTargetModal = () => {
+          const f = modalNutritionTarget.value.form;
+          nutritionTargets.value = {
+            kalori: Math.max(500, Math.round(Number(f.kalori) || 2000)),
+            karbo: Math.max(20, Math.round(Number(f.karbo) || 275)),
+            protein: Math.max(10, Math.round(Number(f.protein) || 60)),
+            lemak: Math.max(10, Math.round(Number(f.lemak) || 65)),
+            serat: Math.max(5, Math.round(Number(f.serat) || 30)),
+            gula: Math.max(5, Math.round(Number(f.gula) || 50)),
+            natrium: Math.max(200, Math.round(Number(f.natrium) || 2000)),
+            defaultRecipeServings: Math.max(1, Math.min(20, Math.round(Number(f.defaultRecipeServings) || 2)))
+          };
+          saveNutritionTargets();
+          modalNutritionTarget.value.show = false;
+          showToast('Target gizi harian berhasil diperbarui!');
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        // Live computeds for Modal Food, Modal Package, Today, and Isi Menu Draft
+        const modalFoodNutritionPreview = computed(() => {
+          if (!modalFood.value || !modalFood.value.form) {
+            return { perPortion: emptyNutritionObj(), totalRecipe: emptyNutritionObj(), servings: 1, matchedCount: 0, totalIngredients: 0 };
+          }
+          return calculateFoodNutrition(modalFood.value.form);
+        });
+
+        const modalPackageNutritionPreview = computed(() => {
+          if (!modalPackage.value || !modalPackage.value.form) return emptyNutritionObj();
+          return calculateItemsNutrition(modalPackage.value.form.items);
+        });
+
+        const modalMasterAutoNutritionPreview = computed(() => {
+          const nm = modalMasterIngredient.value?.form?.name || '';
+          if (!nm.trim()) return null;
+          // Temporarily lookup TKPI only (avoid self-loop)
+          const low = nm.trim().toLowerCase();
+          let bestEntry = null;
+          let bestLen = 0;
+          for (const entry of NUTRITION_DB_PER_100G) {
+            for (const key of entry.keys) {
+              if (low === key) return entry;
+              if (low.includes(key) && key.length > bestLen) {
+                if (key === 'air' && !/(^|\s)air(\s|$)/.test(low)) continue;
+                if (key === 'kol' && !/(^|\s)kol(\s|$)/.test(low)) continue;
+                if (key === 'pir' && !/(^|\s)pir(\s|$)/.test(low)) continue;
+                bestLen = key.length;
+                bestEntry = entry;
+              }
+            }
+          }
+          return bestEntry;
+        });
+
+        const todayNutrition = computed(() => calculateDayNutrition(currentDate.value));
+
+        const draftDayNutrition = computed(() => {
+          const b = calculateItemsNutrition(draftMeals.value?.bekal?.items);
+          const m = calculateItemsNutrition(draftMeals.value?.malam?.items);
+          return {
+            bekal: b,
+            malam: m,
+            total: roundNutritionObj({
+              kalori: b.kalori + m.kalori,
+              karbo: b.karbo + m.karbo,
+              protein: b.protein + m.protein,
+              lemak: b.lemak + m.lemak,
+              serat: b.serat + m.serat,
+              gula: b.gula + m.gula,
+              natrium: b.natrium + m.natrium
+            })
+          };
+        });
 
         // --- 3. HELPER FUNCTIONS ---
         const setTab = (tabId) => {
@@ -5207,6 +6315,7 @@
               category: safeCat,
               categories: [safeCat],
               portion: '4 Porsi Keluarga',
+              nutritionServings: 4,
               notes: '',
               recipeUrl: '',
               batchMode: 'per_saji',
@@ -5237,6 +6346,7 @@
           }
           formCopy.category = formCopy.categories[0];
           formCopy.recipeUrl = item.recipeUrl || item.link || '';
+          formCopy.nutritionServings = getFoodNutritionServings(item);
           const batchCfg = getFoodBatchConfig(item);
           formCopy.batchMode = batchCfg.mode;
           formCopy.batchServings = batchCfg.mode === 'batch' ? batchCfg.servings : 4;
@@ -5308,7 +6418,9 @@
               name: cleanName,
               unit: 'gram',
               group: guessedGroup || 'Bumbu',
-              note: ''
+              note: '',
+              gramPerUnit: '',
+              nutrition: { kalori: '', karbo: '', protein: '', lemak: '', serat: '', gula: '', natrium: '' }
             }
           };
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
@@ -5323,14 +6435,35 @@
               name: item.name || '',
               unit: item.unit || 'gram',
               group: item.group || 'Bumbu',
-              note: item.note || ''
+              note: item.note || '',
+              gramPerUnit: item.gramPerUnit || '',
+              nutrition: {
+                kalori: item.nutrition?.kalori ?? '',
+                karbo: item.nutrition?.karbo ?? '',
+                protein: item.nutrition?.protein ?? '',
+                lemak: item.nutrition?.lemak ?? '',
+                serat: item.nutrition?.serat ?? '',
+                gula: item.nutrition?.gula ?? '',
+                natrium: item.nutrition?.natrium ?? ''
+              }
             }
           };
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
         const saveMasterIngredientModal = () => {
-          const { id, name, unit, group, note } = modalMasterIngredient.value.form;
+          const { id, name, unit, group, note, gramPerUnit, nutrition } = modalMasterIngredient.value.form;
+          const hasCustomNutrition = nutrition && Object.values(nutrition).some(v => v !== '' && v !== null && v !== undefined && !isNaN(Number(v)));
+          const cleanedNutrition = hasCustomNutrition ? {
+            kalori: nutrition.kalori === '' ? '' : Number(nutrition.kalori),
+            karbo: nutrition.karbo === '' ? '' : Number(nutrition.karbo),
+            protein: nutrition.protein === '' ? '' : Number(nutrition.protein),
+            lemak: nutrition.lemak === '' ? '' : Number(nutrition.lemak),
+            serat: nutrition.serat === '' ? '' : Number(nutrition.serat),
+            gula: nutrition.gula === '' ? '' : Number(nutrition.gula),
+            natrium: nutrition.natrium === '' ? '' : Number(nutrition.natrium)
+          } : null;
+          const cleanedGramPerUnit = (gramPerUnit !== '' && !isNaN(Number(gramPerUnit)) && Number(gramPerUnit) > 0) ? Number(gramPerUnit) : '';
           const trimmedName = (name || '').trim();
           if (!trimmedName) {
             showToast('Nama bahan baku wajib diisi!', 'error');
@@ -5350,6 +6483,8 @@
               unit: trimmedUnit,
               group: trimmedGroup,
               note: (note || '').trim(),
+              gramPerUnit: cleanedGramPerUnit,
+              nutrition: cleanedNutrition,
               icon: getGroupIcon(trimmedGroup),
               keywords: [trimmedName.toLowerCase()],
               updatedAt: new Date().toISOString()
@@ -5361,6 +6496,8 @@
               unit: trimmedUnit,
               group: trimmedGroup,
               note: (note || '').trim(),
+              gramPerUnit: cleanedGramPerUnit,
+              nutrition: cleanedNutrition,
               icon: getGroupIcon(trimmedGroup),
               keywords: [trimmedName.toLowerCase()],
               updatedAt: new Date().toISOString()
@@ -5643,8 +6780,10 @@
             modalFood.value.form.baseBatchId = isValidBase ? candidateBase.id : '';
           }
 
-          // Keep form.category synced to primary category
+          // Keep form.category synced to primary category & normalize nutritionServings
           modalFood.value.form.category = modalFood.value.form.categories[0];
+          const parsedNutServ = parseFloat(modalFood.value.form.nutritionServings);
+          modalFood.value.form.nutritionServings = (!isNaN(parsedNutServ) && parsedNutServ >= 1) ? Math.min(50, parsedNutServ) : 1;
 
           // Clean empty ingredient rows and normalize group labels
           modalFood.value.form.ingredients = (modalFood.value.form.ingredients || [])
@@ -6937,7 +8076,26 @@
           modalManualShopping,
           openAddManualShoppingModal,
           saveManualShoppingModal,
-          confirmDeleteManualShopping
+          confirmDeleteManualShopping,
+          NUTRITION_METRICS,
+          NUTRITION_TARGET_PRESETS,
+          nutritionTargets,
+          modalNutritionTarget,
+          openNutritionTargetModal,
+          applyNutritionPreset,
+          saveNutritionTargetModal,
+          calculateFoodNutrition,
+          calculatePackageNutrition,
+          calculateSlotNutrition,
+          calculateDayNutrition,
+          getNutritionPercent,
+          getNutritionBarClass,
+          getNutritionStatusBadge,
+          modalFoodNutritionPreview,
+          modalPackageNutritionPreview,
+          modalMasterAutoNutritionPreview,
+          todayNutrition,
+          draftDayNutrition
         };
       }
     }).mount('#app');
