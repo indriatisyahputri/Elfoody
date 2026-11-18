@@ -1892,71 +1892,96 @@
                 </button>
               </div>
 
-              <!-- Auto-Calculated Nutrition Panel per Portion -->
-              <div class="mb-2.5 p-2.5 rounded-xl bg-gradient-to-br from-cream-50/90 to-white border border-cream-200/90 space-y-1.5">
-                <div class="flex items-center justify-between gap-1.5">
-                  <div class="flex items-center gap-1 text-[11px] font-extrabold text-espresso-900">
-                    <span>🔥</span>
-                    <span v-if="calculateFoodNutrition(item).matchedCount > 0 || calculateFoodNutrition(item).methodExtraKalori > 0">{{ calculateFoodNutrition(item).perPortion.kalori }} kkal</span>
-                    <span v-else class="text-taupe-400 font-semibold">Belum terhitung</span>
-                  </div>
-                  <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-white text-taupe-600 border border-cream-200">
-                    Per porsi (÷{{ calculateFoodNutrition(item).servings }})
-                  </span>
-                </div>
-                <div v-if="calculateFoodNutrition(item).matchedCount > 0 || calculateFoodNutrition(item).methodExtraKalori > 0" class="grid grid-cols-3 gap-1 text-[10px]">
-                  <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
-                    <span class="text-taupe-500">Karbo</span>
-                    <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.karbo }}g</span>
-                  </div>
-                  <div class="px-1.5 py-1 rounded-lg bg-emerald-50/70 border border-emerald-200/70 flex items-center justify-between">
-                    <span class="text-emerald-700">Prot</span>
-                    <span class="font-bold text-emerald-900">{{ calculateFoodNutrition(item).perPortion.protein }}g</span>
-                  </div>
-                  <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
-                    <span class="text-taupe-500">Lemak</span>
-                    <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.lemak }}g</span>
-                  </div>
-                  <div class="px-1.5 py-1 rounded-lg bg-sage-50/70 border border-sage-200/70 flex items-center justify-between">
-                    <span class="text-sage-700">Serat</span>
-                    <span class="font-bold text-sage-900">{{ calculateFoodNutrition(item).perPortion.serat }}g</span>
-                  </div>
-                  <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
-                       :class="calculateFoodNutrition(item).perPortion.gula >= 15 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
-                    <span class="text-taupe-500">Gula</span>
-                    <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.gula }}g</span>
-                  </div>
-                  <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
-                       :class="calculateFoodNutrition(item).perPortion.natrium >= 700 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
-                    <span class="text-taupe-500">Na</span>
-                    <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.natrium }}mg</span>
-                  </div>
-                </div>
-                <div v-else class="text-[10px] text-taupe-400 italic">
-                  Tambahkan bahan &amp; takaran agar gizi otomatis dihitung.
-                </div>
-              </div>
-
-              <!-- Chevron Accordion Toggle for Ingredients (Clean & Simple) -->
+              <!-- Clean 2-Button Toggle Row: Gizi & Kalori | Bahan Belanja -->
               <div>
-                <button @click="toggleFoodIngredients(item.id)" 
-                        type="button"
-                        class="w-full flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-cream-50/70 hover:bg-cream-100 active:bg-cream-200 text-espresso-700 transition border border-cream-200/70 select-none group cursor-pointer text-xs">
-                  <div class="flex items-center gap-1.5 flex-wrap">
-                    <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-caramel-600"></i>
-                    <span class="text-[11px] font-semibold text-espresso-800">Bahan Belanja</span>
-                    <span class="text-[10px] font-bold px-1.5 py-0.2 rounded-md bg-cream-200/70 text-espresso-700">
-                      {{ (item.ingredients || []).length }}
+                <div class="grid grid-cols-2 gap-1.5">
+                  <!-- Button 1: Toggle Nutrition & Calories -->
+                  <button @click="toggleFoodNutrition(item.id)"
+                          type="button"
+                          class="flex items-center justify-between py-2 px-2.5 rounded-xl transition border select-none group cursor-pointer text-xs min-h-[38px]"
+                          :class="isFoodNutritionExpanded(item.id)
+                            ? 'bg-caramel-50 border-caramel-300 text-caramel-900 shadow-2xs'
+                            : 'bg-cream-50/70 hover:bg-cream-100 active:bg-cream-200 text-espresso-700 border-cream-200/80'">
+                    <div class="flex items-center gap-1 min-w-0">
+                      <span class="text-xs flex-shrink-0">🔥</span>
+                      <span class="text-[11px] font-bold truncate">Gizi &amp; Kalori</span>
+                    </div>
+                    <span class="inline-flex transition-transform duration-200 flex-shrink-0"
+                          :class="{ 'rotate-180': isFoodNutritionExpanded(item.id) }">
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-espresso-500"></i>
                     </span>
-                  </div>
-                  <div class="flex items-center gap-1 text-[11px] font-medium text-espresso-600">
-                    <span class="text-[10px]">{{ isFoodIngredientsExpanded(item.id) ? 'Tutup' : 'Lihat' }}</span>
-                    <span class="inline-flex transition-transform duration-200"
+                  </button>
+
+                  <!-- Button 2: Toggle Ingredients -->
+                  <button @click="toggleFoodIngredients(item.id)"
+                          type="button"
+                          class="flex items-center justify-between py-2 px-2.5 rounded-xl transition border select-none group cursor-pointer text-xs min-h-[38px]"
+                          :class="isFoodIngredientsExpanded(item.id)
+                            ? 'bg-espresso-900 border-espresso-900 text-white shadow-2xs'
+                            : 'bg-cream-50/70 hover:bg-cream-100 active:bg-cream-200 text-espresso-700 border-cream-200/80'">
+                    <div class="flex items-center gap-1 min-w-0">
+                      <i data-lucide="shopping-cart" class="w-3.5 h-3.5 flex-shrink-0" :class="isFoodIngredientsExpanded(item.id) ? 'text-caramel-300' : 'text-caramel-600'"></i>
+                      <span class="text-[11px] font-bold truncate">Bahan</span>
+                      <span class="text-[10px] font-extrabold px-1.5 py-0.2 rounded-md flex-shrink-0"
+                            :class="isFoodIngredientsExpanded(item.id) ? 'bg-white/20 text-white' : 'bg-cream-200/80 text-espresso-800'">
+                        {{ (item.ingredients || []).length }}
+                      </span>
+                    </div>
+                    <span class="inline-flex transition-transform duration-200 flex-shrink-0"
                           :class="{ 'rotate-180': isFoodIngredientsExpanded(item.id) }">
-                      <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-espresso-500 group-hover:text-espresso-800"></i>
+                      <i data-lucide="chevron-down" class="w-3.5 h-3.5" :class="isFoodIngredientsExpanded(item.id) ? 'text-cream-200' : 'text-espresso-500'"></i>
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Collapsible Nutrition & Calories Panel (Only shown when clicked) -->
+                <div v-if="isFoodNutritionExpanded(item.id)"
+                     class="mt-2 p-2.5 rounded-xl bg-gradient-to-br from-cream-50/90 to-white border border-caramel-200/80 space-y-1.5 animate-in fade-in duration-150">
+                  <div class="flex items-center justify-between gap-1.5">
+                    <div class="flex items-center gap-1 text-xs font-extrabold text-espresso-900">
+                      <span>🔥</span>
+                      <span v-if="calculateFoodNutrition(item).matchedCount > 0 || calculateFoodNutrition(item).methodExtraKalori > 0">{{ calculateFoodNutrition(item).perPortion.kalori }} kkal</span>
+                      <span v-else class="text-taupe-400 font-semibold">Belum terhitung</span>
+                    </div>
+                    <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-white text-taupe-600 border border-cream-200">
+                      Per porsi (÷{{ calculateFoodNutrition(item).servings }})
                     </span>
                   </div>
-                </button>
+                  <div v-if="calculateFoodNutrition(item).methodExtraKalori > 0" class="text-[9.5px] font-semibold text-amber-800">
+                    Termasuk metode masak: +{{ calculateFoodNutrition(item).methodExtraKalori }} kkal • +{{ calculateFoodNutrition(item).methodExtraLemak }}g lemak
+                  </div>
+                  <div v-if="calculateFoodNutrition(item).matchedCount > 0 || calculateFoodNutrition(item).methodExtraKalori > 0" class="grid grid-cols-3 gap-1 text-[10px]">
+                    <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
+                      <span class="text-taupe-500">Karbo</span>
+                      <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.karbo }}g</span>
+                    </div>
+                    <div class="px-1.5 py-1 rounded-lg bg-emerald-50/70 border border-emerald-200/70 flex items-center justify-between">
+                      <span class="text-emerald-700">Prot</span>
+                      <span class="font-bold text-emerald-900">{{ calculateFoodNutrition(item).perPortion.protein }}g</span>
+                    </div>
+                    <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
+                      <span class="text-taupe-500">Lemak</span>
+                      <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.lemak }}g</span>
+                    </div>
+                    <div class="px-1.5 py-1 rounded-lg bg-sage-50/70 border border-sage-200/70 flex items-center justify-between">
+                      <span class="text-sage-700">Serat</span>
+                      <span class="font-bold text-sage-900">{{ calculateFoodNutrition(item).perPortion.serat }}g</span>
+                    </div>
+                    <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
+                         :class="calculateFoodNutrition(item).perPortion.gula >= 15 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
+                      <span class="text-taupe-500">Gula</span>
+                      <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.gula }}g</span>
+                    </div>
+                    <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
+                         :class="calculateFoodNutrition(item).perPortion.natrium >= 700 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
+                      <span class="text-taupe-500">Na</span>
+                      <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.natrium }}mg</span>
+                    </div>
+                  </div>
+                  <div v-else class="text-[10px] text-taupe-400 italic">
+                    Tambahkan bahan &amp; takaran agar gizi otomatis dihitung.
+                  </div>
+                </div>
 
                 <!-- Collapsible Ingredients List (Accordion) -->
                 <div v-if="isFoodIngredientsExpanded(item.id)" 
@@ -8542,6 +8567,20 @@
           return !!expandedFoodIds.value[id];
         };
 
+        // Accordion toggle state for food nutrition & calories in Dapur Gizi
+        const expandedNutritionFoodIds = ref({});
+
+        const toggleFoodNutrition = (id) => {
+          expandedNutritionFoodIds.value[id] = !expandedNutritionFoodIds.value[id];
+          nextTick(() => {
+            if (window.lucide) lucide.createIcons();
+          });
+        };
+
+        const isFoodNutritionExpanded = (id) => {
+          return !!expandedNutritionFoodIds.value[id];
+        };
+
         const quickAddToPlanner = (item) => {
           modalQuickSchedule.value = {
             show: true,
@@ -9849,7 +9888,9 @@
           COOKING_METHODS,
           getCookingMethodMeta,
           getFoodCookingMethods,
-          toggleModalFoodCookingMethod
+          toggleModalFoodCookingMethod,
+          toggleFoodNutrition,
+          isFoodNutritionExpanded
         };
       }
     }).mount('#app');
