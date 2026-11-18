@@ -1345,7 +1345,7 @@
                   </div>
                 </div>
                 <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  <div v-for="pkg in packages" :key="pkg.id"
+                  <div v-for="pkg in sortedPackages" :key="pkg.id"
                        @click="applyPackageToSelected(pkg)"
                        class="p-4 rounded-2xl border cursor-pointer transition-all duration-200 flex flex-col justify-between"
                        :class="formSelectedPackageId === pkg.id 
@@ -2222,7 +2222,7 @@
 
         <!-- Packages Grid -->
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="pkg in packages" :key="pkg.id"
+          <div v-for="pkg in sortedPackages" :key="pkg.id"
                class="bg-white rounded-3xl border border-cream-200 shadow-card hover:shadow-hover transition-all duration-200 p-6 flex flex-col justify-between">
             
             <div>
@@ -4818,7 +4818,7 @@
           <div v-if="packages.length === 0" class="py-8 text-center text-xs text-taupe-500 bg-cream-50 rounded-2xl border border-cream-200">
             Belum ada Paket Menu. Buat paket di tab <strong>Paket</strong> atau pilih tab <strong>Susun Menu Satuan</strong>.
           </div>
-          <div v-for="pkg in packages" :key="pkg.id"
+          <div v-for="pkg in sortedPackages" :key="pkg.id"
                class="p-3.5 rounded-2xl bg-cream-50/80 border border-cream-200 flex items-center justify-between gap-3">
             <div class="min-w-0">
               <div class="font-bold text-sm text-espresso-900 truncate">{{ pkg.name }}</div>
@@ -8987,6 +8987,12 @@
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
+        const sortedPackages = computed(() => {
+          return [...(packages.value || [])].sort((a, b) =>
+            (a?.name || '').trim().localeCompare((b?.name || '').trim(), 'id', { sensitivity: 'base', numeric: true })
+          );
+        });
+
         const editPackageModal = (pkg) => {
           const formCopy = JSON.parse(JSON.stringify(pkg));
           formCopy.items = normalizeFormItems(formCopy.items);
@@ -10265,7 +10271,8 @@
           confirmQuickMergeIntoWeeklyEntry,
           packageExtraOptions,
           addExtraToPackage,
-          removeExtraFromPackage
+          removeExtraFromPackage,
+          sortedPackages
         };
       }
     }).mount('#app');
