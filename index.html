@@ -3454,11 +3454,12 @@
               </span>
             </div>
             <p class="text-[10.5px] text-taupe-500 leading-relaxed">
-              Pilih cara memasak untuk otomatis menambah estimasi kalori &amp; lemak serapan minyak (misal: <em>Rebus + Deep Fry</em> untuk ayam ungkep goreng):
+              Pilih cara memasak untuk otomatis menambah estimasi kalori &amp; lemak serapan minyak (misal: <em>Rebus + Deep Fry</em> untuk ayam ungkep goreng, atau <em>Minyak Dimakan</em> untuk garlic/chilli oil):
             </p>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
               <button v-for="m in COOKING_METHODS" :key="m.id"
                       type="button"
+                      :title="m.desc"
                       @click="toggleModalFoodCookingMethod(m.id)"
                       class="p-2 rounded-xl border text-left transition active:scale-95 select-none cursor-pointer min-h-[46px] flex flex-col justify-between"
                       :class="(modalFood.form.cookingMethods || []).includes(m.id)
@@ -5022,10 +5023,11 @@
           { id: 'ungkep', label: 'Ungkep / Kuah', icon: '🥣', extraKalori: 0, extraLemak: 0, desc: 'Kalori kuah dari daftar bahan' },
           { id: 'tanpa_masak', label: 'Segar / Mentah', icon: '🥗', extraKalori: 0, extraLemak: 0, desc: 'Salad, lalapan, buah segar' },
           { id: 'air_fry', label: 'Air Fryer', icon: '🌬️', extraKalori: 20, extraLemak: 2.2, desc: 'Oles tipis ~½ sdt minyak' },
-          { id: 'panggang', label: 'Panggang / Grill', icon: '🔥', extraKalori: 35, extraLemak: 3.9, desc: 'Olesan tipis minyak/mentega' },
+          { id: 'panggang', label: 'Panggang / Grill', icon: '🔥', extraKalori: 0, extraLemak: 0, desc: 'Pan anti lengket tanpa minyak/mentega' },
           { id: 'tumis', label: 'Tumis', icon: '🥘', extraKalori: 55, extraLemak: 6.1, desc: 'Serapan minyak tumis ~½ sdm' },
           { id: 'pan_fry', label: 'Pan Fry', icon: '🍳', extraKalori: 80, extraLemak: 8.9, desc: 'Goreng teflon sedikit minyak' },
-          { id: 'deep_fry', label: 'Deep Fry', icon: '🍟', extraKalori: 120, extraLemak: 13.3, desc: 'Goreng rendam ~1 sdm serapan' }
+          { id: 'deep_fry', label: 'Deep Fry', icon: '🍟', extraKalori: 120, extraLemak: 13.3, desc: 'Goreng rendam ~1 sdm serapan' },
+          { id: 'oil_eaten', label: 'Minyak Dimakan', icon: '🌶️', extraKalori: 180, extraLemak: 20, desc: 'Garlic/chilli oil (~1,5-2 sdm minyak)' }
         ];
 
         const getCookingMethodMeta = (methodId) => {
