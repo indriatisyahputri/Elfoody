@@ -383,11 +383,21 @@
                     <p class="text-[10px] sm:text-[11px] text-taupe-500">Otomatis dihitung dari takaran bahan Menu Bekal + Makan Malam</p>
                   </div>
                 </div>
-                <button type="button" @click="openNutritionTargetModal"
-                        class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                  <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-caramel-600"></i>
-                  <span>Atur Target</span>
-                </button>
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <button type="button" @click="openProteinPrepModal('day', currentDate)"
+                          class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <span>⚖️</span>
+                    <span>Timbang Protein</span>
+                    <span v-if="countActualWeightsForDate(currentDate) > 0" class="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-600 text-white">
+                      {{ countActualWeightsForDate(currentDate) }}
+                    </span>
+                  </button>
+                  <button type="button" @click="openNutritionTargetModal"
+                          class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
+                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-caramel-600"></i>
+                    <span>Atur Target</span>
+                  </button>
+                </div>
               </div>
 
               <!-- Main Kalori Progress Bar -->
@@ -461,9 +471,9 @@
                               class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sage-100 text-sage-800 border border-sage-200">
                           {{ getDishCount(getMealForSlot(currentDate, slot.id)) }} Hidangan
                         </span>
-                        <span v-if="getMealForSlot(currentDate, slot.id) && calculateSlotNutrition(getMealForSlot(currentDate, slot.id)).kalori > 0"
+                        <span v-if="getMealForSlot(currentDate, slot.id) && calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori > 0"
                               class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-caramel-50 text-caramel-800 border border-caramel-200">
-                          🔥 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id)).kalori }} kkal • P {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id)).protein }}g
+                          🔥 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori }} kkal • P {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).protein }}g
                         </span>
                       </div>
                       <div class="text-[11px] text-taupe-500">
@@ -522,12 +532,19 @@
                             <span v-if="f.notes"> • {{ f.notes }}</span>
                           </div>
                           <!-- Mini Nutrition Strip per Dish -->
-                          <div v-if="calculateFoodNutrition(f).perPortion.kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
-                            <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateFoodNutrition(f).perPortion.kalori }} kkal</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">K {{ calculateFoodNutrition(f).perPortion.karbo }}g</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80">P {{ calculateFoodNutrition(f).perPortion.protein }}g</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">L {{ calculateFoodNutrition(f).perPortion.lemak }}g</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200/80">S {{ calculateFoodNutrition(f).perPortion.serat }}g</span>
+                          <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
+                            <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">K {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.karbo }}g</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80">P {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.protein }}g</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">L {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.lemak }}g</span>
+                            <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200/80">S {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.serat }}g</span>
+                            <button v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasWeighableProtein"
+                                    type="button"
+                                    @click.stop="openProteinPrepModal('day', currentDate)"
+                                    class="px-1.5 py-0.5 rounded-md border transition cursor-pointer"
+                                    :class="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'">
+                              {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? '⚖️ Berat Aktual' : '⚖️ Edit Gram' }}
+                            </button>
                           </div>
                           <!-- Ingredients preview pills -->
                           <div v-if="(f.ingredients || []).length > 0" class="flex flex-wrap gap-1 pt-1 border-t border-cream-200/60">
@@ -658,6 +675,11 @@
               <button v-if="weekOffset !== 0" @click="weekOffset = 0"
                       class="text-xs font-bold px-3.5 py-2 rounded-xl bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition">
                 Kembali ke Minggu Ini
+              </button>
+              <button type="button" @click="openProteinPrepModal('week')"
+                      class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer min-h-[38px]">
+                <span>⚖️</span>
+                <span>Timbang Protein Pekan Ini</span>
               </button>
               <div class="text-xs text-espresso-600 flex items-center gap-1.5 bg-cream-50 px-3.5 py-2 rounded-xl border border-cream-200">
                 <i data-lucide="move-horizontal" class="w-4 h-4 text-caramel-500"></i>
@@ -2698,6 +2720,11 @@
                 <i data-lucide="plus-circle" class="w-4 h-4"></i>
                 <span>+ Tambah Belanja Stok</span>
               </button>
+              <button @click="openProteinPrepModal('cycle')" 
+                      class="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <span>⚖️</span>
+                <span>Timbang Protein (Sabtu)</span>
+              </button>
               <button @click="copyShoppingListToWA" 
                       class="px-4 py-2.5 rounded-xl text-xs font-bold bg-sage-600 hover:bg-sage-700 text-white shadow-xs transition flex items-center gap-1.5">
                 <i data-lucide="share-2" class="w-4 h-4"></i>
@@ -4036,6 +4063,119 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- MODAL 9: TIMBANG BERAT AKTUAL PROTEIN (FOOD PREP SABTU)  -->
+    <!-- ======================================================== -->
+    <div v-if="modalProteinPrep.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-lg w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-3"></div>
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">⚖️</span>
+            <div>
+              <h3 class="font-bold text-base text-espresso-900">Timbang Protein (Food Prep)</h3>
+              <p class="text-[11px] text-taupe-500">Edit berat gram aktual Ayam, Udang &amp; Sapi per jadwal untuk hitung ulang gizi</p>
+            </div>
+          </div>
+          <button @click="modalProteinPrep.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Scope Switcher -->
+        <div class="grid grid-cols-3 gap-1.5 bg-cream-100 p-1 rounded-xl border border-cream-200 text-[11px] font-bold">
+          <button type="button" @click="modalProteinPrep.scope = 'cycle'"
+                  class="py-2 px-2 rounded-lg transition cursor-pointer text-center"
+                  :class="modalProteinPrep.scope === 'cycle' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600'">
+            Sabtu–Jumat
+          </button>
+          <button type="button" @click="modalProteinPrep.scope = 'week'"
+                  class="py-2 px-2 rounded-lg transition cursor-pointer text-center"
+                  :class="modalProteinPrep.scope === 'week' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600'">
+            Pekan Ini
+          </button>
+          <button type="button" @click="modalProteinPrep.scope = 'all_scheduled'"
+                  class="py-2 px-2 rounded-lg transition cursor-pointer text-center"
+                  :class="modalProteinPrep.scope === 'all_scheduled' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600'">
+            Semua Jadwal
+          </button>
+        </div>
+
+        <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-[11px] text-emerald-900 leading-relaxed">
+          💡 <strong>Cara Pakai Hari Sabtu:</strong> Setelah belanja, masukkan <strong>berat total (gram)</strong> ayam/udang/sapi yang ditimbang untuk tiap menu terjadwal di bawah ini. <strong>Daftar belanja tetap aman</strong> (tidak berubah), hanya nilai gizi harian yang langsung dihitung ulang secara akurat!
+        </div>
+
+        <!-- Empty State -->
+        <div v-if="proteinPrepEntries.length === 0" class="py-10 text-center space-y-2 bg-cream-50/70 rounded-2xl border border-dashed border-cream-300 px-4">
+          <div class="text-3xl">🍗</div>
+          <div class="text-xs font-bold text-espresso-900">Belum Ada Jadwal Menu Ayam / Udang / Sapi di Rentang Ini</div>
+          <p class="text-[11px] text-taupe-500 max-w-xs mx-auto">
+            Atur dulu jadwal masakan di tab <strong>Isi Menu</strong>, atau ubah tab di atas ke <strong>Semua Jadwal</strong>.
+          </p>
+        </div>
+
+        <!-- Weighable Protein Entries List -->
+        <div v-else class="space-y-3 max-h-[45vh] overflow-y-auto pr-1 ios-scroll">
+          <div v-for="entry in proteinPrepEntries" :key="entry.key"
+               class="p-3.5 rounded-2xl border space-y-2.5 transition"
+               :class="entry.hasActual ? 'bg-emerald-50/40 border-emerald-300' : 'bg-cream-50/70 border-cream-200'">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-bold text-taupe-500">
+                  <span>📅 {{ entry.dateLabel }}</span>
+                  <span>•</span>
+                  <span class="px-1.5 py-0.5 rounded bg-white border border-cream-200 text-espresso-800">{{ entry.slotIcon }} {{ entry.slotLabel }}</span>
+                </div>
+                <div class="text-xs sm:text-sm font-bold text-espresso-900 mt-1">{{ entry.foodName }}</div>
+                <div class="text-[11px] font-semibold text-caramel-700 mt-0.5">
+                  🥩 {{ entry.ingName }} <span class="text-taupe-500 font-normal">(resep: {{ entry.recipeQtyUnit }} ≈ {{ entry.stdGrams }}g)</span>
+                </div>
+              </div>
+              <span v-if="entry.hasActual" class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white flex-shrink-0">
+                ✓ Aktual
+              </span>
+            </div>
+
+            <!-- Weight Input Row -->
+            <div class="flex items-center gap-2">
+              <div class="relative flex-grow">
+                <input type="number" inputmode="decimal" step="1" min="0"
+                       v-model="modalProteinPrep.draftWeights[entry.key]"
+                       :placeholder="'Standar: ' + entry.stdGrams + ' gram'"
+                       class="w-full pl-3.5 pr-14 py-2.5 rounded-xl bg-white border border-cream-300 text-xs font-extrabold text-espresso-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]">
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-taupe-400">gram</span>
+              </div>
+              <button v-if="entry.hasActual" type="button" @click="clearProteinPrepDraftEntry(entry.key)"
+                      title="Kembalikan ke estimasi standar"
+                      class="px-3 py-2.5 rounded-xl text-[11px] font-bold bg-white hover:bg-red-50 text-taupe-500 hover:text-red-600 border border-cream-300 min-h-[44px] cursor-pointer">
+                Reset
+              </button>
+            </div>
+
+            <!-- Live Per-Portion Nutrition Impact Preview -->
+            <div class="flex items-center justify-between text-[10px] pt-1 border-t border-cream-200/70">
+              <span class="text-taupe-500">Kontribusi bahan ini (÷{{ entry.servings }} porsi):</span>
+              <span class="font-bold" :class="entry.hasActual ? 'text-emerald-800' : 'text-espresso-700'">
+                🔥 {{ entry.liveKaloriPerPortion }} kkal • 🍗 {{ entry.liveProtPerPortion }}g prot
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-cream-100 flex items-center justify-end gap-3">
+          <button type="button" @click="modalProteinPrep.show = false"
+                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[44px] cursor-pointer">
+            Tutup
+          </button>
+          <button type="button" @click="saveProteinPrepModal"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs min-h-[44px] flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Simpan &amp; Hitung Ulang Gizi</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- MODAL CONFIRMATION: DIALOG KONFIRMASI UNIVERSAL          -->
     <!-- ======================================================== -->
     <div v-if="modalConfirm.show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs">
@@ -4374,7 +4514,7 @@
           // --- PROTEIN HEWANI ---
           { keys: ['ayam dada potong', 'ayam potong'], kalori: 165, karbo: 0, protein: 28, lemak: 4.5, serat: 0, gula: 0, natrium: 74, unitGrams: { potong: 60, pcs: 60, porsi: 100 } },
           { keys: ['ayam dada tanpa tulang', 'ayam dada fillet', 'dada ayam', 'ayam fillet', 'fillet ayam', 'ayam dada', 'ayam giling'], kalori: 165, karbo: 0, protein: 31, lemak: 3.6, serat: 0, gula: 0, natrium: 74, unitGrams: { potong: 180, pcs: 180, centong: 60, porsi: 100 } },
-          { keys: ['paha ayam', 'ayam paha'], kalori: 209, karbo: 0, protein: 26, lemak: 10.9, serat: 0, gula: 0, natrium: 84, unitGrams: { potong: 110, pcs: 110 } },
+          { keys: ['ayam paha fillet', 'paha fillet', 'paha ayam', 'ayam paha'], kalori: 209, karbo: 0, protein: 26, lemak: 10.9, serat: 0, gula: 0, natrium: 84, unitGrams: { potong: 140, pcs: 140 } },
           { keys: ['ayam sayap tengah', 'sayap tengah', 'ayam sayap', 'sayap ayam', 'chicken wing'], kalori: 203, karbo: 0, protein: 24, lemak: 11.5, serat: 0, gula: 0, natrium: 82, unitGrams: { potong: 28, pcs: 28, buah: 28 } },
           { keys: ['ati ampela', 'hati ayam', 'ampela'], kalori: 167, karbo: 0.9, protein: 24.5, lemak: 6.5, serat: 0, gula: 0, natrium: 78, unitGrams: { pasang: 60, potong: 40, pcs: 40 } },
           { keys: ['ceker ayam', 'ceker'], kalori: 215, karbo: 0.2, protein: 19.4, lemak: 14.6, serat: 0, gula: 0, natrium: 67, unitGrams: { pcs: 35, potong: 35 } },
@@ -4658,16 +4798,42 @@
           return (!isNaN(defServ) && defServ >= 1) ? defServ : 2;
         };
 
-        const calculateIngredientNutrition = (ing) => {
-          const empty = { matched: false, grams: 0, ...emptyNutritionObj() };
+        // Detect fresh Ayam, Udang, and Sapi ingredients eligible for Saturday actual-weight weighing
+        const isWeighableProteinIngredient = (ingName) => {
+          const low = (ingName || '').trim().toLowerCase();
+          if (!low) return false;
+          if (/(royco|masako|kaldu|bumbu|racik|saus|saos|kecap|penyedap|tepung|bubuk|mie|indomie|soto|kari|abon|bakso|sosis|nugget|kornet)/i.test(low)) {
+            return false;
+          }
+          return /(ayam|udang|sapi|beef|tenderloin|sirloin|iga|buntut|tetelan|has dalam|ati ampela|ceker)/i.test(low);
+        };
+
+        const makeProteinWeightKey = (dateStr, slotId, foodId, ingName) => {
+          return `${dateStr}__${slotId}__${foodId}__${(ingName || '').trim().toLowerCase()}`;
+        };
+
+        const getActualProteinWeight = (dateStr, slotId, foodId, ingName) => {
+          if (!dateStr || !slotId || !foodId || !ingName) return null;
+          const key = makeProteinWeightKey(dateStr, slotId, foodId, ingName);
+          const rec = (actualProteinWeights.value || {})[key];
+          if (rec && rec.grams !== undefined && rec.grams !== null && Number(rec.grams) > 0) {
+            return Number(rec.grams);
+          }
+          return null;
+        };
+
+        const calculateIngredientNutrition = (ing, overrideGrams = null) => {
+          const empty = { matched: false, grams: 0, isActualWeight: false, ...emptyNutritionObj() };
           if (!ing || !ing.name || !ing.name.trim()) return empty;
           const db = lookupIngredientNutrition(ing.name);
           if (!db) return empty;
-          const grams = convertIngredientToGrams(ing.qty, ing.unit, ing.name, db);
+          const hasOverride = overrideGrams !== null && overrideGrams !== undefined && !isNaN(Number(overrideGrams)) && Number(overrideGrams) > 0;
+          const grams = hasOverride ? Number(overrideGrams) : convertIngredientToGrams(ing.qty, ing.unit, ing.name, db);
           const factor = grams / 100;
           return {
             matched: true,
             grams: Math.round(grams * 10) / 10,
+            isActualWeight: hasOverride,
             kalori: db.kalori * factor,
             karbo: db.karbo * factor,
             protein: db.protein * factor,
@@ -4678,10 +4844,10 @@
           };
         };
 
-        const calculateFoodNutrition = (food, _visitedIds = null) => {
+        const calculateFoodNutrition = (food, _visitedIds = null, weightCtx = null) => {
           const total = emptyNutritionObj();
           if (!food || typeof food !== 'object') {
-            return { perPortion: emptyNutritionObj(), totalRecipe: emptyNutritionObj(), servings: 1, matchedCount: 0, totalIngredients: 0 };
+            return { perPortion: emptyNutritionObj(), totalRecipe: emptyNutritionObj(), servings: 1, matchedCount: 0, totalIngredients: 0, hasActualWeight: false, hasWeighableProtein: false };
           }
 
           const visited = _visitedIds || new Set();
@@ -4689,9 +4855,18 @@
 
           const ings = Array.isArray(food.ingredients) ? food.ingredients.filter(i => i && i.name && i.name.trim()) : [];
           let matchedCount = 0;
+          let hasActualWeight = false;
+          let hasWeighableProtein = false;
 
           ings.forEach(ing => {
-            const res = calculateIngredientNutrition(ing);
+            const weighable = isWeighableProteinIngredient(ing.name);
+            if (weighable) hasWeighableProtein = true;
+            let overrideG = null;
+            if (weighable && weightCtx && weightCtx.dateStr && weightCtx.slotId && food.id) {
+              overrideG = getActualProteinWeight(weightCtx.dateStr, weightCtx.slotId, food.id, ing.name);
+            }
+            const res = calculateIngredientNutrition(ing, overrideG);
+            if (res.isActualWeight) hasActualWeight = true;
             if (res.matched) {
               matchedCount++;
               total.kalori += res.kalori;
@@ -4709,7 +4884,7 @@
           if (food.baseBatchId && !visited.has(food.baseBatchId)) {
             const baseFood = getFoodItem(food.baseBatchId);
             if (baseFood) {
-              const baseCalc = calculateFoodNutrition(baseFood, visited);
+              const baseCalc = calculateFoodNutrition(baseFood, visited, weightCtx);
               const baseDiv = Math.max(1, getFoodBatchConfig(baseFood).servings || 1);
               total.kalori += baseCalc.totalRecipe.kalori / baseDiv;
               total.karbo += baseCalc.totalRecipe.karbo / baseDiv;
@@ -4718,6 +4893,8 @@
               total.serat += baseCalc.totalRecipe.serat / baseDiv;
               total.gula += baseCalc.totalRecipe.gula / baseDiv;
               total.natrium += baseCalc.totalRecipe.natrium / baseDiv;
+              if (baseCalc.hasActualWeight) hasActualWeight = true;
+              if (baseCalc.hasWeighableProtein) hasWeighableProtein = true;
               if (baseCalc.matchedCount > 0) {
                 matchedCount += baseCalc.matchedCount;
                 extraIngredients += baseCalc.totalIngredients;
@@ -4741,11 +4918,13 @@
             totalRecipe: roundNutritionObj(total),
             servings,
             matchedCount,
-            totalIngredients: ings.length + extraIngredients
+            totalIngredients: ings.length + extraIngredients,
+            hasActualWeight,
+            hasWeighableProtein
           };
         };
 
-        const calculateItemsNutrition = (itemsObj) => {
+        const calculateItemsNutrition = (itemsObj, weightCtx = null) => {
           const sum = emptyNutritionObj();
           if (!itemsObj || typeof itemsObj !== 'object') return roundNutritionObj(sum);
           const uniqueFoodIds = new Set();
@@ -4760,7 +4939,7 @@
           uniqueFoodIds.forEach(fid => {
             const food = getFoodItem(fid);
             if (food) {
-              const n = calculateFoodNutrition(food).perPortion;
+              const n = calculateFoodNutrition(food, null, weightCtx).perPortion;
               sum.kalori += n.kalori;
               sum.karbo += n.karbo;
               sum.protein += n.protein;
@@ -4778,16 +4957,17 @@
           return calculateItemsNutrition(pkg.items);
         };
 
-        const calculateSlotNutrition = (slotObj) => {
+        const calculateSlotNutrition = (slotObj, dateStr = null, slotId = null) => {
           if (!slotObj || !slotObj.items) return emptyNutritionObj();
-          return calculateItemsNutrition(slotObj.items);
+          const ctx = (dateStr && slotId) ? { dateStr, slotId } : null;
+          return calculateItemsNutrition(slotObj.items, ctx);
         };
 
         const calculateDayNutrition = (dateStr) => {
           const bekal = getMealForSlot(dateStr, 'bekal');
           const malam = getMealForSlot(dateStr, 'malam');
-          const nB = calculateSlotNutrition(bekal);
-          const nM = calculateSlotNutrition(malam);
+          const nB = calculateSlotNutrition(bekal, dateStr, 'bekal');
+          const nM = calculateSlotNutrition(malam, dateStr, 'malam');
           return roundNutritionObj({
             kalori: nB.kalori + nM.kalori,
             karbo: nB.karbo + nM.karbo,
@@ -4797,6 +4977,12 @@
             gula: nB.gula + nM.gula,
             natrium: nB.natrium + nM.natrium
           });
+        };
+
+        const countActualWeightsForDate = (dateStr) => {
+          if (!dateStr || !actualProteinWeights.value) return 0;
+          const prefix = dateStr + '__';
+          return Object.keys(actualProteinWeights.value).filter(k => k.startsWith(prefix) && Number(actualProteinWeights.value[k]?.grams) > 0).length;
         };
 
         const getNutritionPercent = (val, key) => {
@@ -5165,6 +5351,15 @@
           form: { ...DEFAULT_NUTRITION_TARGETS }
         });
 
+        // Actual Protein Weights (Ayam, Udang, Sapi weighed on Saturday Food Prep per scheduled meal)
+        const actualProteinWeights = ref({});
+        const modalProteinPrep = ref({
+          show: false,
+          scope: 'cycle', // 'cycle' (Sabtu-Jumat) | 'week' (Senin-Minggu) | 'day' (single date)
+          focusDate: '',
+          draftWeights: {} // map of key -> grams string/number
+        });
+
         // Manual Shopping Items for Stock
         const manualShoppingItems = ref([]);
         const modalManualShopping = ref({
@@ -5304,6 +5499,9 @@
             } else {
               nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS };
             }
+
+            const storedActualWeights = localStorage.getItem('seleraku_actual_protein_weights');
+            actualProteinWeights.value = storedActualWeights ? JSON.parse(storedActualWeights) : {};
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -5348,6 +5546,7 @@
               masterIngredients: masterIngredients.value,
               manualShoppingItems: manualShoppingItems.value,
               nutritionTargets: nutritionTargets.value,
+              actualProteinWeights: actualProteinWeights.value,
               updatedAt: lastLocalUpdate
             };
 
@@ -5465,6 +5664,10 @@
                 if (data.nutritionTargets && typeof data.nutritionTargets === 'object') {
                   nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS, ...data.nutritionTargets };
                   localStorage.setItem('seleraku_nutrition_targets', JSON.stringify(nutritionTargets.value));
+                }
+                if (data.actualProteinWeights && typeof data.actualProteinWeights === 'object') {
+                  actualProteinWeights.value = data.actualProteinWeights;
+                  localStorage.setItem('seleraku_actual_protein_weights', JSON.stringify(actualProteinWeights.value));
                 }
 
                 localStorage.setItem('seleraku_last_updated', data.updatedAt);
@@ -5607,8 +5810,9 @@
         const todayNutrition = computed(() => calculateDayNutrition(currentDate.value));
 
         const draftDayNutrition = computed(() => {
-          const b = calculateItemsNutrition(draftMeals.value?.bekal?.items);
-          const m = calculateItemsNutrition(draftMeals.value?.malam?.items);
+          const ds = selectedDate.value;
+          const b = calculateItemsNutrition(draftMeals.value?.bekal?.items, { dateStr: ds, slotId: 'bekal' });
+          const m = calculateItemsNutrition(draftMeals.value?.malam?.items, { dateStr: ds, slotId: 'malam' });
           return {
             bekal: b,
             malam: m,
@@ -5623,6 +5827,145 @@
             })
           };
         });
+
+        // --- SATURDAY FOOD PREP: ACTUAL PROTEIN WEIGHTS (AYAM, UDANG, SAPI) ---
+        const saveActualProteinWeights = () => {
+          localStorage.setItem('seleraku_actual_protein_weights', JSON.stringify(actualProteinWeights.value));
+          triggerSyncServer();
+        };
+
+        const getDatesInRange = (startStr, endStr) => {
+          const dates = [];
+          const cur = new Date(startStr + 'T00:00:00');
+          const end = new Date(endStr + 'T00:00:00');
+          let guard = 0;
+          while (cur <= end && guard < 31) {
+            dates.push(toLocalISOString(cur));
+            cur.setDate(cur.getDate() + 1);
+            guard++;
+          }
+          return dates;
+        };
+
+        const proteinPrepDateList = computed(() => {
+          const scope = modalProteinPrep.value.scope || 'cycle';
+          if (scope === 'day' && modalProteinPrep.value.focusDate) {
+            return [modalProteinPrep.value.focusDate];
+          }
+          if (scope === 'week') {
+            return (currentWeekDays.value || []).map(d => d.dateStr);
+          }
+          if (scope === 'all_scheduled') {
+            return Object.keys(mealPlans.value || {}).sort();
+          }
+          // Default 'cycle': active Saturday-Friday shopping cycle
+          const rng = activeShoppingRange.value;
+          if (rng && rng.start && rng.end) {
+            return getDatesInRange(rng.start, rng.end);
+          }
+          return (currentWeekDays.value || []).map(d => d.dateStr);
+        });
+
+        const proteinPrepEntries = computed(() => {
+          const entries = [];
+          const dates = proteinPrepDateList.value;
+          dates.forEach(dateStr => {
+            mealSlots.forEach(slot => {
+              const slotObj = getMealForSlot(dateStr, slot.id);
+              if (!slotObj || !slotObj.items) return;
+              const uniqueFoodIds = new Set();
+              nutritionCategories.forEach(cat => {
+                const val = slotObj.items[cat.id];
+                if (Array.isArray(val)) val.forEach(id => { if (id) uniqueFoodIds.add(id); });
+                else if (typeof val === 'string' && val) uniqueFoodIds.add(val);
+              });
+
+              uniqueFoodIds.forEach(fid => {
+                const food = getFoodItem(fid);
+                if (!food) return;
+                const servings = getFoodNutritionServings(food);
+                const weighableIngs = (food.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
+                weighableIngs.forEach(ing => {
+                  const key = makeProteinWeightKey(dateStr, slot.id, food.id, ing.name);
+                  const stdCalc = calculateIngredientNutrition(ing, null);
+                  const draftVal = modalProteinPrep.value.draftWeights[key];
+                  const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
+                  const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
+
+                  entries.push({
+                    key,
+                    dateStr,
+                    dateLabel: formatTanggalIndo(dateStr, true),
+                    slotId: slot.id,
+                    slotIcon: slot.icon,
+                    slotLabel: slot.shortLabel,
+                    foodId: food.id,
+                    foodName: food.name,
+                    servings,
+                    ingName: ing.name,
+                    recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
+                    stdGrams: stdCalc.grams,
+                    stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
+                    stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
+                    liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
+                    liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
+                    hasActual: hasDraft
+                  });
+                });
+              });
+            });
+          });
+          return entries;
+        });
+
+        const openProteinPrepModal = (scope = 'cycle', focusDate = '') => {
+          const initialDraft = {};
+          Object.keys(actualProteinWeights.value || {}).forEach(k => {
+            const g = actualProteinWeights.value[k]?.grams;
+            if (g !== undefined && g !== null && Number(g) > 0) {
+              initialDraft[k] = Number(g);
+            }
+          });
+          modalProteinPrep.value = {
+            show: true,
+            scope: scope || 'cycle',
+            focusDate: focusDate || currentDate.value,
+            draftWeights: initialDraft
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const clearProteinPrepDraftEntry = (key) => {
+          if (modalProteinPrep.value && modalProteinPrep.value.draftWeights) {
+            modalProteinPrep.value.draftWeights[key] = '';
+          }
+        };
+
+        const saveProteinPrepModal = () => {
+          const nextMap = { ...(actualProteinWeights.value || {}) };
+          const entries = proteinPrepEntries.value;
+          let updatedCount = 0;
+          entries.forEach(e => {
+            const raw = modalProteinPrep.value.draftWeights[e.key];
+            const num = parseFloat(raw);
+            if (!isNaN(num) && num > 0) {
+              nextMap[e.key] = {
+                grams: Math.round(num * 10) / 10,
+                updatedAt: new Date().toISOString()
+              };
+              updatedCount++;
+            } else {
+              delete nextMap[e.key];
+            }
+          });
+          actualProteinWeights.value = nextMap;
+          saveActualProteinWeights();
+          modalProteinPrep.value.show = false;
+          showToast(updatedCount > 0
+            ? `Berat aktual ${updatedCount} bahan protein disimpan & gizi otomatis dihitung ulang!`
+            : 'Pengaturan berat protein diperbarui (kembali ke standar).');
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
 
         // --- 3. HELPER FUNCTIONS ---
         const setTab = (tabId) => {
@@ -8095,7 +8438,14 @@
           modalPackageNutritionPreview,
           modalMasterAutoNutritionPreview,
           todayNutrition,
-          draftDayNutrition
+          draftDayNutrition,
+          actualProteinWeights,
+          modalProteinPrep,
+          proteinPrepEntries,
+          openProteinPrepModal,
+          clearProteinPrepDraftEntry,
+          saveProteinPrepModal,
+          countActualWeightsForDate
         };
       }
     }).mount('#app');
