@@ -485,14 +485,24 @@
                     </div>
                   </div>
 
-                  <button @click="editMenuForDate(currentDate, slot.id)"
-                          class="min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5"
-                          :class="getMealForSlot(currentDate, slot.id) 
-                            ? 'bg-white hover:bg-cream-100 text-espresso-800 border-cream-300 shadow-2xs' 
-                            : 'bg-caramel-500 hover:bg-caramel-600 text-white border-caramel-600 shadow-xs'">
-                    <i :data-lucide="getMealForSlot(currentDate, slot.id) ? 'edit-2' : 'plus'" class="w-3.5 h-3.5"></i>
-                    <span>{{ getMealForSlot(currentDate, slot.id) ? 'Atur ' + slot.shortLabel : '+ Isi ' + slot.shortLabel }}</span>
-                  </button>
+                  <div class="flex items-center gap-1.5">
+                    <button v-if="getMealForSlot(currentDate, slot.id)"
+                            type="button"
+                            @click="confirmCancelScheduledSlot(currentDate, slot.id)"
+                            title="Batal masak hari ini (beli di luar) & pindahkan ke stok minggu depan"
+                            class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 transition flex items-center gap-1 cursor-pointer">
+                      <span>⏭️</span>
+                      <span>Batal → Mgg Depan</span>
+                    </button>
+                    <button @click="editMenuForDate(currentDate, slot.id)"
+                            class="min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5"
+                            :class="getMealForSlot(currentDate, slot.id) 
+                              ? 'bg-white hover:bg-cream-100 text-espresso-800 border-cream-300 shadow-2xs' 
+                              : 'bg-caramel-500 hover:bg-caramel-600 text-white border-caramel-600 shadow-xs'">
+                      <i :data-lucide="getMealForSlot(currentDate, slot.id) ? 'edit-2' : 'plus'" class="w-3.5 h-3.5"></i>
+                      <span>{{ getMealForSlot(currentDate, slot.id) ? 'Atur ' + slot.shortLabel : '+ Isi ' + slot.shortLabel }}</span>
+                    </button>
+                  </div>
                 </div>
 
                 <!-- Slot Filled Grid -->
@@ -846,12 +856,281 @@
 
 
       <!-- ======================================================== -->
-      <!-- TAB 2: ISI MENU (PENGATURAN H-2 & TUKAR MENU)            -->
+      <!-- TAB 2: ISI MENU (RENCANA SEMINGGU + JADWAL HARIAN)       -->
       <!-- ======================================================== -->
-      <section v-if="activeTab === 'isi'" class="space-y-6">
-        
+      <section v-if="activeTab === 'isi'" class="space-y-5">
+
+        <!-- TOP MODE SWITCHER FOR TAB ISI (Optimized for iPhone 11 & 11 Pro) -->
+        <div class="bg-white p-2 rounded-2xl border border-cream-200 shadow-card grid grid-cols-2 gap-1.5">
+          <button type="button" @click="isiViewMode = 'mingguan'"
+                  class="min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  :class="isiViewMode === 'mingguan' ? 'bg-caramel-500 text-white shadow-xs' : 'text-espresso-700 hover:bg-cream-100'">
+            <span>📋</span>
+            <span>Rencana Seminggu</span>
+            <span v-if="activeWeeklyPoolEntries.length > 0"
+                  class="px-1.5 py-0.2 rounded-full text-[10px] font-extrabold"
+                  :class="isiViewMode === 'mingguan' ? 'bg-white/25 text-white' : 'bg-cream-200 text-espresso-800'">
+              {{ activeWeeklyPoolEntries.length }}
+            </span>
+          </button>
+          <button type="button" @click="isiViewMode = 'harian'"
+                  class="min-h-[44px] px-3 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  :class="isiViewMode === 'harian' ? 'bg-espresso-900 text-white shadow-xs' : 'text-espresso-700 hover:bg-cream-100'">
+            <span>📅</span>
+            <span>Atur Per Tanggal</span>
+          </button>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- MODE A: RENCANA MENU SEMINGGU (TANPA TENTUKAN HARI DULU) -->
+        <!-- ======================================================== -->
+        <div v-if="isiViewMode === 'mingguan'" class="space-y-5">
+
+          <!-- Header & Cycle Picker -->
+          <div class="bg-white p-5 sm:p-7 rounded-3xl border border-cream-200 shadow-card space-y-5">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-cream-100">
+              <div>
+                <div class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-caramel-600 mb-1">
+                  <span>📋</span>
+                  <span>Perencanaan Fleksibel Tanpa Tanggal Dulu</span>
+                </div>
+                <h2 class="text-xl sm:text-2xl font-serif font-bold text-espresso-900">
+                  Daftar Menu Pekan Ini
+                </h2>
+                <p class="text-xs text-taupe-500 mt-1 max-w-2xl leading-relaxed">
+                  Tentukan dulu <strong>berapa &amp; apa saja menu</strong> untuk 1 minggu (otomatis masuk <strong>Rincian Belanja Jumat</strong>). Nanti <strong>hari Sabtu</strong> saat menimbang bahan segar, tinggal pasang masing-masing ke hari Senin, Selasa, dst. Kalau batal masak, tinggal <strong>Cancel → Stok Minggu Depan</strong>!
+                </p>
+              </div>
+
+              <!-- Cycle Selector (3 options) -->
+              <div class="flex flex-col sm:items-end gap-1.5 flex-shrink-0">
+                <label class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Pilih Pekan Masak (Sabtu–Jumat):</label>
+                <select v-model="selectedWeeklyCycle"
+                        class="px-3.5 py-2.5 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[42px]">
+                  <option value="ongoing">Pekan Berjalan: {{ formatShortDate(ongoingFridayRange.start) }} - {{ formatShortDate(ongoingFridayRange.end) }}</option>
+                  <option value="current">Belanja Jumat Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
+                  <option value="next">Jumat Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Weekly Menu Quota Progress & Quick Target Picker -->
+            <div class="p-4 rounded-2xl bg-gradient-to-r from-cream-50 via-white to-sage-50/40 border border-cream-200 space-y-3">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <div class="text-xs font-bold text-espresso-900">
+                    Terkumpul: <span class="text-caramel-700 text-sm font-extrabold">{{ activeWeeklyPoolEntries.length }}</span> / {{ weeklyMenuTarget }} menu pekan ini
+                  </div>
+                  <div class="text-[11px] text-taupe-500 mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
+                    <span>📌 {{ activeWeeklyPoolEntries.filter(e => !e.assignedDate).length }} belum pilih hari</span>
+                    <span>•</span>
+                    <span class="text-emerald-700 font-semibold">✓ {{ activeWeeklyPoolEntries.filter(e => e.assignedDate).length }} sudah dipasang hari</span>
+                    <span v-if="activeWeeklyPoolEntries.filter(e => e.isRollover).length > 0" class="text-sky-700 font-semibold">
+                      • ❄️ {{ activeWeeklyPoolEntries.filter(e => e.isRollover).length }} stok minggu lalu
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Target Count Pills -->
+                <div class="flex items-center gap-1 text-[10px]">
+                  <span class="text-taupe-500 font-semibold mr-1">Target:</span>
+                  <button v-for="t in [5, 7, 10, 12, 14]" :key="t" type="button"
+                          @click="setWeeklyMenuTarget(t)"
+                          class="px-2 py-1 rounded-lg font-bold border transition cursor-pointer"
+                          :class="weeklyMenuTarget === t ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-white text-espresso-700 border-cream-200 hover:bg-cream-100'">
+                    {{ t }}
+                  </button>
+                </div>
+              </div>
+              <div class="w-full h-2 rounded-full bg-cream-200 overflow-hidden">
+                <div class="h-full rounded-full bg-caramel-500 transition-all duration-300"
+                     :style="{ width: Math.min(100, Math.round((activeWeeklyPoolEntries.length / Math.max(1, weeklyMenuTarget)) * 100)) + '%' }"></div>
+              </div>
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="flex flex-wrap items-center gap-2.5">
+              <button type="button" @click="openAddWeeklyMenuModal('paket')"
+                      class="flex-grow sm:flex-grow-0 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>🍱</span>
+                <span>+ Tambah Paket Menu</span>
+              </button>
+              <button type="button" @click="openAddWeeklyMenuModal('satuan')"
+                      class="flex-grow sm:flex-grow-0 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-900 border border-cream-300 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>🥗</span>
+                <span>+ Tambah Menu Satuan</span>
+              </button>
+              <button type="button" @click="openProteinPrepModal('cycle')"
+                      class="flex-grow sm:flex-grow-0 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>⚖️</span>
+                <span>Timbang Protein (Sabtu)</span>
+              </button>
+              <button type="button" @click="goToShoppingForWeeklyCycle"
+                      class="sm:ml-auto min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>🛒</span>
+                <span>Lihat Belanja →</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State for Weekly Pool -->
+          <div v-if="activeWeeklyPoolEntries.length === 0"
+               class="bg-white p-10 sm:p-12 rounded-3xl border border-cream-200 text-center space-y-3 shadow-card">
+            <div class="text-4xl">📋</div>
+            <h3 class="text-base font-serif font-bold text-espresso-900">
+              Belum Ada Rencana Menu untuk Pekan {{ formatShortDate(activeWeeklyRange.start) }} - {{ formatShortDate(activeWeeklyRange.end) }}
+            </h3>
+            <p class="text-xs text-taupe-500 max-w-md mx-auto leading-relaxed">
+              Mulai masukkan daftar menu yang ingin dimasak minggu ini tanpa perlu bingung harinya dulu. Bahannya langsung terhitung otomatis di <strong>Rincian Belanja</strong>!
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+              <button type="button" @click="openAddWeeklyMenuModal('paket')"
+                      class="min-h-[44px] px-5 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs cursor-pointer">
+                🍱 + Pilih dari Paket Menu
+              </button>
+              <button type="button" @click="openAddWeeklyMenuModal('satuan')"
+                      class="min-h-[44px] px-5 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-900 border border-cream-300 cursor-pointer">
+                🥗 + Susun Menu Satuan
+              </button>
+            </div>
+          </div>
+
+          <!-- Active Weekly Menu Pool Cards -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="(entry, idx) in activeWeeklyPoolEntries" :key="entry.id"
+                 class="bg-white rounded-3xl border p-4 sm:p-5 shadow-card flex flex-col justify-between gap-3.5 transition"
+                 :class="entry.isRollover ? 'border-sky-300 bg-gradient-to-br from-sky-50/40 via-white to-white' : (entry.assignedDate ? 'border-emerald-200' : 'border-cream-200')">
+              
+              <div class="space-y-2.5">
+                <!-- Card Top Badges -->
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-cream-200 text-espresso-900">
+                      #{{ idx + 1 }}
+                    </span>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
+                          :class="entry.type === 'paket' ? 'bg-caramel-50 text-caramel-800 border-caramel-200' : 'bg-cream-50 text-taupe-700 border-cream-200'">
+                      {{ entry.type === 'paket' ? '🍱 Paket' : '🥗 Satuan' }}
+                    </span>
+                    <span v-if="entry.isRollover"
+                          class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-300">
+                      ❄️ Stok Minggu Lalu • Skip Beli
+                    </span>
+                  </div>
+
+                  <button type="button" @click="confirmDeleteWeeklyEntry(entry)"
+                          title="Hapus menu ini dari daftar pekan"
+                          class="w-7 h-7 rounded-lg bg-cream-50 hover:bg-red-50 text-taupe-400 hover:text-red-500 flex items-center justify-center border border-cream-200 flex-shrink-0 cursor-pointer">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+
+                <!-- Menu Title & Dishes Preview -->
+                <div>
+                  <h3 class="text-sm sm:text-base font-serif font-bold text-espresso-900 leading-snug">
+                    {{ entry.label }}
+                  </h3>
+                  <div class="flex flex-wrap gap-1 mt-1.5">
+                    <span v-for="f in getWeeklyEntryUniqueFoods(entry)" :key="f.id"
+                          class="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-cream-50 text-espresso-800 border border-cream-200">
+                      {{ f.name }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Nutrition Summary Strip -->
+                <div v-if="calculateWeeklyEntryNutrition(entry).kalori > 0"
+                     class="flex flex-wrap items-center gap-1 text-[10px] font-bold pt-1">
+                  <span class="px-2 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200">
+                    🔥 {{ calculateWeeklyEntryNutrition(entry).kalori }} kkal
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    P {{ calculateWeeklyEntryNutrition(entry).protein }}g
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-md bg-cream-50 text-espresso-700 border border-cream-200">
+                    K {{ calculateWeeklyEntryNutrition(entry).karbo }}g
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200">
+                    S {{ calculateWeeklyEntryNutrition(entry).serat }}g
+                  </span>
+                  <span v-if="weeklyEntryHasActualWeight(entry)"
+                        class="px-1.5 py-0.5 rounded-md bg-emerald-600 text-white">
+                    ⚖️ Berat Aktual
+                  </span>
+                </div>
+
+                <!-- Assigned Day Status Bar -->
+                <div class="p-2.5 rounded-xl border flex items-center justify-between gap-2 text-xs"
+                     :class="entry.assignedDate ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900' : 'bg-amber-50/60 border-amber-200 text-amber-900'">
+                  <div class="font-bold flex items-center gap-1.5 min-w-0 truncate">
+                    <span>{{ entry.assignedDate ? '✅' : '📌' }}</span>
+                    <span v-if="entry.assignedDate" class="truncate">
+                      {{ formatTanggalIndo(entry.assignedDate, true) }} • {{ entry.assignedSlot === 'bekal' ? '🎒 Bekal' : '🌙 Malam' }}
+                    </span>
+                    <span v-else>Belum ditentukan harinya (atur saat Sabtu)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Footer Buttons (Touch-Friendly for iPhone 11 / 11 Pro) -->
+              <div class="pt-3 border-t border-cream-100 flex flex-wrap items-center gap-2">
+                <button type="button" @click="openAssignWeeklyDayModal(entry)"
+                        class="flex-grow min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        :class="entry.assignedDate ? 'bg-cream-100 hover:bg-cream-200 text-espresso-900 border border-cream-300' : 'bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs'">
+                  <span>📅</span>
+                  <span>{{ entry.assignedDate ? 'Ubah Hari' : 'Pasang ke Hari' }}</span>
+                </button>
+
+                <button v-if="weeklyEntryHasWeighableProtein(entry)"
+                        type="button" @click="openProteinPrepModal('cycle', '', entry.id)"
+                        class="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 cursor-pointer"
+                        :class="weeklyEntryHasActualWeight(entry) ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'">
+                  <span>⚖️</span>
+                  <span>{{ weeklyEntryHasActualWeight(entry) ? 'Gram ✓' : 'Timbang' }}</span>
+                </button>
+
+                <button type="button" @click="confirmCancelWeeklyMenu(entry)"
+                        title="Batal masak minggu ini (beli di luar) & pindahkan ke stok minggu depan"
+                        class="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 transition flex items-center justify-center gap-1 cursor-pointer">
+                  <span>⏭️</span>
+                  <span>Cancel → Minggu Depan</span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Cancelled Menus Section (Moved to Next Week Stock) -->
+          <div v-if="activeWeeklyCancelledEntries.length > 0"
+               class="bg-white p-5 rounded-3xl border border-dashed border-sky-300 space-y-3">
+            <div class="flex items-center gap-2 text-xs font-bold text-sky-900">
+              <span>⏭️</span>
+              <span>Menu Dibatalkan Pekan Ini (Sudah Masuk Stok Minggu Depan • {{ activeWeeklyCancelledEntries.length }})</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div v-for="cEntry in activeWeeklyCancelledEntries" :key="cEntry.id"
+                   class="p-3 rounded-2xl bg-sky-50/50 border border-sky-200 flex items-center justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-taupe-500 line-through truncate">{{ cEntry.label }}</div>
+                  <div class="text-[10px] text-sky-700 font-semibold mt-0.5">
+                    ❄️ Dipindah ke pekan {{ formatCycleRangeLabel(getNextCycleKey(cEntry.cycleKey)) }} (Skip beli ulang)
+                  </div>
+                </div>
+                <button type="button" @click="undoCancelWeeklyMenu(cEntry)"
+                        class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 flex-shrink-0 cursor-pointer min-h-[36px]">
+                  ↩️ Kembalikan
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- MODE B: ATUR PER TANGGAL (KALENDER HARIAN DETAIL)        -->
+        <!-- ======================================================== -->
         <!-- Header Banner -->
-        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-card">
+        <div v-if="isiViewMode === 'harian'" class="bg-white p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-card">
           <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-cream-100">
             <div>
               <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-taupe-500 mb-1">
@@ -2214,6 +2493,43 @@
         <!-- ======================================================== -->
         <div v-if="stockSubTab === 'dishes'" class="space-y-6">
 
+          <!-- STOK MENU BATAL (ROLLOVER MINGGU LALU -> SIAP DIMASAK MINGGU DEPAN) -->
+          <div v-if="allRolloverStockEntries.length > 0"
+               class="bg-gradient-to-br from-sky-50 via-white to-cream-50 p-5 sm:p-6 rounded-3xl border border-sky-200 shadow-card space-y-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2.5">
+                <span class="w-9 h-9 rounded-xl bg-sky-100 border border-sky-200 flex items-center justify-center text-lg">❄️</span>
+                <div>
+                  <h3 class="text-sm sm:text-base font-serif font-bold text-espresso-900">
+                    Stok Menu Batal ({{ allRolloverStockEntries.length }} Menu Siap Dimasak)
+                  </h3>
+                  <p class="text-[11px] text-sky-800">
+                    Bahannya sudah dibeli sebelumnya — otomatis di-skip dari Rincian Belanja minggu depan agar tidak terbeli dobel!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div v-for="rEntry in allRolloverStockEntries" :key="rEntry.id"
+                   class="p-3.5 rounded-2xl bg-white border border-sky-200 flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">❄️ Pekan {{ formatCycleRangeLabel(rEntry.cycleKey) }}</span>
+                    <span v-if="calculateWeeklyEntryNutrition(rEntry).kalori > 0" class="text-[9.5px] font-bold text-caramel-700">
+                      🔥 {{ calculateWeeklyEntryNutrition(rEntry).kalori }} kkal
+                    </span>
+                  </div>
+                  <div class="text-xs sm:text-sm font-bold text-espresso-900 mt-1 truncate">{{ rEntry.label }}</div>
+                </div>
+                <button type="button" @click="openAssignWeeklyDayModal(rEntry)"
+                        class="min-h-[38px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-2xs flex-shrink-0 cursor-pointer">
+                  📅 Pasang Hari
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Empty State Dishes -->
           <div v-if="stockDashboard.availableLeftovers.length === 0 && stockDashboard.completedBatches.length === 0 && stockDashboard.weeklyCondiments.length === 0"
                class="bg-white p-10 sm:p-14 rounded-3xl border border-cream-200 text-center space-y-4 shadow-card">
@@ -2751,6 +3067,21 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- Rollover Stock Notice (Skip Re-buying Already-Bought Cancelled Menus) -->
+        <div v-if="activeShoppingRolloverCount > 0"
+             class="p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">❄️</span>
+            <span>
+              Ada <strong>{{ activeShoppingRolloverCount }} menu stok bawaan</strong> (hasil cancel minggu lalu) pada siklus ini — bahannya <strong>otomatis di-skip</strong> agar tidak dibeli 2 kali!
+            </span>
+          </div>
+          <button type="button" @click="isiViewMode = 'mingguan'; setTab('isi')"
+                  class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white hover:bg-sky-100 text-sky-800 border border-sky-300 cursor-pointer">
+            Lihat Daftar Pekan →
+          </button>
         </div>
 
         <!-- Empty State if no meals planned in this cycle -->
@@ -4176,6 +4507,185 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- MODAL 10: PASANG MENU PEKAN KE HARI & SESI (SABTU PREP)  -->
+    <!-- ======================================================== -->
+    <div v-if="modalAssignWeeklyDay.show && activeAssignWeeklyEntry" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-md w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-3"></div>
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+          <div>
+            <h3 class="font-bold text-base text-espresso-900">📅 Pasang Menu ke Hari</h3>
+            <p class="text-[11px] text-taupe-500 truncate max-w-[260px]">{{ activeAssignWeeklyEntry.label }}</p>
+          </div>
+          <button @click="modalAssignWeeklyDay.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <!-- Step 1: Choose Day in Cycle (Sat-Fri) -->
+          <div class="space-y-2">
+            <label class="block font-bold text-espresso-800">1. Pilih Hari Masak (Sabtu–Jumat):</label>
+            <div class="grid grid-cols-1 gap-1.5">
+              <button v-for="d in activeAssignCycleDates" :key="d.dateStr"
+                      type="button"
+                      @click="modalAssignWeeklyDay.dateStr = d.dateStr"
+                      class="px-3.5 py-2.5 rounded-xl border text-left flex items-center justify-between transition cursor-pointer min-h-[44px]"
+                      :class="modalAssignWeeklyDay.dateStr === d.dateStr ? 'bg-caramel-50 border-caramel-500 ring-2 ring-caramel-400/20' : 'bg-cream-50/70 border-cream-200 hover:bg-cream-100'">
+                <div>
+                  <span class="font-bold text-espresso-900">{{ d.dayName }}</span>
+                  <span class="text-taupe-500 ml-1.5">{{ d.shortDate }}</span>
+                </div>
+                <div class="flex items-center gap-1 text-[10px] font-bold">
+                  <span class="px-1.5 py-0.5 rounded-md border" :class="d.hasBekal ? 'bg-sage-100 text-sage-800 border-sage-200' : 'bg-white text-taupe-400 border-cream-200'">
+                    🎒 {{ d.hasBekal ? 'Terisi' : 'Kosong' }}
+                  </span>
+                  <span class="px-1.5 py-0.5 rounded-md border" :class="d.hasMalam ? 'bg-sage-100 text-sage-800 border-sage-200' : 'bg-white text-taupe-400 border-cream-200'">
+                    🌙 {{ d.hasMalam ? 'Terisi' : 'Kosong' }}
+                  </span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Choose Slot -->
+          <div class="space-y-2">
+            <label class="block font-bold text-espresso-800">2. Pilih Sesi Makan:</label>
+            <div class="grid grid-cols-2 gap-2.5">
+              <button type="button" @click="modalAssignWeeklyDay.slotId = 'bekal'"
+                      class="min-h-[46px] py-2.5 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      :class="modalAssignWeeklyDay.slotId === 'bekal' ? 'bg-caramel-500 text-white border-caramel-600 shadow-xs' : 'bg-cream-50 text-espresso-800 border-cream-200'">
+                <span>🎒</span>
+                <span>Menu Bekal</span>
+              </button>
+              <button type="button" @click="modalAssignWeeklyDay.slotId = 'malam'"
+                      class="min-h-[46px] py-2.5 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      :class="modalAssignWeeklyDay.slotId === 'malam' ? 'bg-espresso-900 text-white border-espresso-900 shadow-xs' : 'bg-cream-50 text-espresso-800 border-cream-200'">
+                <span>🌙</span>
+                <span>Makan Malam</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-cream-100 flex items-center justify-between gap-2">
+          <button v-if="activeAssignWeeklyEntry.assignedDate" type="button" @click="unassignWeeklyEntry(activeAssignWeeklyEntry)"
+                  class="px-3.5 py-2.5 rounded-xl text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-200 min-h-[44px] cursor-pointer">
+            Lepas Hari
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" @click="modalAssignWeeklyDay.show = false"
+                    class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[44px] cursor-pointer">
+              Batal
+            </button>
+            <button type="button" @click="confirmAssignWeeklyDay"
+                    class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs min-h-[44px] cursor-pointer">
+              Pasang ke Hari Ini
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 11: TAMBAH MENU KE DAFTAR RENCANA SEMINGGU         -->
+    <!-- ======================================================== -->
+    <div v-if="modalAddWeeklyMenu.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-lg w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 sm:p-7 space-y-4 max-h-[90vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-3"></div>
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+          <div>
+            <h3 class="font-bold text-base text-espresso-900">📋 Tambah Menu Pekan Ini</h3>
+            <p class="text-[11px] text-taupe-500">Pekan {{ formatShortDate(activeWeeklyRange.start) }} - {{ formatShortDate(activeWeeklyRange.end) }} (tanpa pilih hari dulu)</p>
+          </div>
+          <button @click="modalAddWeeklyMenu.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Mode Switcher: Paket vs Satuan -->
+        <div class="grid grid-cols-2 gap-1.5 bg-cream-100 p-1 rounded-xl border border-cream-200 text-xs font-bold">
+          <button type="button" @click="modalAddWeeklyMenu.mode = 'paket'"
+                  class="py-2 rounded-lg transition cursor-pointer"
+                  :class="modalAddWeeklyMenu.mode === 'paket' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600'">
+            🍱 1. Dari Paket Menu
+          </button>
+          <button type="button" @click="modalAddWeeklyMenu.mode = 'satuan'"
+                  class="py-2 rounded-lg transition cursor-pointer"
+                  :class="modalAddWeeklyMenu.mode === 'satuan' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600'">
+            🥗 2. Susun Menu Satuan
+          </button>
+        </div>
+
+        <!-- Option 1: 1-Click Package Picker -->
+        <div v-if="modalAddWeeklyMenu.mode === 'paket'" class="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1 ios-scroll">
+          <div v-if="packages.length === 0" class="py-8 text-center text-xs text-taupe-500 bg-cream-50 rounded-2xl border border-cream-200">
+            Belum ada Paket Menu. Buat paket di tab <strong>Paket</strong> atau pilih tab <strong>Susun Menu Satuan</strong>.
+          </div>
+          <div v-for="pkg in packages" :key="pkg.id"
+               class="p-3.5 rounded-2xl bg-cream-50/80 border border-cream-200 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <div class="font-bold text-sm text-espresso-900 truncate">{{ pkg.name }}</div>
+              <div v-if="calculatePackageNutrition(pkg).kalori > 0" class="flex flex-wrap gap-1 mt-1 text-[9.5px] font-bold">
+                <span class="px-1.5 py-0.5 rounded bg-caramel-50 text-caramel-800 border border-caramel-200">🔥 {{ calculatePackageNutrition(pkg).kalori }} kkal</span>
+                <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">P {{ calculatePackageNutrition(pkg).protein }}g</span>
+                <span class="px-1.5 py-0.5 rounded bg-sage-50 text-sage-800 border border-sage-200">S {{ calculatePackageNutrition(pkg).serat }}g</span>
+              </div>
+            </div>
+            <button type="button" @click="addPackageToWeeklyPool(pkg)"
+                    class="min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-2xs flex-shrink-0 cursor-pointer active:scale-95 transition">
+              + Masukkan
+            </button>
+          </div>
+        </div>
+
+        <!-- Option 2: Multi-Dish Satuan Builder -->
+        <div v-else class="space-y-3">
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" v-model="modalAddWeeklyMenu.searchQuery"
+                   placeholder="Cari masakan (misal: ayam, nasi, bayam, tahu)..."
+                   class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-cream-50 border border-cream-200 text-xs font-semibold text-espresso-900 min-h-[42px]">
+          </div>
+
+          <div class="text-[11px] font-bold text-espresso-800 flex items-center justify-between">
+            <span>Ketuk masakan untuk digabung jadi 1 menu:</span>
+            <span class="px-2 py-0.5 rounded-full bg-caramel-50 text-caramel-800 border border-caramel-200">{{ weeklyModalSelectedCount }} dipilih</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-[38vh] overflow-y-auto pr-1 ios-scroll">
+            <button v-for="dish in filteredWeeklyModalDishes" :key="dish.id"
+                    type="button" @click="toggleDishInWeeklyModal(dish)"
+                    class="p-2.5 rounded-xl border text-left flex items-center justify-between gap-2 transition cursor-pointer min-h-[42px]"
+                    :class="isDishInWeeklyModal(dish.id) ? 'bg-caramel-50 border-caramel-500 text-espresso-900' : 'bg-white border-cream-200 hover:bg-cream-50 text-espresso-800'">
+              <div class="min-w-0">
+                <div class="text-xs font-bold truncate">{{ dish.name }}</div>
+                <div class="text-[9.5px] text-taupe-500">
+                  {{ getCategoryMeta(getFoodCategories(dish)[0]).icon }} {{ calculateFoodNutrition(dish).perPortion.kalori }} kkal • P {{ calculateFoodNutrition(dish).perPortion.protein }}g
+                </div>
+              </div>
+              <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                    :class="isDishInWeeklyModal(dish.id) ? 'bg-caramel-500 text-white' : 'border border-cream-300'">
+                {{ isDishInWeeklyModal(dish.id) ? '✓' : '+' }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-cream-100 flex items-center justify-end gap-2">
+          <button type="button" @click="modalAddWeeklyMenu.show = false"
+                  class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[44px] cursor-pointer">
+            Selesai
+          </button>
+          <button v-if="modalAddWeeklyMenu.mode === 'satuan'" type="button" @click="addSatuanToWeeklyPool"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs min-h-[44px] cursor-pointer">
+            + Masukkan ({{ weeklyModalSelectedCount }}) ke Pekan Ini
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- MODAL CONFIRMATION: DIALOG KONFIRMASI UNIVERSAL          -->
     <!-- ======================================================== -->
     <div v-if="modalConfirm.show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs">
@@ -5357,7 +5867,26 @@
           show: false,
           scope: 'cycle', // 'cycle' (Sabtu-Jumat) | 'week' (Senin-Minggu) | 'day' (single date)
           focusDate: '',
+          focusPoolId: '',
           draftWeights: {} // map of key -> grams string/number
+        });
+
+        // Flexible Weekly Menu Planner (Daftar Menu Seminggu Tanpa Hari Dulu + Cancel Rollover Stock)
+        const isiViewMode = ref('mingguan'); // 'mingguan' (default) | 'harian'
+        const selectedWeeklyCycle = ref('current'); // 'ongoing' | 'current' | 'next'
+        const weeklyMenuTarget = ref(10);
+        const weeklyMenuPool = ref([]);
+        const modalAddWeeklyMenu = ref({
+          show: false,
+          mode: 'paket', // 'paket' | 'satuan'
+          items: createEmptyFormItems(),
+          searchQuery: ''
+        });
+        const modalAssignWeeklyDay = ref({
+          show: false,
+          entryId: '',
+          dateStr: '',
+          slotId: 'bekal'
         });
 
         // Manual Shopping Items for Stock
@@ -5502,6 +6031,14 @@
 
             const storedActualWeights = localStorage.getItem('seleraku_actual_protein_weights');
             actualProteinWeights.value = storedActualWeights ? JSON.parse(storedActualWeights) : {};
+
+            const storedWeeklyPool = localStorage.getItem('seleraku_weekly_menu_pool');
+            weeklyMenuPool.value = storedWeeklyPool ? JSON.parse(storedWeeklyPool) : [];
+
+            const storedWeeklyTarget = localStorage.getItem('seleraku_weekly_menu_target');
+            if (storedWeeklyTarget && !isNaN(Number(storedWeeklyTarget))) {
+              weeklyMenuTarget.value = Math.max(1, Math.min(28, Number(storedWeeklyTarget)));
+            }
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -5547,6 +6084,8 @@
               manualShoppingItems: manualShoppingItems.value,
               nutritionTargets: nutritionTargets.value,
               actualProteinWeights: actualProteinWeights.value,
+              weeklyMenuPool: weeklyMenuPool.value,
+              weeklyMenuTarget: weeklyMenuTarget.value,
               updatedAt: lastLocalUpdate
             };
 
@@ -5668,6 +6207,14 @@
                 if (data.actualProteinWeights && typeof data.actualProteinWeights === 'object') {
                   actualProteinWeights.value = data.actualProteinWeights;
                   localStorage.setItem('seleraku_actual_protein_weights', JSON.stringify(actualProteinWeights.value));
+                }
+                if (Array.isArray(data.weeklyMenuPool)) {
+                  weeklyMenuPool.value = data.weeklyMenuPool;
+                  localStorage.setItem('seleraku_weekly_menu_pool', JSON.stringify(weeklyMenuPool.value));
+                }
+                if (data.weeklyMenuTarget && !isNaN(Number(data.weeklyMenuTarget))) {
+                  weeklyMenuTarget.value = Math.max(1, Math.min(28, Number(data.weeklyMenuTarget)));
+                  localStorage.setItem('seleraku_weekly_menu_target', String(weeklyMenuTarget.value));
                 }
 
                 localStorage.setItem('seleraku_last_updated', data.updatedAt);
@@ -5866,59 +6413,661 @@
           return (currentWeekDays.value || []).map(d => d.dateStr);
         });
 
+        const saveWeeklyMenuPool = () => {
+          localStorage.setItem('seleraku_weekly_menu_pool', JSON.stringify(weeklyMenuPool.value));
+          localStorage.setItem('seleraku_weekly_menu_target', String(weeklyMenuTarget.value));
+          triggerSyncServer();
+        };
+
+        const setWeeklyMenuTarget = (n) => {
+          weeklyMenuTarget.value = Math.max(1, Math.min(28, Number(n) || 10));
+          saveWeeklyMenuPool();
+        };
+
+        const addDaysISO = (isoStr, deltaDays) => {
+          const [y, m, d] = isoStr.split('-').map(Number);
+          const dt = new Date(y, m - 1, d);
+          dt.setDate(dt.getDate() + deltaDays);
+          return formatDateObj(dt);
+        };
+
+        const getNextCycleKey = (cycleKey) => addDaysISO(cycleKey, 7);
+
+        const getCycleKeyForDate = (dateStr) => {
+          const [y, m, d] = dateStr.split('-').map(Number);
+          const dt = new Date(y, m - 1, d);
+          // Saturday is day 6. Find most recent Saturday <= dateStr
+          const diffToSat = (dt.getDay() - 6 + 7) % 7;
+          dt.setDate(dt.getDate() - diffToSat);
+          return formatDateObj(dt);
+        };
+
+        const getCycleDatesArray = (cycleKey) => {
+          const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+          const arr = [];
+          for (let i = 0; i < 7; i++) {
+            const ds = addDaysISO(cycleKey, i);
+            const [y, m, d] = ds.split('-').map(Number);
+            const dt = new Date(y, m - 1, d);
+            arr.push({
+              dateStr: ds,
+              dayName: dayNames[dt.getDay()],
+              shortDate: formatShortDate(ds),
+              hasBekal: !!getMealForSlot(ds, 'bekal'),
+              hasMalam: !!getMealForSlot(ds, 'malam')
+            });
+          }
+          return arr;
+        };
+
+        const formatCycleRangeLabel = (cycleKey) => {
+          if (!cycleKey) return '';
+          const endKey = addDaysISO(cycleKey, 6);
+          return `${formatShortDate(cycleKey)} - ${formatShortDate(endKey)}`;
+        };
+
+        const activeWeeklyPoolEntries = computed(() => {
+          const ck = activeWeeklyRange.value?.start;
+          return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === ck && e.status !== 'cancelled');
+        });
+
+        const activeWeeklyCancelledEntries = computed(() => {
+          const ck = activeWeeklyRange.value?.start;
+          return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === ck && e.status === 'cancelled');
+        });
+
+        const allRolloverStockEntries = computed(() => {
+          return (weeklyMenuPool.value || []).filter(e => e && e.isRollover && e.status !== 'cancelled' && !e.assignedDate);
+        });
+
+        const getWeeklyEntryUniqueFoods = (entry) => {
+          if (!entry || !entry.items) return [];
+          const seen = new Set();
+          const list = [];
+          nutritionCategories.forEach(cat => {
+            const val = entry.items[cat.id];
+            const ids = Array.isArray(val) ? val : (val ? [val] : []);
+            ids.forEach(fid => {
+              if (fid && !seen.has(fid)) {
+                seen.add(fid);
+                const f = getFoodItem(fid);
+                if (f) list.push(f);
+              }
+            });
+          });
+          return list;
+        };
+
+        const weeklyEntryHasWeighableProtein = (entry) => {
+          return getWeeklyEntryUniqueFoods(entry).some(f =>
+            (f.ingredients || []).some(ing => ing && isWeighableProteinIngredient(ing.name))
+          );
+        };
+
+        const weeklyEntryHasActualWeight = (entry) => {
+          if (!entry) return false;
+          if (entry.actualWeights && Object.values(entry.actualWeights).some(v => Number(v) > 0)) return true;
+          if (entry.assignedDate && entry.assignedSlot) {
+            return getWeeklyEntryUniqueFoods(entry).some(f =>
+              (f.ingredients || []).some(ing => ing && getActualProteinWeight(entry.assignedDate, entry.assignedSlot, f.id, ing.name) !== null)
+            );
+          }
+          return false;
+        };
+
+        const calculateWeeklyEntryNutrition = (entry) => {
+          if (!entry || !entry.items) return emptyNutritionObj();
+          if (entry.assignedDate && entry.assignedSlot) {
+            return calculateItemsNutrition(entry.items, { dateStr: entry.assignedDate, slotId: entry.assignedSlot });
+          }
+          // Use entry.actualWeights directly if unassigned yet
+          const sum = emptyNutritionObj();
+          const foods = getWeeklyEntryUniqueFoods(entry);
+          foods.forEach(food => {
+            const servings = Math.max(1, getFoodNutritionServings(food));
+            const total = emptyNutritionObj();
+            (food.ingredients || []).forEach(ing => {
+              if (!ing || !ing.name) return;
+              const pwKey = `${food.id}__${ing.name.trim().toLowerCase()}`;
+              const ov = entry.actualWeights && Number(entry.actualWeights[pwKey]) > 0 ? Number(entry.actualWeights[pwKey]) : null;
+              const res = calculateIngredientNutrition(ing, ov);
+              if (res.matched) {
+                total.kalori += res.kalori;
+                total.karbo += res.karbo;
+                total.protein += res.protein;
+                total.lemak += res.lemak;
+                total.serat += res.serat;
+                total.gula += res.gula;
+                total.natrium += res.natrium;
+              }
+            });
+            sum.kalori += total.kalori / servings;
+            sum.karbo += total.karbo / servings;
+            sum.protein += total.protein / servings;
+            sum.lemak += total.lemak / servings;
+            sum.serat += total.serat / servings;
+            sum.gula += total.gula / servings;
+            sum.natrium += total.natrium / servings;
+          });
+          return roundNutritionObj(sum);
+        };
+
+        const openAddWeeklyMenuModal = (mode = 'paket') => {
+          modalAddWeeklyMenu.value = {
+            show: true,
+            mode: mode || 'paket',
+            items: createEmptyFormItems(),
+            searchQuery: ''
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const addPackageToWeeklyPool = (pkg) => {
+          if (!pkg) return;
+          const ck = activeWeeklyRange.value.start;
+          weeklyMenuPool.value.push({
+            id: 'wm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            cycleKey: ck,
+            label: pkg.name,
+            type: 'paket',
+            packageId: pkg.id,
+            items: normalizeFormItems(pkg.items),
+            assignedDate: null,
+            assignedSlot: null,
+            status: 'planned',
+            isRollover: false,
+            rolloverFromCycle: null,
+            rolloverChildId: null,
+            actualWeights: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          saveWeeklyMenuPool();
+          showToast(`"${pkg.name}" ditambahkan ke daftar menu pekan ini!`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const toggleDishInWeeklyModal = (item) => {
+          if (!item) return;
+          const cats = getFoodCategories(item);
+          const targetCat = cats[0] || 'protein';
+          const itemsObj = modalAddWeeklyMenu.value.items;
+          const exists = Object.values(itemsObj).some(arr => Array.isArray(arr) && arr.includes(item.id));
+          if (exists) {
+            nutritionCategories.forEach(c => {
+              itemsObj[c.id] = (itemsObj[c.id] || []).filter(id => id !== item.id);
+            });
+          } else {
+            if (!Array.isArray(itemsObj[targetCat])) itemsObj[targetCat] = [];
+            itemsObj[targetCat].push(item.id);
+          }
+        };
+
+        const isDishInWeeklyModal = (foodId) => {
+          const itemsObj = modalAddWeeklyMenu.value.items || {};
+          return Object.values(itemsObj).some(arr => Array.isArray(arr) && arr.includes(foodId));
+        };
+
+        const weeklyModalSelectedCount = computed(() => {
+          const itemsObj = modalAddWeeklyMenu.value.items || {};
+          const set = new Set();
+          Object.values(itemsObj).forEach(arr => {
+            if (Array.isArray(arr)) arr.forEach(id => { if (id) set.add(id); });
+          });
+          return set.size;
+        });
+
+        const filteredWeeklyModalDishes = computed(() => {
+          const q = (modalAddWeeklyMenu.value.searchQuery || '').trim().toLowerCase();
+          if (!q) return sortedFoodCatalog.value.slice(0, 24);
+          return sortedFoodCatalog.value.filter(f => (f.name || '').toLowerCase().includes(q)).slice(0, 24);
+        });
+
+        const addSatuanToWeeklyPool = () => {
+          if (weeklyModalSelectedCount.value === 0) {
+            showToast('Pilih minimal 1 hidangan terlebih dahulu!', 'error');
+            return;
+          }
+          const items = normalizeFormItems(modalAddWeeklyMenu.value.items);
+          const summary = getDishSummary({ type: 'satuan', items });
+          const ck = activeWeeklyRange.value.start;
+          weeklyMenuPool.value.push({
+            id: 'wm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            cycleKey: ck,
+            label: summary,
+            type: 'satuan',
+            packageId: null,
+            items,
+            assignedDate: null,
+            assignedSlot: null,
+            status: 'planned',
+            isRollover: false,
+            rolloverFromCycle: null,
+            rolloverChildId: null,
+            actualWeights: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          saveWeeklyMenuPool();
+          modalAddWeeklyMenu.value.items = createEmptyFormItems();
+          modalAddWeeklyMenu.value.show = false;
+          showToast(`Menu "${summary}" dimasukkan ke daftar pekan ini!`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const openAssignWeeklyDayModal = (entry) => {
+          if (!entry) return;
+          const defaultDate = entry.assignedDate || entry.cycleKey;
+          modalAssignWeeklyDay.value = {
+            show: true,
+            entryId: entry.id,
+            dateStr: defaultDate,
+            slotId: entry.assignedSlot || 'bekal'
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const activeAssignWeeklyEntry = computed(() => {
+          return (weeklyMenuPool.value || []).find(e => e.id === modalAssignWeeklyDay.value.entryId) || null;
+        });
+
+        const activeAssignCycleDates = computed(() => {
+          const entry = activeAssignWeeklyEntry.value;
+          if (!entry || !entry.cycleKey) return [];
+          return getCycleDatesArray(entry.cycleKey);
+        });
+
+        const syncEntryWeightsToDateSlot = (entry, dateStr, slotId) => {
+          if (!entry || !entry.actualWeights || !dateStr || !slotId) return;
+          const nextMap = { ...(actualProteinWeights.value || {}) };
+          Object.keys(entry.actualWeights).forEach(pwKey => {
+            const g = Number(entry.actualWeights[pwKey]);
+            if (g > 0) {
+              nextMap[`${dateStr}__${slotId}__${pwKey}`] = { grams: g, updatedAt: new Date().toISOString() };
+            }
+          });
+          actualProteinWeights.value = nextMap;
+          localStorage.setItem('seleraku_actual_protein_weights', JSON.stringify(actualProteinWeights.value));
+        };
+
+        const detachEntryFromMealPlans = (entry) => {
+          if (!entry || !entry.assignedDate || !entry.assignedSlot) return;
+          const oldDate = entry.assignedDate;
+          const oldSlot = entry.assignedSlot;
+          const dayPlan = mealPlans.value[oldDate];
+          if (dayPlan && dayPlan[oldSlot]) {
+            if (!dayPlan[oldSlot].poolId || dayPlan[oldSlot].poolId === entry.id) {
+              dayPlan[oldSlot] = null;
+              if (!dayPlan.bekal && !dayPlan.malam) {
+                delete mealPlans.value[oldDate];
+                if (!deletedMealDates.value.includes(oldDate)) {
+                  deletedMealDates.value.push(oldDate);
+                  localStorage.setItem('seleraku_deleted_meals', JSON.stringify(deletedMealDates.value));
+                }
+              }
+            }
+          }
+          entry.assignedDate = null;
+          entry.assignedSlot = null;
+        };
+
+        const confirmAssignWeeklyDay = () => {
+          const entry = activeAssignWeeklyEntry.value;
+          const { dateStr, slotId } = modalAssignWeeklyDay.value;
+          if (!entry || !dateStr || !slotId) return;
+
+          // Detach from old slot if moved
+          if (entry.assignedDate && (entry.assignedDate !== dateStr || entry.assignedSlot !== slotId)) {
+            detachEntryFromMealPlans(entry);
+          }
+
+          // If another pool entry previously occupied (dateStr, slotId), mark it unassigned
+          (weeklyMenuPool.value || []).forEach(other => {
+            if (other.id !== entry.id && other.assignedDate === dateStr && other.assignedSlot === slotId) {
+              other.assignedDate = null;
+              other.assignedSlot = null;
+            }
+          });
+
+          const existingDay = getDayMeals(dateStr);
+          const nextDay = {
+            bekal: existingDay.bekal || null,
+            malam: existingDay.malam || null,
+            updatedAt: new Date().toISOString()
+          };
+          nextDay[slotId] = {
+            type: entry.type || 'satuan',
+            packageId: entry.packageId || null,
+            items: normalizeFormItems(entry.items),
+            poolId: entry.id,
+            isRollover: !!entry.isRollover,
+            updatedAt: new Date().toISOString()
+          };
+          mealPlans.value[dateStr] = nextDay;
+          if (deletedMealDates.value.includes(dateStr)) {
+            deletedMealDates.value = deletedMealDates.value.filter(d => d !== dateStr);
+            localStorage.setItem('seleraku_deleted_meals', JSON.stringify(deletedMealDates.value));
+          }
+
+          entry.assignedDate = dateStr;
+          entry.assignedSlot = slotId;
+          entry.updatedAt = new Date().toISOString();
+
+          syncEntryWeightsToDateSlot(entry, dateStr, slotId);
+
+          localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+          saveWeeklyMenuPool();
+          modalAssignWeeklyDay.value.show = false;
+          const slotTxt = slotId === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          showToast(`"${entry.label}" dijadwalkan ke ${formatTanggalIndo(dateStr, true)} (${slotTxt})!`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const unassignWeeklyEntry = (entry) => {
+          if (!entry) return;
+          detachEntryFromMealPlans(entry);
+          entry.updatedAt = new Date().toISOString();
+          localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+          saveWeeklyMenuPool();
+          modalAssignWeeklyDay.value.show = false;
+          showToast(`"${entry.label}" dilepas dari jadwal hari (kembali ke daftar pekan).`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmCancelWeeklyMenu = (entry) => {
+          if (!entry) return;
+          const nextCycle = getNextCycleKey(entry.cycleKey);
+          modalConfirm.value = {
+            show: true,
+            title: 'Cancel Menu → Stok Minggu Depan?',
+            message: `Batalkan "${entry.label}" untuk pekan ini (misal beli makan di luar) dan pindahkan sebagai Stok Minggu Depan (${formatCycleRangeLabel(nextCycle)})? Bahannya otomatis ditandai sudah dibeli (skip beli ulang).`,
+            confirmButtonText: 'Ya, Pindah ke Minggu Depan',
+            cancelButtonText: 'Batal',
+            onConfirm: () => {
+              // Capture any weighed actual protein weights from assigned slot before detaching
+              if (entry.assignedDate && entry.assignedSlot) {
+                const foods = getWeeklyEntryUniqueFoods(entry);
+                if (!entry.actualWeights) entry.actualWeights = {};
+                foods.forEach(f => {
+                  (f.ingredients || []).forEach(ing => {
+                    const g = getActualProteinWeight(entry.assignedDate, entry.assignedSlot, f.id, ing.name);
+                    if (g !== null) entry.actualWeights[`${f.id}__${ing.name.trim().toLowerCase()}`] = g;
+                  });
+                });
+                detachEntryFromMealPlans(entry);
+              }
+
+              const rolloverId = 'wm_roll_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+              entry.status = 'cancelled';
+              entry.rolloverChildId = rolloverId;
+              entry.updatedAt = new Date().toISOString();
+
+              weeklyMenuPool.value.push({
+                id: rolloverId,
+                cycleKey: nextCycle,
+                label: entry.label,
+                type: entry.type,
+                packageId: entry.packageId || null,
+                items: normalizeFormItems(entry.items),
+                assignedDate: null,
+                assignedSlot: null,
+                status: 'planned',
+                isRollover: true,
+                rolloverFromCycle: entry.cycleKey,
+                rolloverChildId: null,
+                actualWeights: { ...(entry.actualWeights || {}) },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+
+              localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+              saveWeeklyMenuPool();
+              modalConfirm.value.show = false;
+              showToast(`"${entry.label}" dipindahkan ke Stok Minggu Depan (Skip beli ulang)!`);
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const undoCancelWeeklyMenu = (entry) => {
+          if (!entry) return;
+          if (entry.rolloverChildId) {
+            const child = weeklyMenuPool.value.find(e => e.id === entry.rolloverChildId);
+            if (child) detachEntryFromMealPlans(child);
+            weeklyMenuPool.value = weeklyMenuPool.value.filter(e => e.id !== entry.rolloverChildId);
+          }
+          entry.status = 'planned';
+          entry.rolloverChildId = null;
+          entry.updatedAt = new Date().toISOString();
+          localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+          saveWeeklyMenuPool();
+          showToast(`Cancel dibatalkan — "${entry.label}" aktif kembali di pekan ini.`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmCancelScheduledSlot = (dateStr, slotId) => {
+          const slotObj = getMealForSlot(dateStr, slotId);
+          if (!slotObj) return;
+          // If linked to a weeklyMenuPool entry, reuse confirmCancelWeeklyMenu directly!
+          if (slotObj.poolId) {
+            const linked = (weeklyMenuPool.value || []).find(e => e.id === slotObj.poolId);
+            if (linked) {
+              confirmCancelWeeklyMenu(linked);
+              return;
+            }
+          }
+          const curCycle = getCycleKeyForDate(dateStr);
+          const nextCycle = getNextCycleKey(curCycle);
+          const label = getDishSummary(slotObj);
+          const slotName = slotId === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+
+          modalConfirm.value = {
+            show: true,
+            title: `Cancel ${slotName} → Minggu Depan?`,
+            message: `Batal masak "${label}" hari ini (beli di luar) dan masukkan ke Stok Minggu Depan (${formatCycleRangeLabel(nextCycle)}) agar tidak perlu beli bahannya lagi?`,
+            confirmButtonText: 'Ya, Pindah ke Minggu Depan',
+            cancelButtonText: 'Batal',
+            onConfirm: () => {
+              // Gather any actual protein weights saved for this slot
+              const carriedWeights = {};
+              const prefix = `${dateStr}__${slotId}__`;
+              Object.keys(actualProteinWeights.value || {}).forEach(k => {
+                if (k.startsWith(prefix) && Number(actualProteinWeights.value[k]?.grams) > 0) {
+                  carriedWeights[k.slice(prefix.length)] = Number(actualProteinWeights.value[k].grams);
+                }
+              });
+
+              // Clear this slot from mealPlans
+              const dayPlan = mealPlans.value[dateStr];
+              if (dayPlan) {
+                dayPlan[slotId] = null;
+                if (!dayPlan.bekal && !dayPlan.malam) {
+                  delete mealPlans.value[dateStr];
+                  if (!deletedMealDates.value.includes(dateStr)) {
+                    deletedMealDates.value.push(dateStr);
+                    localStorage.setItem('seleraku_deleted_meals', JSON.stringify(deletedMealDates.value));
+                  }
+                }
+              }
+
+              // Add rollover stock card to next week
+              weeklyMenuPool.value.push({
+                id: 'wm_roll_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                cycleKey: nextCycle,
+                label,
+                type: slotObj.type || 'satuan',
+                packageId: slotObj.packageId || null,
+                items: normalizeFormItems(slotObj.items),
+                assignedDate: null,
+                assignedSlot: null,
+                status: 'planned',
+                isRollover: true,
+                rolloverFromCycle: curCycle,
+                rolloverChildId: null,
+                actualWeights: carriedWeights,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+
+              localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+              saveWeeklyMenuPool();
+              modalConfirm.value.show = false;
+              showToast(`"${label}" dibatalkan hari ini & masuk Stok Minggu Depan!`);
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmDeleteWeeklyEntry = (entry) => {
+          if (!entry) return;
+          modalConfirm.value = {
+            show: true,
+            title: 'Hapus Menu dari Rencana Pekan?',
+            message: `Hapus "${entry.label}" dari daftar rencana menu pekan ini?`,
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
+            onConfirm: () => {
+              detachEntryFromMealPlans(entry);
+              weeklyMenuPool.value = weeklyMenuPool.value.filter(e => e.id !== entry.id);
+              localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+              saveWeeklyMenuPool();
+              modalConfirm.value.show = false;
+              showToast(`"${entry.label}" dihapus dari rencana pekan.`);
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const goToShoppingForWeeklyCycle = () => {
+          if (selectedWeeklyCycle.value === 'next') {
+            selectedShoppingCycle.value = 'next';
+          } else {
+            selectedShoppingCycle.value = 'current';
+          }
+          setTab('belanja');
+        };
+
+        // Upgraded Protein Prep Entries: supports BOTH scheduled mealPlans AND unassigned weeklyMenuPool menus!
         const proteinPrepEntries = computed(() => {
           const entries = [];
           const dates = proteinPrepDateList.value;
-          dates.forEach(dateStr => {
-            mealSlots.forEach(slot => {
-              const slotObj = getMealForSlot(dateStr, slot.id);
-              if (!slotObj || !slotObj.items) return;
-              const uniqueFoodIds = new Set();
-              nutritionCategories.forEach(cat => {
-                const val = slotObj.items[cat.id];
-                if (Array.isArray(val)) val.forEach(id => { if (id) uniqueFoodIds.add(id); });
-                else if (typeof val === 'string' && val) uniqueFoodIds.add(val);
-              });
+          const seenPoolIds = new Set();
+          const focusPoolId = modalProteinPrep.value.focusPoolId || '';
 
-              uniqueFoodIds.forEach(fid => {
-                const food = getFoodItem(fid);
-                if (!food) return;
-                const servings = getFoodNutritionServings(food);
-                const weighableIngs = (food.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
-                weighableIngs.forEach(ing => {
-                  const key = makeProteinWeightKey(dateStr, slot.id, food.id, ing.name);
-                  const stdCalc = calculateIngredientNutrition(ing, null);
-                  const draftVal = modalProteinPrep.value.draftWeights[key];
-                  const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
-                  const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
+          // 1. Scheduled mealPlans entries
+          if (!focusPoolId) {
+            dates.forEach(dateStr => {
+              mealSlots.forEach(slot => {
+                const slotObj = getMealForSlot(dateStr, slot.id);
+                if (!slotObj || !slotObj.items) return;
+                if (slotObj.poolId) seenPoolIds.add(slotObj.poolId);
+                const uniqueFoodIds = new Set();
+                nutritionCategories.forEach(cat => {
+                  const val = slotObj.items[cat.id];
+                  if (Array.isArray(val)) val.forEach(id => { if (id) uniqueFoodIds.add(id); });
+                  else if (typeof val === 'string' && val) uniqueFoodIds.add(val);
+                });
 
-                  entries.push({
-                    key,
-                    dateStr,
-                    dateLabel: formatTanggalIndo(dateStr, true),
-                    slotId: slot.id,
-                    slotIcon: slot.icon,
-                    slotLabel: slot.shortLabel,
-                    foodId: food.id,
-                    foodName: food.name,
-                    servings,
-                    ingName: ing.name,
-                    recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
-                    stdGrams: stdCalc.grams,
-                    stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
-                    stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
-                    liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
-                    liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
-                    hasActual: hasDraft
+                uniqueFoodIds.forEach(fid => {
+                  const food = getFoodItem(fid);
+                  if (!food) return;
+                  const servings = getFoodNutritionServings(food);
+                  const weighableIngs = (food.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
+                  weighableIngs.forEach(ing => {
+                    const key = makeProteinWeightKey(dateStr, slot.id, food.id, ing.name);
+                    const stdCalc = calculateIngredientNutrition(ing, null);
+                    const draftVal = modalProteinPrep.value.draftWeights[key];
+                    const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
+                    const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
+
+                    entries.push({
+                      key,
+                      source: 'schedule',
+                      poolId: slotObj.poolId || null,
+                      pwSubKey: `${food.id}__${ing.name.trim().toLowerCase()}`,
+                      dateStr,
+                      dateLabel: formatTanggalIndo(dateStr, true),
+                      slotId: slot.id,
+                      slotIcon: slot.icon,
+                      slotLabel: slot.shortLabel,
+                      foodId: food.id,
+                      foodName: food.name,
+                      servings,
+                      ingName: ing.name,
+                      recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
+                      stdGrams: stdCalc.grams,
+                      stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
+                      stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
+                      liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
+                      liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
+                      hasActual: hasDraft
+                    });
                   });
                 });
               });
             });
+          }
+
+          // 2. Unassigned (or focused) weeklyMenuPool entries in scope!
+          const scope = modalProteinPrep.value.scope || 'cycle';
+          const cycleKey = activeWeeklyRange.value?.start;
+          const shopCycleKey = activeShoppingRange.value?.start;
+          (weeklyMenuPool.value || []).forEach(poolEntry => {
+            if (!poolEntry || poolEntry.status === 'cancelled') return;
+            if (focusPoolId) {
+              if (poolEntry.id !== focusPoolId) return;
+            } else {
+              if (seenPoolIds.has(poolEntry.id)) return;
+              if (scope === 'day') return;
+              if (scope === 'cycle' && poolEntry.cycleKey !== shopCycleKey && poolEntry.cycleKey !== cycleKey) return;
+            }
+            const foods = getWeeklyEntryUniqueFoods(poolEntry);
+            foods.forEach(food => {
+              const servings = getFoodNutritionServings(food);
+              const weighableIngs = (food.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
+              weighableIngs.forEach(ing => {
+                const pwSubKey = `${food.id}__${ing.name.trim().toLowerCase()}`;
+                const key = (poolEntry.assignedDate && poolEntry.assignedSlot)
+                  ? makeProteinWeightKey(poolEntry.assignedDate, poolEntry.assignedSlot, food.id, ing.name)
+                  : `pool__${poolEntry.id}__${pwSubKey}`;
+                const stdCalc = calculateIngredientNutrition(ing, null);
+                const draftVal = modalProteinPrep.value.draftWeights[key];
+                const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
+                const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
+
+                entries.push({
+                  key,
+                  source: (poolEntry.assignedDate && poolEntry.assignedSlot) ? 'schedule' : 'pool',
+                  poolId: poolEntry.id,
+                  pwSubKey,
+                  dateStr: poolEntry.assignedDate || null,
+                  dateLabel: poolEntry.assignedDate ? formatTanggalIndo(poolEntry.assignedDate, true) : `Pekan ${formatCycleRangeLabel(poolEntry.cycleKey)}`,
+                  slotId: poolEntry.assignedSlot || null,
+                  slotIcon: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? '🎒' : '🌙') : '📌',
+                  slotLabel: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam') : 'Belum Tentukan Hari',
+                  foodId: food.id,
+                  foodName: food.name,
+                  servings,
+                  ingName: ing.name,
+                  recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
+                  stdGrams: stdCalc.grams,
+                  stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
+                  stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
+                  liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
+                  liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
+                  hasActual: hasDraft
+                });
+              });
+            });
           });
+
           return entries;
         });
 
-        const openProteinPrepModal = (scope = 'cycle', focusDate = '') => {
+        const openProteinPrepModal = (scope = 'cycle', focusDate = '', focusPoolId = '') => {
           const initialDraft = {};
           Object.keys(actualProteinWeights.value || {}).forEach(k => {
             const g = actualProteinWeights.value[k]?.grams;
@@ -5926,10 +7075,23 @@
               initialDraft[k] = Number(g);
             }
           });
+          (weeklyMenuPool.value || []).forEach(poolEntry => {
+            if (!poolEntry || !poolEntry.actualWeights) return;
+            Object.keys(poolEntry.actualWeights).forEach(pwSubKey => {
+              const g = Number(poolEntry.actualWeights[pwSubKey]);
+              if (g > 0) {
+                initialDraft[`pool__${poolEntry.id}__${pwSubKey}`] = g;
+                if (poolEntry.assignedDate && poolEntry.assignedSlot) {
+                  initialDraft[`${poolEntry.assignedDate}__${poolEntry.assignedSlot}__${pwSubKey}`] = g;
+                }
+              }
+            });
+          });
           modalProteinPrep.value = {
             show: true,
             scope: scope || 'cycle',
             focusDate: focusDate || currentDate.value,
+            focusPoolId: focusPoolId || '',
             draftWeights: initialDraft
           };
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
@@ -5945,21 +7107,44 @@
           const nextMap = { ...(actualProteinWeights.value || {}) };
           const entries = proteinPrepEntries.value;
           let updatedCount = 0;
+          let poolTouched = false;
+
           entries.forEach(e => {
             const raw = modalProteinPrep.value.draftWeights[e.key];
             const num = parseFloat(raw);
-            if (!isNaN(num) && num > 0) {
-              nextMap[e.key] = {
-                grams: Math.round(num * 10) / 10,
-                updatedAt: new Date().toISOString()
-              };
-              updatedCount++;
-            } else {
-              delete nextMap[e.key];
+            const validNum = (!isNaN(num) && num > 0) ? Math.round(num * 10) / 10 : null;
+
+            if (e.source === 'schedule') {
+              if (validNum !== null) {
+                nextMap[e.key] = { grams: validNum, updatedAt: new Date().toISOString() };
+                updatedCount++;
+              } else {
+                delete nextMap[e.key];
+              }
+            }
+
+            if (e.poolId) {
+              const poolEntry = (weeklyMenuPool.value || []).find(p => p.id === e.poolId);
+              if (poolEntry) {
+                if (!poolEntry.actualWeights) poolEntry.actualWeights = {};
+                if (validNum !== null) {
+                  poolEntry.actualWeights[e.pwSubKey] = validNum;
+                  if (e.source === 'pool') updatedCount++;
+                } else {
+                  delete poolEntry.actualWeights[e.pwSubKey];
+                }
+                poolEntry.updatedAt = new Date().toISOString();
+                poolTouched = true;
+              }
             }
           });
+
           actualProteinWeights.value = nextMap;
-          saveActualProteinWeights();
+          localStorage.setItem('seleraku_actual_protein_weights', JSON.stringify(actualProteinWeights.value));
+          if (poolTouched) {
+            localStorage.setItem('seleraku_weekly_menu_pool', JSON.stringify(weeklyMenuPool.value));
+          }
+          triggerSyncServer();
           modalProteinPrep.value.show = false;
           showToast(updatedCount > 0
             ? `Berat aktual ${updatedCount} bahan protein disimpan & gizi otomatis dihitung ulang!`
@@ -6418,6 +7603,7 @@
             const dayMeals = getDayMeals(dateStr);
             activeMealSlot.value = dayMeals.bekal || !dayMeals.malam ? 'bekal' : 'malam';
           }
+          isiViewMode.value = 'harian';
           setTab('isi');
         };
 
@@ -7586,8 +8772,15 @@
           };
         };
 
+        const ongoingFridayRange = computed(() => getFridayCycleRange(-1));
         const fridayRange = computed(() => getFridayCycleRange(0));
         const nextFridayRange = computed(() => getFridayCycleRange(1));
+
+        const activeWeeklyRange = computed(() => {
+          if (selectedWeeklyCycle.value === 'ongoing') return ongoingFridayRange.value;
+          if (selectedWeeklyCycle.value === 'next') return nextFridayRange.value;
+          return fridayRange.value;
+        });
 
         const activeShoppingRange = computed(() => {
           return selectedShoppingCycle.value === 'next' ? nextFridayRange.value : fridayRange.value;
@@ -7597,7 +8790,8 @@
           return selectedStockCycle.value === 'next' ? nextFridayRange.value : fridayRange.value;
         });
 
-        // Collect all unique scheduled dishes and session labels across a 7-day cycle
+        // Collect all unique scheduled dishes AND unassigned weeklyMenuPool dishes across a 7-day cycle
+        // Automatically SKIPS rollover menus (isRollover === true) whose ingredients were already bought last week!
         const getCycleFoodUsageMap = (range) => {
           const [sY, sM, sD] = range.start.split('-').map(Number);
           const [eY, eM, eD] = range.end.split('-').map(Number);
@@ -7605,6 +8799,7 @@
           const endDate = new Date(eY, eM - 1, eD);
           const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
           const usageMap = {};
+          const countedPoolIds = new Set();
 
           for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
             const ds = formatDateObj(d);
@@ -7614,6 +8809,9 @@
             mealSlots.forEach(slot => {
               const meal = dayMeals[slot.id];
               if (!meal || !meal.items) return;
+              if (meal.poolId) countedPoolIds.add(meal.poolId);
+              // Rollover menu from last week's cancel -> already bought! Skip re-buying!
+              if (meal.isRollover) return;
 
               const sessionFoodIds = [];
               Object.values(meal.items).forEach(val => {
@@ -7634,8 +8832,38 @@
               });
             });
           }
+
+          // Also include UNASSIGNED menus from weeklyMenuPool for this cycleKey (so Friday Shopping List works before day assignment!)
+          (weeklyMenuPool.value || []).forEach((entry, idx) => {
+            if (!entry || entry.cycleKey !== range.start) return;
+            if (entry.status === 'cancelled') return;
+            if (entry.isRollover) return; // Already bought last week -> skip re-buying!
+            if (countedPoolIds.has(entry.id)) return; // Already counted via mealPlans!
+
+            const sessionFoodIds = [];
+            Object.values(entry.items || {}).forEach(val => {
+              if (Array.isArray(val)) val.forEach(id => { if (id) sessionFoodIds.push(id); });
+              else if (val) sessionFoodIds.push(val);
+            });
+
+            [...new Set(sessionFoodIds)].forEach(foodId => {
+              const food = getFoodItem(foodId);
+              if (!food) return;
+              if (!usageMap[foodId]) {
+                usageMap[foodId] = { food, sessionLabels: [] };
+              }
+              usageMap[foodId].sessionLabels.push(`Rencana Pekan (${entry.label || ('Menu #' + (idx + 1))})`);
+            });
+          });
+
           return usageMap;
         };
+
+        const activeShoppingRolloverCount = computed(() => {
+          const cycleKey = activeShoppingRange.value?.start;
+          if (!cycleKey) return 0;
+          return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === cycleKey && e.isRollover && e.status !== 'cancelled').length;
+        });
 
         const currentCycleUsageMap = computed(() => getCycleFoodUsageMap(fridayRange.value));
         const nextCycleUsageMap = computed(() => getCycleFoodUsageMap(nextFridayRange.value));
@@ -8445,7 +9673,43 @@
           openProteinPrepModal,
           clearProteinPrepDraftEntry,
           saveProteinPrepModal,
-          countActualWeightsForDate
+          countActualWeightsForDate,
+          isiViewMode,
+          selectedWeeklyCycle,
+          weeklyMenuTarget,
+          weeklyMenuPool,
+          ongoingFridayRange,
+          activeWeeklyRange,
+          activeWeeklyPoolEntries,
+          activeWeeklyCancelledEntries,
+          allRolloverStockEntries,
+          activeShoppingRolloverCount,
+          modalAddWeeklyMenu,
+          modalAssignWeeklyDay,
+          activeAssignWeeklyEntry,
+          activeAssignCycleDates,
+          weeklyModalSelectedCount,
+          filteredWeeklyModalDishes,
+          setWeeklyMenuTarget,
+          formatCycleRangeLabel,
+          getNextCycleKey,
+          getWeeklyEntryUniqueFoods,
+          weeklyEntryHasWeighableProtein,
+          weeklyEntryHasActualWeight,
+          calculateWeeklyEntryNutrition,
+          openAddWeeklyMenuModal,
+          addPackageToWeeklyPool,
+          toggleDishInWeeklyModal,
+          isDishInWeeklyModal,
+          addSatuanToWeeklyPool,
+          openAssignWeeklyDayModal,
+          confirmAssignWeeklyDay,
+          unassignWeeklyEntry,
+          confirmCancelWeeklyMenu,
+          undoCancelWeeklyMenu,
+          confirmCancelScheduledSlot,
+          confirmDeleteWeeklyEntry,
+          goToShoppingForWeeklyCycle
         };
       }
     }).mount('#app');
