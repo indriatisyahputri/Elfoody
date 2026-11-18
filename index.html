@@ -1371,7 +1371,7 @@
 
                       <!-- Mini preview of package items -->
                       <div class="mt-3 pt-2.5 border-t border-cream-100 space-y-1 text-xs">
-                        <div v-for="cat in nutritionCategories" :key="cat.id" class="flex items-center gap-1.5 text-espresso-800">
+                        <div v-for="cat in packageNutritionCategories" :key="cat.id" class="flex items-center gap-1.5 text-espresso-800">
                           <span class="text-xs">{{ cat.icon }}</span>
                           <span class="truncate text-[11px]">
                             {{ getMealCategoryFoods(pkg.items, cat.id).length > 0 ? getMealCategoryFoods(pkg.items, cat.id).map(f => f.name).join(', ') : '-' }}
@@ -2156,7 +2156,7 @@
               Koleksi Paket Menu Siap Saji
             </h2>
             <p class="text-xs text-taupe-500 mt-1 max-w-xl">
-              Susun kombinasi menu seimbang (Karbo, Protein, Sayur, Buah, Tambahan, Dessert) sekali jalan. Di <strong>Isi Menu</strong>, Anda cukup memilih paket ini dengan 1 klik.
+              Susun kombinasi masakan utama (Karbo, Protein, Sayur, Tambahan + Alat/Sauce) sekali jalan. Buah &amp; Dessert ditambahkan nanti setelah belanja sesuai stok supermarket.
             </p>
           </div>
 
@@ -2287,9 +2287,9 @@
                 </div>
               </div>
 
-              <!-- 6 Pillars Breakdown -->
+              <!-- Core Meal Breakdown (without Buah & Dessert) -->
               <div class="space-y-2.5 pt-3 border-t border-cream-100">
-                <div v-for="cat in nutritionCategories" :key="cat.id"
+                <div v-for="cat in packageNutritionCategories" :key="cat.id"
                      class="flex items-center justify-between text-xs py-1.5 px-3 rounded-xl bg-cream-50/70 border border-cream-100">
                   <div class="flex items-center gap-2">
                     <span>{{ cat.icon }}</span>
@@ -2321,7 +2321,7 @@
 
             <!-- Apply Package Button -->
             <div class="mt-6 pt-4 border-t border-cream-100 flex items-center justify-between">
-              <span class="text-[11px] text-taupe-400">6 Kategori Gizi</span>
+              <span class="text-[11px] text-taupe-400">4 Kategori Utama</span>
               <button @click="applyPackageDirectly(pkg)" 
                       class="px-4 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card shadow-xs transition">
                 Gunakan di Isi Menu &rarr;
@@ -3887,14 +3887,14 @@
             <div class="flex items-center justify-between">
               <div>
                 <span class="font-bold text-espresso-800 text-xs">Pilih Komponen Hidangan Paket</span>
-                <p class="text-[10px] text-taupe-500">Bisa memilih lebih dari 1 masakan per kategori gizi</p>
+                <p class="text-[10px] text-taupe-500">Bisa &gt; 1 masakan per kategori • Buah &amp; Dessert diisi nanti setelah belanja</p>
               </div>
               <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-cream-100 text-espresso-800 border border-cream-200">
                 Total {{ getTotalPackageDishesCount() }} hidangan
               </span>
             </div>
             
-            <div v-for="cat in nutritionCategories" :key="cat.id" 
+            <div v-for="cat in packageNutritionCategories" :key="cat.id" 
                  class="p-3 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-2">
               
               <!-- Category Header -->
@@ -5098,6 +5098,11 @@
           { id: 'dessert', label: 'Dessert', icon: '🍮' },
         ];
 
+        // 4 Core Nutrition Categories for Paket Menu (Buah & Dessert diisi setelah belanja)
+        const packageNutritionCategories = nutritionCategories.filter(
+          c => c.id !== 'serat_buah' && c.id !== 'dessert'
+        );
+
         // Grocery Department Groups
         const groceryGroups = [
           { name: 'Daging & Unggas', icon: '🥩' },
@@ -5747,7 +5752,8 @@
 
         const calculatePackageNutrition = (pkg) => {
           if (!pkg || !pkg.items) return emptyNutritionObj();
-          const base = calculateItemsNutrition(pkg.items);
+          const coreItems = { ...pkg.items, serat_buah: [], dessert: [] };
+          const base = calculateItemsNutrition(coreItems);
           const ex = calculateExtrasNutrition(pkg.extras);
           return roundNutritionObj({
             kalori: base.kalori + ex.kalori,
@@ -6930,7 +6936,7 @@
             label: pkg.name,
             type: 'paket',
             packageId: pkg.id,
-            items: normalizeFormItems(pkg.items),
+            items: { ...normalizeFormItems(pkg.items), serat_buah: [], dessert: [] },
             extras: Array.isArray(pkg.extras) ? JSON.parse(JSON.stringify(pkg.extras)) : [],
             assignedDate: null,
             assignedSlot: null,
@@ -7970,7 +7976,7 @@
 
         const applyPackageToSelected = (pkg) => {
           formSelectedPackageId.value = pkg.id;
-          formItems.value = normalizeFormItems(pkg.items);
+          formItems.value = { ...normalizeFormItems(pkg.items), serat_buah: [], dessert: [] };
           isDraftDirty.value = true;
         };
 
@@ -7982,7 +7988,7 @@
             const resolved = {
               type: 'paket',
               packageId: selectedPkg.id,
-              items: normalizeFormItems(selectedPkg.items),
+              items: { ...normalizeFormItems(selectedPkg.items), serat_buah: [], dessert: [] },
               updatedAt: new Date().toISOString()
             };
             return isMealSlotFilled(resolved) ? resolved : null;
@@ -8966,7 +8972,7 @@
         const getTotalPackageDishesCount = () => {
           if (!modalPackage.value || !modalPackage.value.form || !modalPackage.value.form.items) return 0;
           let count = 0;
-          nutritionCategories.forEach(cat => {
+          packageNutritionCategories.forEach(cat => {
             count += getPackageCategoryFoodIds(cat.id).length;
           });
           return count;
@@ -8996,6 +9002,8 @@
         const editPackageModal = (pkg) => {
           const formCopy = JSON.parse(JSON.stringify(pkg));
           formCopy.items = normalizeFormItems(formCopy.items);
+          formCopy.items.serat_buah = [];
+          formCopy.items.dessert = [];
           formCopy.extras = Array.isArray(formCopy.extras) ? formCopy.extras.map(ex => ({
             ...ex,
             group: normalizeIngredientGroup(ex.group, ex.name)
@@ -9015,6 +9023,8 @@
           }
 
           modalPackage.value.form.items = normalizeFormItems(modalPackage.value.form.items);
+          modalPackage.value.form.items.serat_buah = [];
+          modalPackage.value.form.items.dessert = [];
           modalPackage.value.form.extras = (modalPackage.value.form.extras || [])
             .filter(ex => ex && (ex.name || '').trim() !== '')
             .map(ex => ({
@@ -10272,7 +10282,8 @@
           packageExtraOptions,
           addExtraToPackage,
           removeExtraFromPackage,
-          sortedPackages
+          sortedPackages,
+          packageNutritionCategories
         };
       }
     }).mount('#app');
