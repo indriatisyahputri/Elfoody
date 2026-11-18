@@ -541,6 +541,13 @@
                             {{ f.portion || 'Porsi Keluarga' }}
                             <span v-if="f.notes"> • {{ f.notes }}</span>
                           </div>
+                          <!-- Cooking Method Mini Pills -->
+                          <div v-if="getFoodCookingMethods(f).length > 0" class="flex flex-wrap items-center gap-1 pt-0.5">
+                            <span v-for="mId in getFoodCookingMethods(f)" :key="mId"
+                                  class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cream-100 text-espresso-700 border border-cream-200">
+                              {{ getCookingMethodMeta(mId)?.icon }} {{ getCookingMethodMeta(mId)?.label }}
+                            </span>
+                          </div>
                           <!-- Mini Nutrition Strip per Dish -->
                           <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
                             <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal</span>
@@ -1867,19 +1874,37 @@
                 </div>
               </div>
 
+              <!-- Cooking Methods Badges on Dish Card -->
+              <div class="mb-2 flex flex-wrap items-center gap-1">
+                <template v-if="getFoodCookingMethods(item).length > 0">
+                  <span v-for="mId in getFoodCookingMethods(item)" :key="mId"
+                        class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border"
+                        :class="(getCookingMethodMeta(mId)?.extraKalori || 0) > 0 ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'">
+                    <span>{{ getCookingMethodMeta(mId)?.icon }}</span>
+                    <span>{{ getCookingMethodMeta(mId)?.label }}</span>
+                    <span v-if="(getCookingMethodMeta(mId)?.extraKalori || 0) > 0" class="text-[9px] opacity-80">+{{ getCookingMethodMeta(mId).extraKalori }}</span>
+                  </span>
+                </template>
+                <button v-else type="button" @click.stop="editFoodModal(item)"
+                        class="inline-flex items-center gap-1 text-[10px] font-semibold text-taupe-500 hover:text-caramel-700 bg-cream-50 hover:bg-cream-100 px-2 py-0.5 rounded-lg border border-dashed border-cream-300 transition cursor-pointer">
+                  <span>🍳</span>
+                  <span>+ Metode masak</span>
+                </button>
+              </div>
+
               <!-- Auto-Calculated Nutrition Panel per Portion -->
               <div class="mb-2.5 p-2.5 rounded-xl bg-gradient-to-br from-cream-50/90 to-white border border-cream-200/90 space-y-1.5">
                 <div class="flex items-center justify-between gap-1.5">
                   <div class="flex items-center gap-1 text-[11px] font-extrabold text-espresso-900">
                     <span>🔥</span>
-                    <span v-if="calculateFoodNutrition(item).matchedCount > 0">{{ calculateFoodNutrition(item).perPortion.kalori }} kkal</span>
+                    <span v-if="calculateFoodNutrition(item).matchedCount > 0 || calculateFoodNutrition(item).methodExtraKalori > 0">{{ calculateFoodNutrition(item).perPortion.kalori }} kkal</span>
                     <span v-else class="text-taupe-400 font-semibold">Belum terhitung</span>
                   </div>
                   <span class="text-[9.5px] font-bold px-1.5 py-0.5 rounded-md bg-white text-taupe-600 border border-cream-200">
                     Per porsi (÷{{ calculateFoodNutrition(item).servings }})
                   </span>
                 </div>
-                <div v-if="calculateFoodNutrition(item).matchedCount > 0" class="grid grid-cols-3 gap-1 text-[10px]">
+                <div v-if="calculateFoodNutrition(item).matchedCount > 0 || calculateFoodNutrition(item).methodExtraKalori > 0" class="grid grid-cols-3 gap-1 text-[10px]">
                   <div class="px-1.5 py-1 rounded-lg bg-white border border-cream-200/80 flex items-center justify-between">
                     <span class="text-taupe-500">Karbo</span>
                     <span class="font-bold text-espresso-900">{{ calculateFoodNutrition(item).perPortion.karbo }}g</span>
@@ -3413,6 +3438,47 @@
             </div>
           </div>
 
+          <!-- Cooking Methods Multi-Select Template (Untuk Hitung Tambahan Kalori & Lemak Minyak) -->
+          <div class="space-y-2 p-3.5 rounded-2xl bg-cream-50/90 border border-cream-200">
+            <div class="flex items-center justify-between gap-2">
+              <label class="block font-bold text-espresso-800 flex items-center gap-1.5">
+                <span>🍳</span>
+                <span>Metode Memasak (Bisa Pilih &gt; 1)</span>
+              </label>
+              <span v-if="modalFoodNutritionPreview.methodExtraKalori > 0"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                +{{ modalFoodNutritionPreview.methodExtraKalori }} kkal / porsi
+              </span>
+              <span v-else class="text-[10px] font-semibold text-taupe-500">
+                {{ (modalFood.form.cookingMethods || []).length }} dipilih
+              </span>
+            </div>
+            <p class="text-[10.5px] text-taupe-500 leading-relaxed">
+              Pilih cara memasak untuk otomatis menambah estimasi kalori &amp; lemak serapan minyak (misal: <em>Rebus + Deep Fry</em> untuk ayam ungkep goreng):
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+              <button v-for="m in COOKING_METHODS" :key="m.id"
+                      type="button"
+                      @click="toggleModalFoodCookingMethod(m.id)"
+                      class="p-2 rounded-xl border text-left transition active:scale-95 select-none cursor-pointer min-h-[46px] flex flex-col justify-between"
+                      :class="(modalFood.form.cookingMethods || []).includes(m.id)
+                        ? 'bg-espresso-900 text-white border-espresso-900 shadow-xs'
+                        : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                <div class="flex items-center justify-between gap-1">
+                  <span class="text-[11px] font-bold truncate flex items-center gap-1">
+                    <span>{{ m.icon }}</span>
+                    <span class="truncate">{{ m.label }}</span>
+                  </span>
+                  <span v-if="(modalFood.form.cookingMethods || []).includes(m.id)" class="text-[10px] font-extrabold text-amber-300">✓</span>
+                </div>
+                <div class="text-[9.5px] mt-0.5 font-semibold"
+                     :class="(modalFood.form.cookingMethods || []).includes(m.id) ? 'text-cream-200' : (m.extraKalori > 0 ? 'text-caramel-700' : 'text-emerald-700')">
+                  {{ m.extraKalori > 0 ? `+${m.extraKalori} kkal • +${m.extraLemak}g L` : '+0 kkal (Bebas minyak)' }}
+                </div>
+              </button>
+            </div>
+          </div>
+
           <!-- Portion / Notes -->
           <div>
             <label class="block font-bold text-espresso-800 mb-1">Estimasi Porsi / Catatan</label>
@@ -3645,6 +3711,9 @@
                 </div>
                 <div class="text-[10px] text-taupe-500">
                   {{ modalFoodNutritionPreview.matchedCount }}/{{ modalFoodNutritionPreview.totalIngredients }} bahan terdeteksi otomatis (TKPI)
+                  <span v-if="modalFoodNutritionPreview.methodExtraKalori > 0" class="text-amber-700 font-bold">
+                    • Metode masak: +{{ modalFoodNutritionPreview.methodExtraKalori }} kkal (+{{ modalFoodNutritionPreview.methodExtraLemak }}g lemak)
+                  </span>
                 </div>
               </div>
               <div class="text-right">
@@ -4946,6 +5015,44 @@
 
 
         // --- NUTRITION METRICS, TARGETS & INDONESIAN TKPI DATABASE (PER 100G) ---
+        // Standardized Cooking Methods & Oil-Absorption Extra Calories/Fat (per portion)
+        const COOKING_METHODS = [
+          { id: 'rebus', label: 'Rebus', icon: '🍲', extraKalori: 0, extraLemak: 0, desc: 'Tanpa tambahan minyak' },
+          { id: 'kukus', label: 'Kukus', icon: '♨️', extraKalori: 0, extraLemak: 0, desc: 'Uap panas, tanpa minyak' },
+          { id: 'ungkep', label: 'Ungkep / Kuah', icon: '🥣', extraKalori: 0, extraLemak: 0, desc: 'Kalori kuah dari daftar bahan' },
+          { id: 'tanpa_masak', label: 'Segar / Mentah', icon: '🥗', extraKalori: 0, extraLemak: 0, desc: 'Salad, lalapan, buah segar' },
+          { id: 'air_fry', label: 'Air Fryer', icon: '🌬️', extraKalori: 20, extraLemak: 2.2, desc: 'Oles tipis ~½ sdt minyak' },
+          { id: 'panggang', label: 'Panggang / Grill', icon: '🔥', extraKalori: 35, extraLemak: 3.9, desc: 'Olesan tipis minyak/mentega' },
+          { id: 'tumis', label: 'Tumis', icon: '🥘', extraKalori: 55, extraLemak: 6.1, desc: 'Serapan minyak tumis ~½ sdm' },
+          { id: 'pan_fry', label: 'Pan Fry', icon: '🍳', extraKalori: 80, extraLemak: 8.9, desc: 'Goreng teflon sedikit minyak' },
+          { id: 'deep_fry', label: 'Deep Fry', icon: '🍟', extraKalori: 120, extraLemak: 13.3, desc: 'Goreng rendam ~1 sdm serapan' }
+        ];
+
+        const getCookingMethodMeta = (methodId) => {
+          return COOKING_METHODS.find(m => m.id === methodId) || null;
+        };
+
+        const getFoodCookingMethods = (food) => {
+          if (!food || !Array.isArray(food.cookingMethods)) return [];
+          return food.cookingMethods.filter(id => COOKING_METHODS.some(m => m.id === id));
+        };
+
+        const getCookingMethodsExtraNutrition = (methodIds) => {
+          if (!Array.isArray(methodIds) || methodIds.length === 0) {
+            return { kalori: 0, lemak: 0 };
+          }
+          let kalori = 0;
+          let lemak = 0;
+          [...new Set(methodIds)].forEach(id => {
+            const meta = getCookingMethodMeta(id);
+            if (meta) {
+              kalori += meta.extraKalori || 0;
+              lemak += meta.extraLemak || 0;
+            }
+          });
+          return { kalori: Math.round(kalori), lemak: Math.round(lemak * 10) / 10 };
+        };
+
         const NUTRITION_METRICS = [
           { key: 'kalori', label: 'Kalori', short: 'Kal', unit: 'kkal', icon: '🔥', isMaxLimit: false, barColor: 'bg-caramel-500' },
           { key: 'karbo', label: 'Karbohidrat', short: 'Karbo', unit: 'g', icon: '🍚', isMaxLimit: false, barColor: 'bg-amber-500' },
@@ -5413,24 +5520,32 @@
           }
 
           const servings = Math.max(1, getFoodNutritionServings(food));
+          const methodExtra = getCookingMethodsExtraNutrition(food.cookingMethods);
           const perPortionRaw = {
-            kalori: total.kalori / servings,
+            kalori: (total.kalori / servings) + methodExtra.kalori,
             karbo: total.karbo / servings,
             protein: total.protein / servings,
-            lemak: total.lemak / servings,
+            lemak: (total.lemak / servings) + methodExtra.lemak,
             serat: total.serat / servings,
             gula: total.gula / servings,
             natrium: total.natrium / servings
           };
+          const totalWithMethods = {
+            ...total,
+            kalori: total.kalori + (methodExtra.kalori * servings),
+            lemak: total.lemak + (methodExtra.lemak * servings)
+          };
 
           return {
             perPortion: roundNutritionObj(perPortionRaw),
-            totalRecipe: roundNutritionObj(total),
+            totalRecipe: roundNutritionObj(totalWithMethods),
             servings,
             matchedCount,
             totalIngredients: ings.length + extraIngredients,
             hasActualWeight,
-            hasWeighableProtein
+            hasWeighableProtein,
+            methodExtraKalori: methodExtra.kalori,
+            methodExtraLemak: methodExtra.lemak
           };
         };
 
@@ -6541,10 +6656,11 @@
                 total.natrium += res.natrium;
               }
             });
-            sum.kalori += total.kalori / servings;
+            const mExtra = getCookingMethodsExtraNutrition(food.cookingMethods);
+            sum.kalori += (total.kalori / servings) + mExtra.kalori;
             sum.karbo += total.karbo / servings;
             sum.protein += total.protein / servings;
-            sum.lemak += total.lemak / servings;
+            sum.lemak += (total.lemak / servings) + mExtra.lemak;
             sum.serat += total.serat / servings;
             sum.gula += total.gula / servings;
             sum.natrium += total.natrium / servings;
@@ -7819,6 +7935,19 @@
           modalFood.value.form.category = modalFood.value.form.categories[0] || '';
         };
 
+        const toggleModalFoodCookingMethod = (methodId) => {
+          if (!modalFood.value || !modalFood.value.form) return;
+          if (!Array.isArray(modalFood.value.form.cookingMethods)) {
+            modalFood.value.form.cookingMethods = [];
+          }
+          const idx = modalFood.value.form.cookingMethods.indexOf(methodId);
+          if (idx === -1) {
+            modalFood.value.form.cookingMethods.push(methodId);
+          } else {
+            modalFood.value.form.cookingMethods.splice(idx, 1);
+          }
+        };
+
         const setModalFoodBatchMode = (mode) => {
           if (!modalFood.value || !modalFood.value.form) return;
           const allowed = ['per_saji', 'batch', 'weekly_once'];
@@ -7843,6 +7972,7 @@
               name: '',
               category: safeCat,
               categories: [safeCat],
+              cookingMethods: [],
               portion: '4 Porsi Keluarga',
               nutritionServings: 4,
               notes: '',
@@ -7876,6 +8006,7 @@
           formCopy.category = formCopy.categories[0];
           formCopy.recipeUrl = item.recipeUrl || item.link || '';
           formCopy.nutritionServings = getFoodNutritionServings(item);
+          formCopy.cookingMethods = getFoodCookingMethods(item);
           const batchCfg = getFoodBatchConfig(item);
           formCopy.batchMode = batchCfg.mode;
           formCopy.batchServings = batchCfg.mode === 'batch' ? batchCfg.servings : 4;
@@ -8313,6 +8444,7 @@
           modalFood.value.form.category = modalFood.value.form.categories[0];
           const parsedNutServ = parseFloat(modalFood.value.form.nutritionServings);
           modalFood.value.form.nutritionServings = (!isNaN(parsedNutServ) && parsedNutServ >= 1) ? Math.min(50, parsedNutServ) : 1;
+          modalFood.value.form.cookingMethods = getFoodCookingMethods(modalFood.value.form);
 
           // Clean empty ingredient rows and normalize group labels
           modalFood.value.form.ingredients = (modalFood.value.form.ingredients || [])
@@ -9709,7 +9841,11 @@
           undoCancelWeeklyMenu,
           confirmCancelScheduledSlot,
           confirmDeleteWeeklyEntry,
-          goToShoppingForWeeklyCycle
+          goToShoppingForWeeklyCycle,
+          COOKING_METHODS,
+          getCookingMethodMeta,
+          getFoodCookingMethods,
+          toggleModalFoodCookingMethod
         };
       }
     }).mount('#app');
