@@ -2300,6 +2300,23 @@
                   </span>
                 </div>
               </div>
+
+              <!-- Tambahan Alat & Sauce Badges on Package Card -->
+              <div v-if="pkg.extras && pkg.extras.length > 0" class="mt-3 pt-2.5 border-t border-cream-100 space-y-1.5">
+                <div class="text-[10px] font-bold uppercase tracking-wider text-sky-700 flex items-center gap-1">
+                  <span>🛠️</span>
+                  <span>Tambahan (Alat &amp; Sauce)</span>
+                </div>
+                <div class="flex flex-wrap gap-1.5">
+                  <span v-for="(ex, eIdx) in pkg.extras" :key="eIdx"
+                        class="inline-flex items-center gap-1 text-[10.5px] font-bold px-2 py-0.5 rounded-lg border"
+                        :class="ex.group === 'Alat' ? 'bg-sky-50 text-sky-800 border-sky-200' : 'bg-amber-50 text-amber-900 border-amber-200'">
+                    <span>{{ getGroupIcon(ex.group) }}</span>
+                    <span>{{ ex.name }}</span>
+                    <span class="opacity-75 font-semibold">({{ ex.qty }} {{ ex.unit }})</span>
+                  </span>
+                </div>
+              </div>
             </div>
 
             <!-- Apply Package Button -->
@@ -3929,6 +3946,68 @@
             </div>
           </div>
 
+          <!-- FIELD TAMBAHAN PAKET: ALAT & SAUCE (DARI MASTER BAHAN BAKU) -->
+          <div class="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-200/90 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <div class="text-xs font-bold text-espresso-900 flex items-center gap-1.5">
+                  <span>🛠️</span>
+                  <span>Tambahan (Alat &amp; Sauce)</span>
+                </div>
+                <p class="text-[10px] text-taupe-500">
+                  Pilih alat (misal: daun pisang, tusuk gigi) atau saus cocolan dari Master Bahan Baku — otomatis masuk Rincian Belanja!
+                </p>
+              </div>
+              <span v-if="(modalPackage.form.extras || []).length > 0"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200 flex-shrink-0">
+                {{ (modalPackage.form.extras || []).length }} item
+              </span>
+            </div>
+
+            <!-- Dropdown Picker from Master Bahan (Kategori Alat & Sauce) -->
+            <div v-if="packageExtraOptions.length > 0">
+              <select @change="addExtraToPackage($event.target.value); $event.target.value = ''"
+                      class="w-full px-3 py-2.5 rounded-xl text-xs font-semibold text-espresso-900 bg-white border border-cream-300 focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer shadow-2xs min-h-[42px]">
+                <option value="">+ Pilih Tambahan dari Master Bahan (Alat &amp; Sauce)...</option>
+                <option v-for="m in packageExtraOptions" :key="m.id" :value="m.id">
+                  {{ getGroupIcon(m.group) }} {{ m.name }} ({{ m.group }} • {{ m.unit }})
+                </option>
+              </select>
+            </div>
+            <div v-else class="p-2.5 rounded-xl bg-white border border-dashed border-sky-300 text-[10.5px] text-taupe-600 flex items-center justify-between gap-2">
+              <span>Belum ada bahan berkategori <strong>Alat</strong> atau <strong>Sauce</strong> di Master Bahan.</span>
+              <button type="button" @click="modalPackage.show = false; setTab('nutrisi'); nutrisiSubTab = 'ingredients'; openAddMasterIngredientModal()"
+                      class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-sky-600 text-white flex-shrink-0 cursor-pointer">
+                + Tambah
+              </button>
+            </div>
+
+            <!-- Selected Extras List (with editable qty & unit) -->
+            <div v-if="(modalPackage.form.extras || []).length > 0" class="space-y-2 pt-1">
+              <div v-for="(ex, eIdx) in modalPackage.form.extras" :key="eIdx"
+                   class="p-2.5 rounded-xl bg-white border border-cream-200 flex flex-wrap sm:flex-nowrap items-center gap-2 shadow-2xs">
+                <div class="flex items-center gap-1.5 min-w-0 flex-grow">
+                  <span class="text-sm flex-shrink-0">{{ getGroupIcon(ex.group) }}</span>
+                  <div class="min-w-0">
+                    <div class="text-xs font-bold text-espresso-900 truncate">{{ ex.name }}</div>
+                    <div class="text-[9.5px] text-taupe-500">{{ ex.group }}</div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <input type="text" v-model="ex.qty" placeholder="Jml"
+                         class="w-14 px-2 py-1.5 rounded-lg bg-cream-50 border border-cream-200 text-xs font-bold text-center text-espresso-900">
+                  <input type="text" list="standard-units" v-model="ex.unit" placeholder="Satuan"
+                         class="w-20 px-2 py-1.5 rounded-lg bg-cream-50 border border-cream-200 text-xs font-semibold text-center text-espresso-900">
+                  <button type="button" @click="removeExtraFromPackage(eIdx)"
+                          title="Hapus tambahan ini"
+                          class="w-7 h-7 rounded-lg hover:bg-red-50 text-taupe-400 hover:text-red-600 flex items-center justify-center transition cursor-pointer">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Live Package Nutrition Preview -->
           <div class="p-3.5 rounded-2xl bg-gradient-to-br from-cream-50 via-white to-sage-50/40 border border-cream-200 space-y-2">
             <div class="flex items-center justify-between">
@@ -5029,6 +5108,7 @@
           { name: 'Sauce', icon: '🍶' },
           { name: 'Tepung', icon: '🌾' },
           { name: 'Instan', icon: '🍜' },
+          { name: 'Alat', icon: '🛠️' },
           { name: 'Lainnya', icon: '🧺' },
           { name: 'Dessert', icon: '🍮' },
         ];
@@ -5052,6 +5132,11 @@
           'mie instan', 'mi instan', 'indomie', 'sedap', 'sedaap', 'sarimi', 'supermi',
           'samyang', 'bihun instan', 'bubur instan', 'spaghetti instan', 'pasta instan',
           'pop mie', 'cup noodle', 'makaroni instan', 'instan', 'instant'
+        ];
+        const ALAT_KEYWORDS = [
+          'daun pisang', 'tusuk gigi', 'tusuk sate', 'lidi', 'kertas nasi', 'kertas minyak',
+          'aluminium foil', 'baking paper', 'plastik wrap', 'cling wrap', 'plastik klip',
+          'tisu dapur', 'cup puding', 'wadah', 'mika', 'steples', 'karet gelang'
         ];
         const DESSERT_KEYWORDS = ['agar', 'jelly', 'puding', 'pudding', 'coklat', 'cokelat', 'es krim', 'dessert'];
 
@@ -5255,7 +5340,7 @@
           { keys: ['kacang polong', 'kapri'], kalori: 81, karbo: 14.5, protein: 5.4, lemak: 0.4, serat: 5.7, gula: 5.7, natrium: 5, unitGrams: { sdm: 15, porsi: 60 } },
 
           // --- BUAH-BUAHAN ---
-          { keys: ['daun pisang'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 0, unitGrams: { lembar: 0, helai: 0, ikat: 0 } },
+          { keys: ['daun pisang', 'tusuk gigi', 'tusuk sate', 'lidi', 'kertas nasi', 'kertas minyak', 'aluminium foil', 'baking paper', 'plastik wrap', 'cling wrap', 'plastik klip', 'tisu dapur', 'cup puding'], kalori: 0, karbo: 0, protein: 0, lemak: 0, serat: 0, gula: 0, natrium: 0, unitGrams: { lembar: 0, helai: 0, ikat: 0, pcs: 0, buah: 0, bungkus: 0, batang: 0 } },
           { keys: ['pisang', 'banana'], kalori: 89, karbo: 22.8, protein: 1.1, lemak: 0.3, serat: 2.6, gula: 12.2, natrium: 1, unitGrams: { buah: 110, pcs: 110, potong: 60 } },
           { keys: ['apel', 'apple'], kalori: 52, karbo: 13.8, protein: 0.3, lemak: 0.2, serat: 2.4, gula: 10.4, natrium: 1, unitGrams: { buah: 150, pcs: 150, potong: 50 } },
           { keys: ['semangka', 'watermelon'], kalori: 30, karbo: 7.6, protein: 0.6, lemak: 0.2, serat: 0.4, gula: 6.2, natrium: 1, unitGrams: { potong: 150, porsi: 150, buah: 1000 } },
@@ -5628,15 +5713,67 @@
           return roundNutritionObj(sum);
         };
 
+        const calculateExtrasNutrition = (extrasList) => {
+          const sum = emptyNutritionObj();
+          if (!Array.isArray(extrasList) || extrasList.length === 0) return roundNutritionObj(sum);
+          const defServ = Math.max(1, parseFloat(nutritionTargets.value?.defaultRecipeServings) || 2);
+          extrasList.forEach(ex => {
+            if (!ex || !ex.name) return;
+            // Alat items are non-edible (0 calories)
+            if (normalizeIngredientGroup(ex.group, ex.name) === 'Alat') return;
+            const res = calculateIngredientNutrition({ name: ex.name, qty: ex.qty, unit: ex.unit });
+            if (res.matched) {
+              sum.kalori += res.kalori / defServ;
+              sum.karbo += res.karbo / defServ;
+              sum.protein += res.protein / defServ;
+              sum.lemak += res.lemak / defServ;
+              sum.serat += res.serat / defServ;
+              sum.gula += res.gula / defServ;
+              sum.natrium += res.natrium / defServ;
+            }
+          });
+          return roundNutritionObj(sum);
+        };
+
+        const resolveSlotExtras = (slotObj) => {
+          if (!slotObj) return [];
+          if (Array.isArray(slotObj.extras) && slotObj.extras.length > 0) return slotObj.extras;
+          if (slotObj.type === 'paket' && slotObj.packageId) {
+            const pkg = (packages.value || []).find(p => p.id === slotObj.packageId);
+            if (pkg && Array.isArray(pkg.extras)) return pkg.extras;
+          }
+          return [];
+        };
+
         const calculatePackageNutrition = (pkg) => {
           if (!pkg || !pkg.items) return emptyNutritionObj();
-          return calculateItemsNutrition(pkg.items);
+          const base = calculateItemsNutrition(pkg.items);
+          const ex = calculateExtrasNutrition(pkg.extras);
+          return roundNutritionObj({
+            kalori: base.kalori + ex.kalori,
+            karbo: base.karbo + ex.karbo,
+            protein: base.protein + ex.protein,
+            lemak: base.lemak + ex.lemak,
+            serat: base.serat + ex.serat,
+            gula: base.gula + ex.gula,
+            natrium: base.natrium + ex.natrium
+          });
         };
 
         const calculateSlotNutrition = (slotObj, dateStr = null, slotId = null) => {
           if (!slotObj || !slotObj.items) return emptyNutritionObj();
           const ctx = (dateStr && slotId) ? { dateStr, slotId } : null;
-          return calculateItemsNutrition(slotObj.items, ctx);
+          const base = calculateItemsNutrition(slotObj.items, ctx);
+          const ex = calculateExtrasNutrition(resolveSlotExtras(slotObj));
+          return roundNutritionObj({
+            kalori: base.kalori + ex.kalori,
+            karbo: base.karbo + ex.karbo,
+            protein: base.protein + ex.protein,
+            lemak: base.lemak + ex.lemak,
+            serat: base.serat + ex.serat,
+            gula: base.gula + ex.gula,
+            natrium: base.natrium + ex.natrium
+          });
         };
 
         const calculateDayNutrition = (dateStr) => {
@@ -5809,6 +5946,7 @@
           if (low === 'sauce' || low === 'saus' || low === 'saos' || low === 'sauces') return 'Sauce';
           if (low === 'tepung' || low === 'tepung-tepungan' || low === 'flour') return 'Tepung';
           if (low === 'instan' || low === 'instant' || low === 'makanan instan' || low === 'mie instan') return 'Instan';
+          if (low === 'alat' || low === 'peralatan' || low === 'alat masak' || low === 'perlengkapan') return 'Alat';
           if (low === 'desert') return 'Dessert';
           if (low === 'buah-buahan' || low === 'buah buahan') return 'Buah Buahan';
           if (low === 'daging & unggas') return 'Daging & Unggas';
@@ -5816,6 +5954,10 @@
 
           // 3. Fallback deductions ONLY for unassigned or legacy merged groups
           if (itemLow.includes('racik')) return 'Bumbu';
+
+          if (ALAT_KEYWORDS.some(k => itemLow.includes(k))) {
+            return 'Alat';
+          }
 
           if (INSTAN_KEYWORDS.some(k => itemLow.includes(k))) {
             return 'Instan';
@@ -6495,8 +6637,50 @@
 
         const modalPackageNutritionPreview = computed(() => {
           if (!modalPackage.value || !modalPackage.value.form) return emptyNutritionObj();
-          return calculateItemsNutrition(modalPackage.value.form.items);
+          return calculatePackageNutrition(modalPackage.value.form);
         });
+
+        // Master Ingredients filtered to 'Alat' and 'Sauce' for Paket Menu "Tambahan" selector
+        const packageExtraOptions = computed(() => {
+          return (masterIngredients.value || [])
+            .filter(m => {
+              const g = normalizeIngredientGroup(m.group, m.name);
+              return g === 'Alat' || g === 'Sauce';
+            })
+            .sort((a, b) => {
+              const gA = normalizeIngredientGroup(a.group, a.name);
+              const gB = normalizeIngredientGroup(b.group, b.name);
+              if (gA !== gB) return gA === 'Alat' ? -1 : 1;
+              return (a.name || '').localeCompare(b.name || '', 'id');
+            });
+        });
+
+        const addExtraToPackage = (masterId) => {
+          if (!masterId || !modalPackage.value?.form) return;
+          const m = (masterIngredients.value || []).find(item => item.id === masterId);
+          if (!m) return;
+          if (!Array.isArray(modalPackage.value.form.extras)) {
+            modalPackage.value.form.extras = [];
+          }
+          const already = modalPackage.value.form.extras.some(ex => ex.masterId === m.id || (ex.name || '').toLowerCase() === (m.name || '').toLowerCase());
+          if (already) {
+            showToast(`"${m.name}" sudah ada di daftar tambahan paket ini.`, 'error');
+            return;
+          }
+          modalPackage.value.form.extras.push({
+            masterId: m.id,
+            name: m.name,
+            qty: '1',
+            unit: m.unit || 'pcs',
+            group: normalizeIngredientGroup(m.group, m.name)
+          });
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const removeExtraFromPackage = (idx) => {
+          if (!modalPackage.value?.form || !Array.isArray(modalPackage.value.form.extras)) return;
+          modalPackage.value.form.extras.splice(idx, 1);
+        };
 
         const modalMasterAutoNutritionPreview = computed(() => {
           const nm = modalMasterIngredient.value?.form?.name || '';
@@ -6716,6 +6900,14 @@
             sum.gula += total.gula / servings;
             sum.natrium += total.natrium / servings;
           });
+          const exNut = calculateExtrasNutrition(resolveSlotExtras(entry));
+          sum.kalori += exNut.kalori;
+          sum.karbo += exNut.karbo;
+          sum.protein += exNut.protein;
+          sum.lemak += exNut.lemak;
+          sum.serat += exNut.serat;
+          sum.gula += exNut.gula;
+          sum.natrium += exNut.natrium;
           return roundNutritionObj(sum);
         };
 
@@ -6739,6 +6931,7 @@
             type: 'paket',
             packageId: pkg.id,
             items: normalizeFormItems(pkg.items),
+            extras: Array.isArray(pkg.extras) ? JSON.parse(JSON.stringify(pkg.extras)) : [],
             assignedDate: null,
             assignedSlot: null,
             status: 'planned',
@@ -6906,6 +7099,7 @@
             type: entry.type || 'satuan',
             packageId: entry.packageId || null,
             items: normalizeFormItems(entry.items),
+            extras: Array.isArray(entry.extras) ? JSON.parse(JSON.stringify(entry.extras)) : resolveSlotExtras(entry),
             poolId: entry.id,
             isRollover: !!entry.isRollover,
             updatedAt: new Date().toISOString()
@@ -8786,7 +8980,8 @@
               id: 'pkg_' + Date.now(),
               name: '',
               description: '',
-              items: createEmptyFormItems()
+              items: createEmptyFormItems(),
+              extras: []
             }
           };
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
@@ -8795,6 +8990,10 @@
         const editPackageModal = (pkg) => {
           const formCopy = JSON.parse(JSON.stringify(pkg));
           formCopy.items = normalizeFormItems(formCopy.items);
+          formCopy.extras = Array.isArray(formCopy.extras) ? formCopy.extras.map(ex => ({
+            ...ex,
+            group: normalizeIngredientGroup(ex.group, ex.name)
+          })) : [];
           modalPackage.value = {
             show: true,
             isEdit: true,
@@ -8810,6 +9009,14 @@
           }
 
           modalPackage.value.form.items = normalizeFormItems(modalPackage.value.form.items);
+          modalPackage.value.form.extras = (modalPackage.value.form.extras || [])
+            .filter(ex => ex && (ex.name || '').trim() !== '')
+            .map(ex => ({
+              ...ex,
+              qty: String(ex.qty || '1').trim(),
+              unit: (ex.unit || 'pcs').trim(),
+              group: normalizeIngredientGroup(ex.group, ex.name)
+            }));
 
           if (modalPackage.value.isEdit) {
             const idx = packages.value.findIndex(p => p.id === modalPackage.value.form.id);
@@ -9497,6 +9704,66 @@
             });
           });
 
+          // Include Package Extras (Alat & Sauce) from scheduled mealPlans & unassigned weeklyMenuPool (skipping rollover!)
+          const shopRange = activeShoppingRange.value;
+          if (shopRange && shopRange.start && shopRange.end) {
+            const addExtraToShoppingMap = (ex, sourceLabel) => {
+              if (!ex || !ex.name) return;
+              const normName = ex.name.trim();
+              const normUnit = (ex.unit || '').trim().toLowerCase();
+              const key = `${normName.toLowerCase()}_${normUnit}`;
+              if (!ingredientMap[key]) {
+                ingredientMap[key] = {
+                  id: key,
+                  name: normName,
+                  unit: ex.unit || '',
+                  quantities: [],
+                  group: normalizeIngredientGroup(ex.group, ex.name),
+                  usedInDishes: []
+                };
+              }
+              if (sourceLabel && !ingredientMap[key].usedInDishes.includes(sourceLabel)) {
+                ingredientMap[key].usedInDishes.push(sourceLabel);
+              }
+              const numQty = parseIngredientQtyNumber(ex.qty);
+              if (numQty !== null) {
+                ingredientMap[key].quantities.push(numQty);
+              } else if (ex.qty && String(ex.qty).trim() !== '') {
+                ingredientMap[key].quantities.push(String(ex.qty).trim());
+              }
+            };
+
+            const [sY, sM, sD] = shopRange.start.split('-').map(Number);
+            const [eY, eM, eD] = shopRange.end.split('-').map(Number);
+            const startD = new Date(sY, sM - 1, sD);
+            const endD = new Date(eY, eM - 1, eD);
+            const dayNamesShort = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const countedExtraPoolIds = new Set();
+
+            for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+              const ds = formatDateObj(d);
+              const dayMeals = getDayMeals(ds);
+              const dName = dayNamesShort[d.getDay()];
+              mealSlots.forEach(slot => {
+                const meal = dayMeals[slot.id];
+                if (!meal) return;
+                if (meal.poolId) countedExtraPoolIds.add(meal.poolId);
+                if (meal.isRollover) return;
+                const extras = resolveSlotExtras(meal);
+                const pkgLabel = meal.type === 'paket' ? getPackageName(meal.packageId) : 'Menu';
+                extras.forEach(ex => addExtraToShoppingMap(ex, `${dName} ${slot.shortLabel} (Tambahan ${pkgLabel})`));
+              });
+            }
+
+            (weeklyMenuPool.value || []).forEach(entry => {
+              if (!entry || entry.cycleKey !== shopRange.start) return;
+              if (entry.status === 'cancelled' || entry.isRollover) return;
+              if (countedExtraPoolIds.has(entry.id)) return;
+              const extras = resolveSlotExtras(entry);
+              extras.forEach(ex => addExtraToShoppingMap(ex, `Rencana Pekan (Tambahan ${entry.label})`));
+            });
+          }
+
           // Format summarized text
           const result = Object.values(ingredientMap).map(item => {
             let totalQtyText = '';
@@ -9995,7 +10262,10 @@
           isFoodNutritionExpanded,
           quickScheduleCycleEntries,
           confirmQuickAddToWeeklyPool,
-          confirmQuickMergeIntoWeeklyEntry
+          confirmQuickMergeIntoWeeklyEntry,
+          packageExtraOptions,
+          addExtraToPackage,
+          removeExtraFromPackage
         };
       }
     }).mount('#app');
