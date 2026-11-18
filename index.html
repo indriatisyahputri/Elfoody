@@ -541,13 +541,6 @@
                             {{ f.portion || 'Porsi Keluarga' }}
                             <span v-if="f.notes"> • {{ f.notes }}</span>
                           </div>
-                          <!-- Cooking Method Mini Pills -->
-                          <div v-if="getFoodCookingMethods(f).length > 0" class="flex flex-wrap items-center gap-1 pt-0.5">
-                            <span v-for="mId in getFoodCookingMethods(f)" :key="mId"
-                                  class="text-[9px] font-bold px-1.5 py-0.2 rounded bg-cream-100 text-espresso-700 border border-cream-200">
-                              {{ getCookingMethodMeta(mId)?.icon }} {{ getCookingMethodMeta(mId)?.label }}
-                            </span>
-                          </div>
                           <!-- Mini Nutrition Strip per Dish -->
                           <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
                             <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal</span>
@@ -1872,24 +1865,6 @@
                     <span>+ Tambah link resep</span>
                   </button>
                 </div>
-              </div>
-
-              <!-- Cooking Methods Badges on Dish Card -->
-              <div class="mb-2 flex flex-wrap items-center gap-1">
-                <template v-if="getFoodCookingMethods(item).length > 0">
-                  <span v-for="mId in getFoodCookingMethods(item)" :key="mId"
-                        class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-lg border"
-                        :class="(getCookingMethodMeta(mId)?.extraKalori || 0) > 0 ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-emerald-50 text-emerald-800 border-emerald-200'">
-                    <span>{{ getCookingMethodMeta(mId)?.icon }}</span>
-                    <span>{{ getCookingMethodMeta(mId)?.label }}</span>
-                    <span v-if="(getCookingMethodMeta(mId)?.extraKalori || 0) > 0" class="text-[9px] opacity-80">+{{ getCookingMethodMeta(mId).extraKalori }}</span>
-                  </span>
-                </template>
-                <button v-else type="button" @click.stop="editFoodModal(item)"
-                        class="inline-flex items-center gap-1 text-[10px] font-semibold text-taupe-500 hover:text-caramel-700 bg-cream-50 hover:bg-cream-100 px-2 py-0.5 rounded-lg border border-dashed border-cream-300 transition cursor-pointer">
-                  <span>🍳</span>
-                  <span>+ Metode masak</span>
-                </button>
               </div>
 
               <!-- Clean 2-Button Toggle Row: Gizi & Kalori | Bahan Belanja -->
@@ -3351,22 +3326,23 @@
 
 
     <!-- ======================================================== -->
-    <!-- MODAL 1B: JADWALKAN CEPAT DARI DAPUR GIZI (BEKAL/MALAM)  -->
+    <!-- MODAL 1B: MASUKKAN MASAKAN KE RENCANA PEKAN (TANPA TGL)  -->
     <!-- ======================================================== -->
     <div v-if="modalQuickSchedule.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
-      <div class="bg-white max-w-md w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 space-y-4 ios-safe-bottom">
+      <div class="bg-white max-w-md w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 space-y-4 max-h-[88vh] overflow-y-auto ios-scroll ios-safe-bottom">
         <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-2"></div>
 
         <div class="flex items-center justify-between pb-3 border-b border-cream-100">
           <div>
-            <h3 class="font-bold text-base text-espresso-900">Jadwalkan Masakan</h3>
-            <p class="text-[11px] text-taupe-500">Pilih tanggal &amp; sesi makan (Bekal atau Makan Malam)</p>
+            <h3 class="font-bold text-base text-espresso-900">📋 Masukkan ke Rencana Pekan</h3>
+            <p class="text-[11px] text-taupe-500">Tanpa pilih tanggal dulu — jadwal hari diatur saat Sabtu setelah belanja</p>
           </div>
-          <button @click="modalQuickSchedule.show = false" class="text-taupe-400 hover:text-espresso-800 p-1">
+          <button @click="modalQuickSchedule.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
 
+        <!-- Selected Dish Summary -->
         <div v-if="modalQuickSchedule.item" class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 space-y-1.5">
           <div class="font-bold text-sm text-espresso-900">{{ modalQuickSchedule.item.name }}</div>
           <div class="flex flex-wrap gap-1.5">
@@ -3377,25 +3353,71 @@
           </div>
         </div>
 
-        <div class="space-y-2 text-xs">
-          <label class="block font-bold text-espresso-800">Pilih Tanggal Masak:</label>
-          <input type="date" v-model="modalQuickSchedule.date"
-                 class="w-full px-3.5 py-2.5 rounded-xl font-bold text-espresso-900 bg-cream-50 border border-cream-300">
+        <!-- Step 1: Pick Weekly Cycle (Default: Current Friday Shopping Cycle) -->
+        <div class="space-y-1.5 text-xs">
+          <label class="block font-bold text-espresso-800">Pilih Pekan Masak (Sabtu–Jumat):</label>
+          <select v-model="modalQuickSchedule.cycleType"
+                  class="w-full px-3.5 py-2.5 rounded-xl font-bold text-espresso-900 bg-cream-50 border border-cream-300 min-h-[42px]">
+            <option value="ongoing">Pekan Berjalan: {{ formatShortDate(ongoingFridayRange.start) }} - {{ formatShortDate(ongoingFridayRange.end) }}</option>
+            <option value="current">Belanja Jumat Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
+            <option value="next">Jumat Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
+          </select>
         </div>
 
-        <div class="space-y-2 pt-1">
-          <div class="text-xs font-bold text-espresso-800">Masukkan ke Sesi Mana?</div>
-          <div class="grid grid-cols-2 gap-3">
-            <button type="button" @click="confirmQuickSchedule('bekal')"
-                    class="min-h-[48px] py-3 px-4 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center justify-center gap-2">
-              <span>🎒</span>
-              <span>Menu Bekal</span>
-            </button>
-            <button type="button" @click="confirmQuickSchedule('malam')"
-                    class="min-h-[48px] py-3 px-4 rounded-2xl text-xs font-bold bg-espresso-800 hover:bg-espresso-900 text-white shadow-card transition flex items-center justify-center gap-2">
-              <span>🌙</span>
-              <span>Makan Malam</span>
-            </button>
+        <!-- Primary Action: Add as New Unassigned Weekly Menu Card -->
+        <div class="space-y-2.5">
+          <button type="button" @click="confirmQuickAddToWeeklyPool()"
+                  class="w-full min-h-[48px] py-3 px-4 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+            <span>📋</span>
+            <span>+ Masukkan ke Daftar Pekan Ini (Tanpa Tanggal)</span>
+          </button>
+
+          <!-- Optional: Combine into an Existing Menu Card in that Cycle -->
+          <div v-if="quickScheduleCycleEntries.length > 0" class="pt-2 border-t border-cream-100 space-y-2">
+            <div class="text-[11px] font-bold text-espresso-800">Atau gabungkan ke menu pekan yang sudah ada:</div>
+            <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1 ios-scroll">
+              <button v-for="entry in quickScheduleCycleEntries" :key="entry.id"
+                      type="button" @click="confirmQuickMergeIntoWeeklyEntry(entry.id)"
+                      class="w-full p-2.5 rounded-xl bg-cream-50 hover:bg-caramel-50 border border-cream-200 hover:border-caramel-300 text-left flex items-center justify-between gap-2 transition cursor-pointer min-h-[42px]">
+                <div class="min-w-0">
+                  <div class="text-xs font-bold text-espresso-900 truncate">{{ entry.label }}</div>
+                  <div class="text-[10px] text-taupe-500 truncate">
+                    {{ entry.assignedDate ? formatTanggalIndo(entry.assignedDate, true) : '📌 Belum tentukan hari' }}
+                  </div>
+                </div>
+                <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-white text-caramel-700 border border-caramel-200 flex-shrink-0">
+                  + Gabung
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Collapsible Option: Direct Date Scheduling (Hidden by default) -->
+        <div class="pt-2 border-t border-cream-100">
+          <button type="button" @click="modalQuickSchedule.showDateOption = !modalQuickSchedule.showDateOption"
+                  class="w-full text-[11px] font-semibold text-taupe-500 hover:text-espresso-800 flex items-center justify-center gap-1 py-1 cursor-pointer">
+            <span>{{ modalQuickSchedule.showDateOption ? 'Sembunyikan pilihan tanggal' : 'Atau langsung pasang ke tanggal tertentu ⌄' }}</span>
+          </button>
+
+          <div v-if="modalQuickSchedule.showDateOption" class="mt-2.5 p-3 rounded-2xl bg-cream-50/80 border border-cream-200 space-y-2.5 text-xs">
+            <div>
+              <label class="block font-bold text-espresso-800 mb-1">Pilih Tanggal Masak:</label>
+              <input type="date" v-model="modalQuickSchedule.date"
+                     class="w-full px-3 py-2 rounded-xl font-bold text-espresso-900 bg-white border border-cream-300">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" @click="confirmQuickSchedule('bekal')"
+                      class="min-h-[42px] py-2 px-3 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>🎒</span>
+                <span>Menu Bekal</span>
+              </button>
+              <button type="button" @click="confirmQuickSchedule('malam')"
+                      class="min-h-[42px] py-2 px-3 rounded-xl text-xs font-bold bg-espresso-800 hover:bg-espresso-900 text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>🌙</span>
+                <span>Makan Malam</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -8585,8 +8607,88 @@
           modalQuickSchedule.value = {
             show: true,
             item,
+            cycleType: selectedWeeklyCycle.value || 'current',
+            showDateOption: false,
             date: isDateEditable(selectedDate.value) ? selectedDate.value : getDateOffset(2)
           };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const getQuickScheduleCycleKey = () => {
+          const ct = modalQuickSchedule.value?.cycleType || 'current';
+          if (ct === 'ongoing') return ongoingFridayRange.value.start;
+          if (ct === 'next') return nextFridayRange.value.start;
+          return fridayRange.value.start;
+        };
+
+        const quickScheduleCycleEntries = computed(() => {
+          const ck = getQuickScheduleCycleKey();
+          return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === ck && e.status !== 'cancelled');
+        });
+
+        const confirmQuickAddToWeeklyPool = () => {
+          const item = modalQuickSchedule.value.item;
+          if (!item) return;
+          const ck = getQuickScheduleCycleKey();
+          const items = createEmptyFormItems();
+          const cats = getFoodCategories(item);
+          const primaryCat = cats[0] || 'protein';
+          items[primaryCat] = [item.id];
+
+          weeklyMenuPool.value.push({
+            id: 'wm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            cycleKey: ck,
+            label: item.name,
+            type: 'satuan',
+            packageId: null,
+            items,
+            assignedDate: null,
+            assignedSlot: null,
+            status: 'planned',
+            isRollover: false,
+            rolloverFromCycle: null,
+            rolloverChildId: null,
+            actualWeights: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+
+          selectedWeeklyCycle.value = modalQuickSchedule.value.cycleType || 'current';
+          saveWeeklyMenuPool();
+          modalQuickSchedule.value.show = false;
+          showToast(`"${item.name}" masuk ke Rencana Pekan (${formatCycleRangeLabel(ck)}) tanpa tanggal dulu!`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmQuickMergeIntoWeeklyEntry = (entryId) => {
+          const item = modalQuickSchedule.value.item;
+          const entry = (weeklyMenuPool.value || []).find(e => e.id === entryId);
+          if (!item || !entry) return;
+
+          if (!entry.items || typeof entry.items !== 'object') {
+            entry.items = createEmptyFormItems();
+          }
+          const cats = getFoodCategories(item);
+          const primaryCat = cats[0] || 'protein';
+          if (!Array.isArray(entry.items[primaryCat])) entry.items[primaryCat] = [];
+          if (!entry.items[primaryCat].includes(item.id)) {
+            entry.items[primaryCat].push(item.id);
+          }
+
+          if (entry.type !== 'paket') {
+            entry.label = getDishSummary({ type: 'satuan', items: entry.items });
+          }
+          entry.updatedAt = new Date().toISOString();
+
+          // If this weekly entry is already assigned to a day in mealPlans, keep mealPlans in sync too
+          if (entry.assignedDate && entry.assignedSlot && mealPlans.value[entry.assignedDate]?.[entry.assignedSlot]) {
+            mealPlans.value[entry.assignedDate][entry.assignedSlot].items = normalizeFormItems(entry.items);
+            localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+          }
+
+          saveWeeklyMenuPool();
+          modalQuickSchedule.value.show = false;
+          showToast(`"${item.name}" digabungkan ke menu "${entry.label}"!`);
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
@@ -9890,7 +9992,10 @@
           getFoodCookingMethods,
           toggleModalFoodCookingMethod,
           toggleFoodNutrition,
-          isFoodNutritionExpanded
+          isFoodNutritionExpanded,
+          quickScheduleCycleEntries,
+          confirmQuickAddToWeeklyPool,
+          confirmQuickMergeIntoWeeklyEntry
         };
       }
     }).mount('#app');
