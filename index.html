@@ -1408,14 +1408,7 @@
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   </a>
 
-                  <!-- Shortcut Tambah Cemilan (Khusus Kategori Cemilan) -->
-                  <button v-if="foodHasCategory(item, 'dessert')"
-                          @click="openAddSnackModalWithFood(item)" 
-                          title="Tambah ke Daftar Cemilan &amp; Belanja"
-                          class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 text-[11px] font-bold flex items-center gap-1 transition border border-amber-300 select-none cursor-pointer">
-                    <span>🍪</span>
-                    <span>+ Cemilan</span>
-                  </button>
+
 
                   <button @click="editFoodModal(item)" title="Edit Makanan & Bahan" class="w-8 h-8 rounded-lg bg-cream-50 hover:bg-cream-100 text-taupe-600 flex items-center justify-center transition border border-cream-200 cursor-pointer">
                     <i data-lucide="edit-2" class="w-4 h-4"></i>
@@ -1737,55 +1730,127 @@
       <!-- ======================================================== -->
       <!-- TAB 4: PAKET MENU (PERENCANAAN PAKET LENGKAP)             -->
       <!-- ======================================================== -->
+      <!-- ======================================================== -->
+      <!-- TAB 4: PERENCANAAN PEKAN (MENU, BUAH & CEMILAN)          -->
+      <!-- ======================================================== -->
       <section v-if="activeTab === 'paket'" class="space-y-6">
         
-        <!-- Header Banner & Step 1 Weekly Selector -->
+        <!-- Header Banner & Unified SubTab Switcher (Menu | Buah | Cemilan) -->
         <div class="bg-white p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-card space-y-5">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-cream-100">
             <div>
               <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-caramel-600 mb-1">
                 <span>🍱</span>
-                <span>Langkah 1: Pilih Menu Seminggu</span>
+                <span>Langkah 1: Perencanaan Menu Seminggu</span>
               </div>
               <h2 class="text-2xl font-serif font-bold text-espresso-900">
-                Pilih Paket Menu untuk Seminggu
+                <span v-if="paketSubTab === 'menu'">Pilih Paket Menu untuk Seminggu</span>
+                <span v-else-if="paketSubTab === 'buah'">Pilih Buah-buahan untuk Seminggu</span>
+                <span v-else>Pilih Cemilan untuk Seminggu</span>
               </h2>
               <p class="text-xs text-taupe-500 mt-1 max-w-xl leading-relaxed">
-                Pilih paket-paket menu yang ingin dimasak dalam sepekan. Paket yang dipilih otomatis tersedia di <strong>Menu Isi</strong> dan seluruh bahan baku langsung tercantum di <strong>Menu Belanja</strong>.
+                <span v-if="paketSubTab === 'menu'">
+                  Pilih paket-paket menu yang ingin dimasak dalam sepekan. Paket yang dipilih otomatis tersedia di <strong>Menu Isi</strong> dan seluruh bahan baku langsung tercantum di <strong>Menu Belanja</strong>.
+                </span>
+                <span v-else-if="paketSubTab === 'buah'">
+                  Pilih buah-buahan dari <strong>Master Bahan</strong> untuk stok konsumsi sepekan. Buah yang dipilih langsung otomatis tercantum di <strong>Menu Belanja</strong> hari Jumat.
+                </span>
+                <span v-else>
+                  Pilih cemilan lezat yang ingin dibuat sepekan ini. Bahan-bahan pembuatannya otomatis dimasukkan ke <strong>Menu Belanja</strong> dan status ketersediaannya terpantau di <strong>Menu Papan</strong>.
+                </span>
               </p>
             </div>
 
-            <!-- Add Package Button -->
+            <!-- Action Buttons based on Active Subtab -->
             <div class="flex items-center gap-2 self-start md:self-center">
-              <button @click="openAddPackageModal" 
+              <button v-if="paketSubTab === 'menu'"
+                      @click="openAddPackageModal" 
                       class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card shadow-sm transition cursor-pointer min-h-[42px]">
                 <i data-lucide="plus" class="w-4 h-4"></i>
                 <span>+ Buat Paket Baru</span>
               </button>
+              <button v-else-if="paketSubTab === 'buah'"
+                      @click="openAddMasterIngredientModal('', 'Buah Buahan')"
+                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-card shadow-sm transition cursor-pointer min-h-[42px]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Buah Baru ke Master Bahan</span>
+              </button>
+              <button v-else
+                      @click="openAddFoodModalWithCategory('dessert')"
+                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-card shadow-sm transition cursor-pointer min-h-[42px]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Buat Resep Cemilan</span>
+              </button>
             </div>
           </div>
 
-          <!-- Weekly Cycle Selector & Next Step Progress Strip -->
-          <div class="p-4 rounded-2xl bg-gradient-to-r from-cream-50 via-white to-amber-50/40 border border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-              <div class="flex flex-col">
-                <label class="text-[10px] font-bold uppercase tracking-wider text-taupe-500 mb-1">Target Pekan Masak (Sabtu–Jumat):</label>
-                <select v-model="selectedWeeklyCycle"
-                        class="px-3.5 py-2 rounded-xl text-xs font-bold text-espresso-900 bg-white border border-cream-300 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[40px]">
-                  <option value="ongoing">Pekan Berjalan: {{ formatShortDate(ongoingFridayRange.start) }} - {{ formatShortDate(ongoingFridayRange.end) }}</option>
-                  <option value="current">Belanja Jumat Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
-                  <option value="next">Jumat Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
-                </select>
-              </div>
+          <!-- Subtab Pills: Menu Makanan | Buah-buahan | Cemilan -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="inline-flex p-1.5 rounded-2xl bg-cream-100 border border-cream-200">
+              <button type="button"
+                      @click="paketSubTab = 'menu'"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer min-h-[42px]"
+                      :class="paketSubTab === 'menu' ? 'bg-white text-espresso-900 shadow-xs' : 'text-taupe-600 hover:text-espresso-800'">
+                <span>🍱 Menu Makanan</span>
+                <span v-if="activeWeeklyPoolEntries.length > 0"
+                      class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-caramel-500 text-white">
+                  {{ activeWeeklyPoolEntries.length }}
+                </span>
+              </button>
 
-              <div class="sm:self-end text-xs text-taupe-600 font-semibold bg-white px-3 py-2 rounded-xl border border-cream-200">
-                Terkumpul: <span class="text-caramel-700 font-extrabold text-sm">{{ activeWeeklyPoolEntries.length }}</span> paket terpilih
-              </div>
+              <button type="button"
+                      @click="paketSubTab = 'buah'"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer min-h-[42px]"
+                      :class="paketSubTab === 'buah' ? 'bg-white text-espresso-900 shadow-xs' : 'text-taupe-600 hover:text-espresso-800'">
+                <span>🍎 Buah-buahan</span>
+                <span v-if="activeCycleFruits.length > 0"
+                      class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-600 text-white">
+                  {{ activeCycleFruits.length }}
+                </span>
+              </button>
+
+              <button type="button"
+                      @click="paketSubTab = 'cemilan'"
+                      class="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer min-h-[42px]"
+                      :class="paketSubTab === 'cemilan' ? 'bg-white text-espresso-900 shadow-xs' : 'text-taupe-600 hover:text-espresso-800'">
+                <span>🍪 Cemilan</span>
+                <span v-if="activeWeeklySnacks.length > 0"
+                      class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500 text-white">
+                  {{ activeWeeklySnacks.length }}
+                </span>
+              </button>
             </div>
 
-            <div class="flex items-center gap-2 self-start sm:self-center">
+            <!-- Target Weekly Cycle Selector -->
+            <div class="flex items-center gap-2">
+              <label class="text-[10px] font-bold uppercase tracking-wider text-taupe-500 flex-shrink-0">Pekan:</label>
+              <select v-model="selectedWeeklyCycle"
+                      class="px-3.5 py-2 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[40px]">
+                <option value="ongoing">Pekan Berjalan: {{ formatShortDate(ongoingFridayRange.start) }} - {{ formatShortDate(ongoingFridayRange.end) }}</option>
+                <option value="current">Belanja Jumat Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
+                <option value="next">Jumat Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Weekly Cycle Context Banner Strip -->
+          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-cream-50 via-white to-amber-50/40 border border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="flex items-center gap-2 text-taupe-600">
+              <span class="text-base">📅</span>
+              <span v-if="paketSubTab === 'menu'">
+                Menu terpilih untuk pekan ini: <strong class="text-espresso-900 font-extrabold text-sm">{{ activeWeeklyPoolEntries.length }}</strong> paket
+              </span>
+              <span v-else-if="paketSubTab === 'buah'">
+                Buah terpilih untuk pekan ini: <strong class="text-rose-700 font-extrabold text-sm">{{ activeCycleFruits.length }}</strong> jenis (otomatis masuk belanja Jumat)
+              </span>
+              <span v-else>
+                Cemilan terpilih untuk pekan ini: <strong class="text-amber-800 font-extrabold text-sm">{{ activeWeeklySnacks.length }}</strong> macam (otomatis masuk belanja Jumat)
+              </span>
+            </div>
+
+            <div v-if="paketSubTab === 'menu'" class="flex items-center gap-2 self-start sm:self-center">
               <button @click="setTab('isi')"
-                      class="min-h-[42px] px-5 py-2.5 rounded-xl text-xs font-bold bg-espresso-900 hover:bg-espresso-800 text-white shadow-card transition flex items-center gap-2 cursor-pointer">
+                      class="min-h-[38px] px-4 py-2 rounded-xl text-xs font-bold bg-espresso-900 hover:bg-espresso-800 text-white shadow-card transition flex items-center gap-2 cursor-pointer">
                 <span>Lanjut ke Isi Jadwal</span>
                 <span v-if="activeWeeklyPoolEntries.length > 0" class="px-2 py-0.5 rounded-full text-[10px] bg-caramel-500 text-white font-extrabold">
                   {{ activeWeeklyPoolEntries.length }} Paket
@@ -1796,6 +1861,10 @@
           </div>
         </div>
 
+        <!-- ========================================== -->
+        <!-- SUB-TAB 1: MENU MAKANAN (PAKET MENU)       -->
+        <!-- ========================================== -->
+        <div v-if="paketSubTab === 'menu'" class="space-y-6">
         <!-- Empty State when 0 packages in Paket Menu -->
         <div v-if="packages.length === 0" 
              class="bg-white p-10 sm:p-14 rounded-3xl border border-cream-200 text-center space-y-4 shadow-card">
@@ -1949,7 +2018,336 @@
             </div>
 
           </div>
-        </div></section>
+        </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SUB-TAB 2: BUAH-BUAHAN                     -->
+        <!-- ========================================== -->
+        <div v-else-if="paketSubTab === 'buah'" class="space-y-6">
+
+          <!-- Section A: Buah Terpilih untuk Pekan Ini -->
+          <div class="bg-white p-5 sm:p-6 rounded-3xl border border-cream-200 shadow-card space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🧺</span>
+                <div>
+                  <h3 class="font-bold text-base text-espresso-900">Daftar Buah Pekan Ini</h3>
+                  <p class="text-[11px] text-taupe-500">Buah yang akan dibeli di hari Jumat dan dikonsumsi sepekan.</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200">
+                {{ activeCycleFruits.length }} Buah Terpilih
+              </span>
+            </div>
+
+            <!-- Empty State for Selected Fruits -->
+            <div v-if="activeCycleFruits.length === 0" 
+                 class="p-8 rounded-2xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-2">
+              <div class="text-3xl">🍎</div>
+              <div class="text-sm font-bold text-espresso-900">Belum Ada Buah yang Dipilih untuk Pekan Ini</div>
+              <p class="text-xs text-taupe-500 max-w-md mx-auto">
+                Pilih buah-buahan dari katalog Master Bahan di bawah ini. Buah yang Anda pilih akan otomatis tercantum di daftar belanja hari Jumat!
+              </p>
+            </div>
+
+            <!-- Grid of Selected Fruits in Cycle -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div v-for="fr in activeCycleFruits" :key="fr.id"
+                   class="p-4 rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50/30 via-white to-cream-50/30 shadow-card flex flex-col justify-between gap-3">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <span class="text-2xl p-2 rounded-xl bg-rose-50 border border-rose-100 flex-shrink-0">{{ fr.icon || '🍎' }}</span>
+                    <div class="min-w-0">
+                      <h4 class="font-bold text-sm text-espresso-900 truncate">{{ fr.name }}</h4>
+                      <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 mt-0.5">
+                        ✓ Masuk Belanja Jumat
+                      </span>
+                    </div>
+                  </div>
+                  <button type="button" @click="removeFruitFromCycle(fr.id)" title="Hapus buah dari pekan ini"
+                          class="w-7 h-7 rounded-lg text-taupe-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+
+                <!-- Quantity Stepper & Unit -->
+                <div class="flex items-center justify-between pt-2 border-t border-rose-100/70">
+                  <span class="text-[11px] font-semibold text-taupe-600">Jumlah Beli:</span>
+                  <div class="flex items-center gap-2">
+                    <button type="button" @click="updateFruitQtyInCycle(fr.id, -1)"
+                            class="w-7 h-7 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 font-bold flex items-center justify-center transition cursor-pointer active:scale-95">
+                      -
+                    </button>
+                    <span class="font-bold text-xs text-espresso-900 min-w-[50px] text-center bg-white px-2 py-1 rounded-md border border-cream-200">
+                      {{ fr.qty }} {{ fr.unit }}
+                    </span>
+                    <button type="button" @click="updateFruitQtyInCycle(fr.id, 1)"
+                            class="w-7 h-7 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 font-bold flex items-center justify-center transition cursor-pointer active:scale-95">
+                      +
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: Katalog Buah dari Master Bahan -->
+          <div class="bg-white p-5 sm:p-6 rounded-3xl border border-cream-200 shadow-card space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-100">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🍎</span>
+                <div>
+                  <h3 class="font-bold text-base text-espresso-900">Katalog Buah (dari Master Bahan)</h3>
+                  <p class="text-[11px] text-taupe-500">Klik "+ Pilih" untuk memasukkan buah ke target belanja pekan ini.</p>
+                </div>
+              </div>
+
+              <!-- Search Bar for Fruits -->
+              <div class="relative w-full sm:w-64">
+                <input type="text" v-model="fruitSearchQuery"
+                       placeholder="Cari nama buah..."
+                       class="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[38px]">
+                <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3 top-2.5 pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- Empty Fruit Catalog -->
+            <div v-if="filteredMasterFruits.length === 0" 
+                 class="p-8 rounded-2xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-3">
+              <p class="text-xs text-taupe-500">
+                {{ fruitSearchQuery ? 'Tidak ada buah yang cocok dengan pencarian "' + fruitSearchQuery + '".' : 'Belum ada bahan berkategori "Buah Buahan" di Master Bahan.' }}
+              </p>
+              <button type="button" @click="openAddMasterIngredientModal('', 'Buah Buahan')"
+                      class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Tambah Buah ke Master Bahan</span>
+              </button>
+            </div>
+
+            <!-- Fruit Cards Grid -->
+            <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              <div v-for="m in filteredMasterFruits" :key="m.id"
+                   class="p-3 rounded-2xl border transition shadow-card flex flex-col justify-between gap-2.5 bg-white"
+                   :class="isFruitSelectedInCycle(m.id) ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400/30' : 'border-cream-200 hover:border-cream-300'">
+                <div>
+                  <div class="flex items-center justify-between gap-1">
+                    <span class="text-2xl">{{ m.icon || '🍎' }}</span>
+                    <span class="text-[10px] text-taupe-500 font-semibold bg-cream-100 px-1.5 py-0.5 rounded">
+                      {{ m.unit || m.defaultUnit || 'Buah' }}
+                    </span>
+                  </div>
+                  <h4 class="font-bold text-xs text-espresso-900 mt-1.5 line-clamp-1" :title="m.name">{{ m.name }}</h4>
+                </div>
+
+                <div v-if="isFruitSelectedInCycle(m.id)" class="space-y-1.5">
+                  <div class="text-[10px] font-bold text-rose-700 flex items-center justify-between">
+                    <span>✓ Terpilih:</span>
+                    <span>{{ getFruitInCycle(m.id)?.qty }} {{ getFruitInCycle(m.id)?.unit }}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button type="button" @click="updateFruitQtyInCycle(getFruitInCycle(m.id)?.id, 1)"
+                            class="flex-1 py-1 rounded-lg text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 transition cursor-pointer text-center">
+                      + Tambah
+                    </button>
+                    <button type="button" @click="removeFruitFromCycle(getFruitInCycle(m.id)?.id)"
+                            class="px-2 py-1 rounded-lg text-[10px] font-bold bg-cream-100 hover:bg-red-50 hover:text-red-600 text-taupe-500 transition cursor-pointer">
+                      ✕
+                    </button>
+                  </div>
+                </div>
+
+                <div v-else>
+                  <button type="button" @click="addFruitToCycle(m, 1)"
+                          class="w-full py-1.5 rounded-xl text-[11px] font-bold bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-800 border border-rose-200 transition cursor-pointer flex items-center justify-center gap-1">
+                    <span>+ Pilih</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- SUB-TAB 3: CEMILAN                        -->
+        <!-- ========================================== -->
+        <div v-else-if="paketSubTab === 'cemilan'" class="space-y-6">
+
+          <!-- Section A: Cemilan Terpilih untuk Pekan Ini -->
+          <div class="bg-white p-5 sm:p-6 rounded-3xl border border-cream-200 shadow-card space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">🍪</span>
+                <div>
+                  <h3 class="font-bold text-base text-espresso-900">Daftar Cemilan Pekan Ini</h3>
+                  <p class="text-[11px] text-taupe-500">Cemilan yang bahannya otomatis dibelanjakan di hari Jumat.</p>
+                </div>
+              </div>
+              <span class="text-xs font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200">
+                {{ activeWeeklySnacks.length }} Cemilan Terpilih
+              </span>
+            </div>
+
+            <!-- Empty State for Selected Snacks -->
+            <div v-if="activeWeeklySnacks.length === 0" 
+                 class="p-8 rounded-2xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-2">
+              <div class="text-3xl">🍪</div>
+              <div class="text-sm font-bold text-espresso-900">Belum Ada Cemilan yang Dipilih untuk Pekan Ini</div>
+              <p class="text-xs text-taupe-500 max-w-md mx-auto">
+                Pilih cemilan dari resep di bawah ini. Bahan pembuatannya akan otomatis diakumulasikan ke daftar belanja Jumat pekan yang Anda pilih!
+              </p>
+            </div>
+
+            <!-- Grid of Selected Snacks in Cycle -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div v-for="snack in activeWeeklySnacks" :key="snack.id"
+                   class="p-4 rounded-2xl border transition shadow-card flex flex-col justify-between gap-3 bg-white"
+                   :class="snack.status === 'tersedia' ? 'border-emerald-200 bg-emerald-50/15' : 'border-amber-200 bg-amber-50/15'">
+                <div class="space-y-1.5">
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                      <span class="text-2xl p-2 rounded-xl bg-amber-50 border border-amber-100 flex-shrink-0">{{ snack.foodIcon || '🍪' }}</span>
+                      <div class="min-w-0">
+                        <h4 class="font-bold text-sm text-espresso-900 truncate">{{ snack.foodName }}</h4>
+                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 mt-0.5">
+                          ✓ Masuk Belanja Jumat
+                        </span>
+                      </div>
+                    </div>
+                    <button type="button" @click="confirmDeleteSnack(snack)" title="Hapus cemilan"
+                            class="w-7 h-7 rounded-lg text-taupe-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer">
+                      <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+
+                  <!-- Date Planning Shortcut -->
+                  <div class="flex items-center justify-between text-[11px] pt-1">
+                    <span class="text-taupe-500 font-semibold">Rencana Bikin:</span>
+                    <button type="button" @click="openPlanSnackDateModal(snack)"
+                            class="font-semibold text-caramel-700 hover:underline cursor-pointer flex items-center gap-1">
+                      <span>📅 {{ snack.plannedDate ? formatTanggalIndo(snack.plannedDate, true) : '+ Atur Hari' }}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Status Switcher with Confirmation -->
+                <div class="pt-2.5 border-t border-cream-100 space-y-1.5">
+                  <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Status Ketersediaan:</div>
+                  <div class="grid grid-cols-3 gap-1.5 text-center">
+                    <button type="button"
+                            @click="promptChangeSnackStatus(snack, 'belum_dibikin')"
+                            class="py-1.5 rounded-xl text-[10px] font-bold border transition cursor-pointer"
+                            :class="snack.status === 'belum_dibikin' ? 'bg-amber-500 text-white border-amber-600 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-amber-50'">
+                      ⏳ Belum
+                    </button>
+                    <button type="button"
+                            @click="promptChangeSnackStatus(snack, 'tersedia')"
+                            class="py-1.5 rounded-xl text-[10px] font-bold border transition cursor-pointer"
+                            :class="snack.status === 'tersedia' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-emerald-50'">
+                      🟢 Ada
+                    </button>
+                    <button type="button"
+                            @click="promptChangeSnackStatus(snack, 'habis')"
+                            class="py-1.5 rounded-xl text-[10px] font-bold border transition cursor-pointer bg-cream-50 text-espresso-700 border-cream-200 hover:bg-red-50 hover:text-red-700">
+                      🔴 Habis
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section B: Katalog Resep Cemilan dari Dapur Gizi -->
+          <div class="bg-white p-5 sm:p-6 rounded-3xl border border-cream-200 shadow-card space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-100">
+              <div class="flex items-center gap-2">
+                <span class="text-xl">📖</span>
+                <div>
+                  <h3 class="font-bold text-base text-espresso-900">Katalog Resep Cemilan (Dapur Gizi)</h3>
+                  <p class="text-[11px] text-taupe-500">Klik "+ Pilih" untuk memasukkan cemilan ke rencana pekan ini.</p>
+                </div>
+              </div>
+
+              <!-- Search Bar for Snacks -->
+              <div class="relative w-full sm:w-64">
+                <input type="text" v-model="snackSearchQuery"
+                       placeholder="Cari nama cemilan..."
+                       class="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[38px]">
+                <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3 top-2.5 pointer-events-none"></i>
+              </div>
+            </div>
+
+            <!-- Empty Cemilan Catalog -->
+            <div v-if="filteredSnackDishOptions.length === 0" 
+                 class="p-8 rounded-2xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-3">
+              <p class="text-xs text-taupe-500">
+                {{ snackSearchQuery ? 'Tidak ada cemilan yang cocok dengan pencarian "' + snackSearchQuery + '".' : 'Belum ada resep berkategori "Cemilan" di Dapur Gizi.' }}
+              </p>
+              <button type="button" @click="openAddFoodModalWithCategory('dessert')"
+                      class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Buat Resep Cemilan Baru</span>
+              </button>
+            </div>
+
+            <!-- Cemilan Cards Grid -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              <div v-for="dish in filteredSnackDishOptions" :key="dish.id"
+                   class="p-4 rounded-2xl border transition shadow-card flex flex-col justify-between gap-3 bg-white"
+                   :class="isSnackDishInCycle(dish.id) ? 'border-amber-400 bg-amber-50/20 ring-1 ring-amber-400/30' : 'border-cream-200 hover:border-cream-300'">
+                <div>
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span class="text-2xl">{{ dish.icon || '🍪' }}</span>
+                      <div class="min-w-0">
+                        <h4 class="font-bold text-sm text-espresso-900 truncate">{{ dish.name }}</h4>
+                        <p v-if="dish.portion" class="text-[11px] text-taupe-500 truncate">{{ dish.portion }}</p>
+                      </div>
+                    </div>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-100 text-espresso-800 border border-cream-200 flex-shrink-0">
+                      {{ (dish.ingredients || []).length }} Bahan
+                    </span>
+                  </div>
+
+                  <!-- Ingredients Preview -->
+                  <div v-if="(dish.ingredients || []).length > 0" class="mt-2.5 pt-2 border-t border-cream-100/80">
+                    <div class="text-[10px] text-taupe-500 line-clamp-1">
+                      Bahan: {{ dish.ingredients.map(i => i.name).filter(Boolean).slice(0, 3).join(', ') }}{{ dish.ingredients.length > 3 ? '...' : '' }}
+                    </div>
+                  </div>
+                </div>
+
+                <div v-if="isSnackDishInCycle(dish.id)" class="pt-2 border-t border-cream-100/80 space-y-1.5">
+                  <div class="text-[11px] font-bold text-amber-800 flex items-center justify-between">
+                    <span>✓ Terpilih di Pekan Ini:</span>
+                    <span>{{ getSnackDishCycleCount(dish.id) }}x disiapkan</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button type="button" @click="addSnackDishToCycle(dish)"
+                            class="flex-1 py-1.5 rounded-xl text-[11px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer text-center">
+                      + Tambah Lagi
+                    </button>
+                    <button type="button" @click="removeSnackDishFromCycle(dish.id)"
+                            class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-cream-100 hover:bg-red-50 hover:text-red-600 text-taupe-500 transition cursor-pointer">
+                      - Kurangi
+                    </button>
+                  </div>
+                </div>
+
+                <div v-else class="pt-2 border-t border-cream-100/80">
+                  <button type="button" @click="addSnackDishToCycle(dish)"
+                          class="w-full py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                    <span>+ Pilih untuk Pekan Ini</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
 
 
       <!-- ======================================================== -->
@@ -6378,7 +6776,11 @@
 
         // Flexible Weekly Menu Planner (Daftar Menu Seminggu Tanpa Hari Dulu + Cancel Rollover Stock)
         const isiViewMode = ref('mingguan'); // 'mingguan' (default) | 'harian'
-        const selectedWeeklyCycle = ref('current'); // 'ongoing' | 'current' | 'next'
+        const paketSubTab = ref('menu'); // 'menu' | 'buah' | 'cemilan'
+          const selectedWeeklyCycle = ref('current'); // 'ongoing' | 'current' | 'next'
+          const fruitSearchQuery = ref('');
+          const snackSearchQuery = ref('');
+          const cycleFruits = ref({}); // { [cycleKey]: [ { id, masterId, name, qty, unit, icon } ] }
         const weeklyMenuTarget = ref(10);
         const weeklyMenuPool = ref([]);
         const modalAddWeeklyMenu = ref({
@@ -6574,6 +6976,9 @@
 
             const storedSnacks = localStorage.getItem('seleraku_snack_list');
             snackList.value = storedSnacks ? JSON.parse(storedSnacks) : [];
+
+              const storedCycleFruits = localStorage.getItem('seleraku_cycle_fruits');
+              cycleFruits.value = storedCycleFruits ? JSON.parse(storedCycleFruits) : {};
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -6621,7 +7026,8 @@
               actualProteinWeights: actualProteinWeights.value,
               weeklyMenuPool: weeklyMenuPool.value,
               weeklyMenuTarget: weeklyMenuTarget.value,
-              snackList: snackList.value,
+                snackList: snackList.value,
+                cycleFruits: cycleFruits.value,
               updatedAt: lastLocalUpdate
             };
 
@@ -6756,6 +7162,10 @@
                   snackList.value = data.snackList;
                   localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
                 }
+                  if (data.cycleFruits && typeof data.cycleFruits === 'object') {
+                    cycleFruits.value = data.cycleFruits;
+                    localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
+                  }
 
                 localStorage.setItem('seleraku_last_updated', data.updatedAt);
                 lastLocalUpdate = data.updatedAt;
@@ -9650,7 +10060,8 @@
             masterIngredients: masterIngredients.value,
             pantryStocks: pantryStocks.value,
             manualStocks: manualStocks.value,
-            snackList: snackList.value
+              snackList: snackList.value,
+              cycleFruits: cycleFruits.value
           };
           const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
           const dlAnchorElem = document.createElement('a');
@@ -9701,6 +10112,10 @@
                   snackList.value = imported.snackList;
                   localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
                 }
+                  if (imported.cycleFruits && typeof imported.cycleFruits === 'object') {
+                    cycleFruits.value = imported.cycleFruits;
+                    localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
+                  }
                 deletedFoodIds.value = [];
                 deletedPackageIds.value = [];
                 deletedMasterIds.value = [];
@@ -10326,7 +10741,29 @@
             };
           });
 
-          return [...result, ...manualItems];
+          // Include cycle fruits for the active shopping range
+            const cycleFruitsForShopping = (cycleFruits.value && activeShoppingRange.value?.start) ? (cycleFruits.value[activeShoppingRange.value.start] || []) : [];
+            const fruitShoppingItems = cycleFruitsForShopping.map(fr => {
+              const normName = (fr.name || '').trim();
+              const unitStr = (fr.unit || 'Buah').trim();
+              const qtyStr = (fr.qty !== undefined && fr.qty !== null && String(fr.qty).trim() !== '') ? `${fr.qty} ${unitStr}`.trim() : unitStr || '1 Buah';
+              const pantryMatch = getPantryStockForIngredient(normName);
+              const pantryStockText = pantryMatch ? `${pantryMatch.qty} ${pantryMatch.unit}` : '';
+              return {
+                id: 'fruit_' + fr.id,
+                name: normName,
+                unit: fr.unit || 'Buah',
+                group: 'Buah Buahan',
+                qtyText: qtyStr,
+                usedInDishes: ['Buah Pekan Ini'],
+                pantryStockText,
+                isManual: false,
+                isCycleFruit: true,
+                fruitId: fr.id
+              };
+            });
+
+            return [...result, ...fruitShoppingItems, ...manualItems];
         });
 
         const getIngredientsInGroup = (groupName) => {
@@ -10543,14 +10980,146 @@
           return activeSnackList.value.filter(s => s.status === 'belum_dibikin').length;
         });
 
-        const activeWeeklySnacks = computed(() => {
+        // Cycle Fruits (Buah-buahan untuk Pekan Ini) Logic
+          const saveCycleFruits = () => {
+            localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
+            triggerSyncServer();
+          };
+
+          const activeCycleFruits = computed(() => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck) return [];
+            return (cycleFruits.value[ck] || []).filter(f => f && f.name);
+          });
+
+          const filteredMasterFruits = computed(() => {
+            const q = (fruitSearchQuery.value || '').trim().toLowerCase();
+            return (masterFruitOptions.value || []).filter(m => {
+              if (!q) return true;
+              return (m.name || '').toLowerCase().includes(q) ||
+                     (m.keywords || []).some(k => k.toLowerCase().includes(q));
+            });
+          });
+
+          const addFruitToCycle = (masterFruit, qty = 1) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck) {
+              showToast('Pilih target pekan terlebih dahulu.', 'error');
+              return;
+            }
+            if (!masterFruit) return;
+            if (!Array.isArray(cycleFruits.value[ck])) {
+              cycleFruits.value[ck] = [];
+            }
+            const existing = cycleFruits.value[ck].find(f => (f.masterId && f.masterId === masterFruit.id) || (f.name || '').toLowerCase() === (masterFruit.name || '').toLowerCase());
+            if (existing) {
+              existing.qty = (Number(existing.qty) || 0) + (Number(qty) || 1);
+              existing.qty = Math.round(existing.qty * 10) / 10;
+            } else {
+              cycleFruits.value[ck].push({
+                id: 'cfr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                masterId: masterFruit.id,
+                name: masterFruit.name,
+                qty: Number(qty) || 1,
+                unit: masterFruit.defaultUnit || masterFruit.unit || 'Buah',
+                icon: masterFruit.icon || '🍎'
+              });
+            }
+            saveCycleFruits();
+            showToast(`"${masterFruit.name}" ditambahkan ke daftar buah pekan ini!`, 'success');
+            nextTick(() => { if (window.lucide) lucide.createIcons(); });
+          };
+
+          const updateFruitQtyInCycle = (fruitId, delta) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck || !Array.isArray(cycleFruits.value[ck])) return;
+            const item = cycleFruits.value[ck].find(f => f.id === fruitId);
+            if (!item) return;
+            const newQty = Math.max(0.5, (Number(item.qty) || 1) + delta);
+            item.qty = Math.round(newQty * 10) / 10;
+            saveCycleFruits();
+          };
+
+          const removeFruitFromCycle = (fruitId) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck || !Array.isArray(cycleFruits.value[ck])) return;
+            const item = cycleFruits.value[ck].find(f => f.id === fruitId);
+            cycleFruits.value[ck] = cycleFruits.value[ck].filter(f => f.id !== fruitId);
+            saveCycleFruits();
+            if (item) showToast(`"${item.name}" dihapus dari daftar buah pekan ini.`);
+            nextTick(() => { if (window.lucide) lucide.createIcons(); });
+          };
+
+          const isFruitSelectedInCycle = (masterId) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck || !Array.isArray(cycleFruits.value[ck])) return false;
+            return cycleFruits.value[ck].some(f => f.masterId === masterId);
+          };
+
+          const getFruitInCycle = (masterId) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck || !Array.isArray(cycleFruits.value[ck])) return null;
+            return cycleFruits.value[ck].find(f => f.masterId === masterId) || null;
+          };
+
+          // Cemilan helpers for Tab Paket
+          const isSnackDishInCycle = (foodId) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck) return false;
+            return (snackList.value || []).some(s => s && s.foodId === foodId && s.cycleKey === ck && s.status !== 'habis');
+          };
+
+          const getSnackDishCycleCount = (foodId) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck) return 0;
+            return (snackList.value || []).filter(s => s && s.foodId === foodId && s.cycleKey === ck && s.status !== 'habis').length;
+          };
+
+          const addSnackDishToCycle = (dish) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck) {
+              showToast('Pilih target pekan terlebih dahulu.', 'error');
+              return;
+            }
+            if (!dish) return;
+            snackList.value.push({
+              id: 'snack_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+              foodId: dish.id,
+              foodName: dish.name,
+              foodIcon: dish.icon || '🍪',
+              portion: dish.portion || '',
+              cycleKey: ck,
+              status: 'belum_dibikin',
+              plannedDate: null,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+            saveSnackList();
+            showToast(`"${dish.name}" ditambahkan ke cemilan pekan ini! Bahannya masuk belanja Jumat.`, 'success');
+            nextTick(() => { if (window.lucide) lucide.createIcons(); });
+          };
+
+          const removeSnackDishFromCycle = (foodId) => {
+            const ck = activeWeeklyRange.value?.start;
+            if (!ck) return;
+            const idx = (snackList.value || []).findIndex(s => s && s.foodId === foodId && s.cycleKey === ck && s.status !== 'habis');
+            if (idx !== -1) {
+              const item = snackList.value[idx];
+              snackList.value.splice(idx, 1);
+              saveSnackList();
+              showToast(`"${item.foodName}" dihapus dari cemilan pekan ini.`);
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+
+          const activeWeeklySnacks = computed(() => {
           const ck = activeWeeklyRange.value?.start;
           if (!ck) return [];
           return (snackList.value || []).filter(s => s && s.cycleKey === ck);
         });
 
         const filteredSnackDishOptions = computed(() => {
-          const q = (modalAddSnack.value.searchQuery || '').trim().toLowerCase();
+            const q = (modalAddSnack.value.show ? modalAddSnack.value.searchQuery : (snackSearchQuery.value || modalAddSnack.value.searchQuery || '')).trim().toLowerCase();
           const filterCat = modalAddSnack.value.filterCategory || 'dessert';
           return foodItems.value.filter(dish => {
             if (filterCat === 'dessert') {
@@ -11004,8 +11573,24 @@
           showFinishedSnacks,
           availableSnackCount,
           pendingSnackCount,
-          activeWeeklySnacks,
-          modalAddSnack,
+          paketSubTab,
+            fruitSearchQuery,
+            snackSearchQuery,
+            cycleFruits,
+            saveCycleFruits,
+            activeCycleFruits,
+            filteredMasterFruits,
+            addFruitToCycle,
+            updateFruitQtyInCycle,
+            removeFruitFromCycle,
+            isFruitSelectedInCycle,
+            getFruitInCycle,
+            isSnackDishInCycle,
+            getSnackDishCycleCount,
+            addSnackDishToCycle,
+            removeSnackDishFromCycle,
+            activeWeeklySnacks,
+            modalAddSnack,
           modalConfirmSnackStatus,
           filteredSnackDishOptions,
           saveSnackList,
