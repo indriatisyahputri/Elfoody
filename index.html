@@ -663,8 +663,9 @@
                 </div>
               </div>
               <div class="mt-4 pt-3 border-t border-cream-100 flex items-center justify-between">
-                <span class="text-[11px] font-medium text-espresso-500">
-                  {{ isDateEditable(getDateOffset(offset)) ? '✓ Dapat diedit' : '🔒 Terkunci H-2 (bisa ditukar)' }}
+                <span class="text-[11px] font-medium text-sage-700 flex items-center gap-1">
+                  <span>✓</span>
+                  <span>Bisa diedit</span>
                 </span>
                 <button @click="editMenuForDate(getDateOffset(offset), 'bekal')" class="text-xs font-bold text-caramel-600 hover:text-caramel-700">
                   Buka Menu &rarr;
@@ -748,9 +749,8 @@
                   <span v-if="day.isToday" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-caramel-500 text-white shadow-xs">
                     Hari Ini
                   </span>
-                  <span v-else class="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                        :class="day.canEditDirectly ? 'bg-sage-50 text-sage-600 border border-sage-200' : 'bg-cream-200 text-taupe-600'">
-                    {{ day.canEditDirectly ? 'Bisa Diisi' : 'Terkunci H-2' }}
+                  <span v-else class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sage-50 text-sage-600 border border-sage-200">
+                    Bisa Diisi
                   </span>
                 </div>
 
@@ -857,7 +857,7 @@
 
                 <button @click="editMenuForDate(day.dateStr, 'bekal')" 
                         class="min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs transition flex items-center gap-1.5">
-                  <i :data-lucide="day.canEditDirectly ? 'edit-3' : 'lock'" class="w-3.5 h-3.5"></i>
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
                   <span>{{ (day.meals.bekal || day.meals.malam) ? 'Atur Menu' : 'Isi Menu' }}</span>
                 </button>
               </div>
@@ -867,7 +867,7 @@
           </div>
 
           <div class="text-center text-xs text-taupe-400 py-1">
-            💡 <em>Tip: Klik tombol <strong>Tukar</strong> untuk memindahkan hidangan antar hari dalam minggu yang sama tanpa terhalang aturan H-2.</em>
+            💡 <em>Tip: Klik tombol <strong>Tukar</strong> untuk memindahkan hidangan antar hari dalam minggu yang sama secara fleksibel.</em>
           </div>
 
         </div>
@@ -1169,7 +1169,7 @@
               </p>
             </div>
 
-            <!-- Target Date Picker & H-2 Status -->
+            <!-- Target Date Picker -->
             <div class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 w-full sm:w-auto">
               <div class="flex flex-col flex-grow">
                 <label class="text-[11px] font-bold uppercase tracking-wider text-espresso-600 mb-1.5">Pilih Tanggal Masak:</label>
@@ -1186,76 +1186,9 @@
                   Besok
                 </button>
                 <button @click="selectedDate = getDateOffset(2)" class="px-3 py-2 text-[11px] font-bold rounded-xl bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 text-center transition min-h-[38px]">
-                  Lusa (H-2)
+                  Lusa
                 </button>
               </div>
-            </div>
-          </div>
-
-          <!-- H-2 RULE VALIDATION BANNER -->
-          <div class="mt-6">
-            <!-- Case 1: Locked under H-2 -->
-            <div v-if="!isDateEditable(selectedDate) && !bypassH2Rule" 
-                 class="p-5 rounded-2xl bg-amber-50/70 border border-amber-200/90 text-amber-900 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-              <div class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i data-lucide="lock" class="w-4 h-4"></i>
-                </div>
-                <div>
-                  <div class="text-xs font-bold flex items-center gap-2">
-                    <span>Aturan Kunci Menu (Minimal H-2)</span>
-                    <span class="text-[10px] bg-amber-200/70 text-amber-800 px-2 py-0.5 rounded-full font-bold">Terkunci Langsung</span>
-                  </div>
-                  <p class="text-xs text-amber-800/90 mt-0.5 leading-relaxed">
-                    Menu untuk <strong>{{ formatTanggalIndo(selectedDate, true) }}</strong> tidak dapat diubah langsung karena persiapan bahan membutuhkan minimal 2 hari sebelum hari H.
-                    <br class="hidden sm:inline"> Namun, Anda <strong>tetap bisa menukar menu ini</strong> dengan menu hari lain di minggu yang sama!
-                  </p>
-                </div>
-              </div>
-
-              <!-- Action to swap or bypass -->
-              <div class="flex items-center gap-2 self-start md:self-center flex-shrink-0">
-                <button @click="openSwapModalWithDate(selectedDate)"
-                        class="px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition flex items-center gap-1.5">
-                  <i data-lucide="arrow-left-right" class="w-3.5 h-3.5"></i>
-                  <span>Tukar Menu Hari Ini</span>
-                </button>
-                <button @click="bypassH2Rule = true" 
-                        title="Aktifkan simulasi untuk menguji pengisian tanpa batasan H-2"
-                        class="px-2.5 py-2 rounded-xl text-[11px] font-medium bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300">
-                  Simulasi Edit
-                </button>
-              </div>
-            </div>
-
-            <!-- Case 2: Open & Editable (>= H-2) -->
-            <div v-else-if="isDateEditable(selectedDate)"
-                 class="p-4 rounded-2xl bg-sage-50/70 border border-sage-200/90 text-sage-900 flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center flex-shrink-0">
-                  <i data-lucide="check-circle" class="w-4 h-4"></i>
-                </div>
-                <div>
-                  <div class="text-xs font-bold text-sage-800">
-                    Menu Siap Diisi / Diedit (Memenuhi Aturan H-2)
-                  </div>
-                  <p class="text-xs text-sage-600">
-                    Tanggal terpilih: <strong>{{ formatTanggalIndo(selectedDate, true) }}</strong>. Atur Menu Bekal &amp; Makan Malam lalu klik Simpan.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Case 3: Simulation mode active -->
-            <div v-else
-                 class="p-3.5 rounded-2xl bg-blue-50 border border-blue-200 text-blue-900 flex items-center justify-between text-xs">
-              <div class="flex items-center gap-2">
-                <i data-lucide="shield-alert" class="w-4 h-4 text-blue-600"></i>
-                <span><strong>Mode Simulasi Aktif:</strong> Aturan H-2 dinonaktifkan sementara untuk pengetesan.</span>
-              </div>
-              <button @click="bypassH2Rule = false" class="text-[11px] underline font-semibold text-blue-700 hover:text-blue-900">
-                Kembalikan Aturan Kunci
-              </button>
             </div>
           </div>
 
@@ -1767,11 +1700,7 @@
                   </button>
 
                   <button @click="saveCurrentMealPlan"
-                          :disabled="!isDateEditable(selectedDate) && !bypassH2Rule"
-                          class="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-card transition flex items-center gap-2"
-                          :class="(!isDateEditable(selectedDate) && !bypassH2Rule) 
-                            ? 'bg-cream-300 text-espresso-400 cursor-not-allowed' 
-                            : 'bg-caramel-500 hover:bg-caramel-600 text-white shadow-card'">
+                          class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-card transition flex items-center gap-2 cursor-pointer">
                     <i data-lucide="save" class="w-4 h-4"></i>
                     <span>Simpan Menu Tanggal Ini</span>
                   </button>
@@ -8251,22 +8180,8 @@
           return 'Bumbu';
         };
 
-        // --- 4. H-2 RULE & DATE VALIDATION LOGIC ---
-        // "pengisian dan edit menu hanya bisa dilakukan min h-2"
-        const isDateEditable = (dateStr) => {
-          if (!dateStr) return false;
-          const [tY, tM, tD] = dateStr.split('-').map(Number);
-          const target = new Date(tY, tM - 1, tD);
-          
-          const [cY, cM, cD] = currentDate.value.split('-').map(Number);
-          const today = new Date(cY, cM - 1, cD);
-
-          const diffMs = target.getTime() - today.getTime();
-          const diffDays = Math.round(diffMs / 86400000);
-          
-          // Must be at least 2 days ahead
-          return diffDays >= 2;
-        };
+        // --- 4. DATE VALIDATION LOGIC (Fleksibel: Bebas Edit Tanggal Kapan Saja) ---
+        const isDateEditable = () => true;
 
         // Check if two dates belong to the exact same calendar week (Monday to Sunday)
         const isSameWeek = (dateStr1, dateStr2) => {
@@ -8403,11 +8318,6 @@
         };
 
         const saveCurrentMealPlan = () => {
-          if (!isDateEditable(selectedDate.value) && !bypassH2Rule.value) {
-            showToast('Pengisian ditolak: Menu minimal H-2! Gunakan fitur Tukar Menu.', 'error');
-            return;
-          }
-
           if (formMode.value === 'paket' && !formSelectedPackageId.value) {
             showToast('Harap pilih salah satu Paket Menu pada sesi aktif atau ubah ke Menu Satuan!', 'error');
             return;
@@ -9208,7 +9118,7 @@
             item,
             cycleType: selectedWeeklyCycle.value || 'current',
             showDateOption: false,
-            date: isDateEditable(selectedDate.value) ? selectedDate.value : getDateOffset(2)
+            date: selectedDate.value || currentDate.value
           };
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
@@ -9706,12 +9616,6 @@
         };
 
         const applyPackageDirectly = (pkg) => {
-          const targetDate = isDateEditable(selectedDate.value) ? selectedDate.value : getDateOffset(2);
-          if (targetDate !== selectedDate.value) {
-            skipNextDateWatch = true;
-            selectedDate.value = targetDate;
-            loadDayIntoDraft(targetDate);
-          }
           draftMeals.value[activeMealSlot.value] = {
             type: 'paket',
             packageId: pkg.id,
