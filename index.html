@@ -5101,6 +5101,8 @@
           return `${year}-${month}-${day}`;
         };
         const currentDate = ref(formatDateObj(now));
+        const getTodayISO = () => currentDate.value || formatDateObj(new Date());
+        const toLocalISOString = (d) => formatDateObj(d);
 
         // Meal slots (2 Menus per Day: Bekal & Makan Malam)
         const mealSlots = [
@@ -7039,7 +7041,7 @@
           const end = new Date(endStr + 'T00:00:00');
           let guard = 0;
           while (cur <= end && guard < 31) {
-            dates.push(toLocalISOString(cur));
+            dates.push(formatDateObj(cur));
             cur.setDate(cur.getDate() + 1);
             guard++;
           }
@@ -7135,7 +7137,7 @@
           const ck = activeWeeklyRange.value?.start;
           if (!ck) return [];
           const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-          const todayStr = getTodayISO();
+          const todayStr = currentDate.value || formatDateObj(new Date());
           const arr = [];
           for (let i = 0; i < 7; i++) {
             const ds = addDaysISO(ck, i);
