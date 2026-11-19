@@ -4017,6 +4017,63 @@
                 Total {{ getTotalPackageDishesCount() }} hidangan
               </span>
             </div>
+
+            <!-- Validasi Kelengkapan 3 Gizi Utama (Karbohidrat, Protein, Serat Sayur) -->
+            <div class="p-3.5 rounded-2xl border transition-all duration-200"
+                 :class="packageNutritionCoverage.isComplete ? 'bg-emerald-50/70 border-emerald-200' : 'bg-amber-50/70 border-amber-200'">
+              <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-bold flex items-center gap-1.5"
+                      :class="packageNutritionCoverage.isComplete ? 'text-emerald-900' : 'text-amber-900'">
+                  <span>{{ packageNutritionCoverage.isComplete ? '✅' : '⚠️' }}</span>
+                  <span>{{ packageNutritionCoverage.isComplete ? '3 Gizi Utama Lengkap' : 'Wajib Penuhi 3 Gizi Utama' }}</span>
+                </span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      :class="packageNutritionCoverage.isComplete ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'">
+                  {{ packageNutritionCoverage.isComplete ? 'Bisa Disimpan' : 'Wajib 3 Gizi' }}
+                </span>
+              </div>
+
+              <!-- 3 Pillar Checklist Badges -->
+              <div class="grid grid-cols-3 gap-1.5 mt-2.5 text-[10.5px]">
+                <div class="p-2 rounded-xl border flex flex-col justify-between gap-1 shadow-2xs"
+                     :class="packageNutritionCoverage.hasKarbo ? 'bg-white border-emerald-300 text-emerald-900' : 'bg-white/80 border-dashed border-amber-300 text-amber-800'">
+                  <div class="flex items-center justify-between font-bold">
+                    <span>🍚 Karbo</span>
+                    <span>{{ packageNutritionCoverage.hasKarbo ? '✓' : '✗' }}</span>
+                  </div>
+                  <div class="text-[9.5px] truncate" :class="packageNutritionCoverage.hasKarbo ? 'text-emerald-700 font-semibold' : 'text-taupe-400 italic'">
+                    {{ packageNutritionCoverage.hasKarbo ? packageNutritionCoverage.karboContributors.map(f => f.name).join(', ') : 'Belum ada' }}
+                  </div>
+                </div>
+
+                <div class="p-2 rounded-xl border flex flex-col justify-between gap-1 shadow-2xs"
+                     :class="packageNutritionCoverage.hasProtein ? 'bg-white border-emerald-300 text-emerald-900' : 'bg-white/80 border-dashed border-amber-300 text-amber-800'">
+                  <div class="flex items-center justify-between font-bold">
+                    <span>🍗 Protein</span>
+                    <span>{{ packageNutritionCoverage.hasProtein ? '✓' : '✗' }}</span>
+                  </div>
+                  <div class="text-[9.5px] truncate" :class="packageNutritionCoverage.hasProtein ? 'text-emerald-700 font-semibold' : 'text-taupe-400 italic'">
+                    {{ packageNutritionCoverage.hasProtein ? packageNutritionCoverage.proteinContributors.map(f => f.name).join(', ') : 'Belum ada' }}
+                  </div>
+                </div>
+
+                <div class="p-2 rounded-xl border flex flex-col justify-between gap-1 shadow-2xs"
+                     :class="packageNutritionCoverage.hasSeratSayur ? 'bg-white border-emerald-300 text-emerald-900' : 'bg-white/80 border-dashed border-amber-300 text-amber-800'">
+                  <div class="flex items-center justify-between font-bold">
+                    <span>🥦 Serat Sayur</span>
+                    <span>{{ packageNutritionCoverage.hasSeratSayur ? '✓' : '✗' }}</span>
+                  </div>
+                  <div class="text-[9.5px] truncate" :class="packageNutritionCoverage.hasSeratSayur ? 'text-emerald-700 font-semibold' : 'text-taupe-400 italic'">
+                    {{ packageNutritionCoverage.hasSeratSayur ? packageNutritionCoverage.seratSayurContributors.map(f => f.name).join(', ') : 'Belum ada' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Missing info hint -->
+              <p v-if="!packageNutritionCoverage.isComplete" class="text-[10px] text-amber-800 mt-2 leading-relaxed font-medium">
+                Kurang: <strong>{{ packageNutritionCoverage.missingList.join(', ') }}</strong>. Menu multi-gizi (misal: ayam suwir kemangi yang ada protein &amp; serat) otomatis dihitung!
+              </p>
+            </div>
             
             <div v-for="cat in packageNutritionCategories" :key="cat.id" 
                  class="p-3 rounded-2xl bg-cream-50/70 border border-cream-200 space-y-2">
@@ -4063,8 +4120,15 @@
                 </span>
               </div>
 
-              <div v-else class="text-[10px] text-taupe-400 italic py-0.5">
-                Belum ada menu yang dipilih untuk {{ cat.label }}.
+              <div v-else class="text-[10px] py-0.5">
+                <div v-if="getCrossCategoryContributors(cat.id).length > 0" 
+                     class="p-2 rounded-xl bg-emerald-50/80 border border-emerald-200 text-emerald-800 text-[10.5px] flex items-center gap-1.5 font-semibold">
+                  <span>💡</span>
+                  <span>Gizi {{ cat.label }} sudah terpenuhi dari menu: <strong>{{ getCrossCategoryContributors(cat.id).map(f => f.name).join(', ') }}</strong></span>
+                </div>
+                <div v-else class="text-taupe-400 italic">
+                  Belum ada menu yang dipilih untuk {{ cat.label }}.
+                </div>
               </div>
 
             </div>
@@ -4179,8 +4243,11 @@
             <button type="button" @click="modalPackage.show = false" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[44px] cursor-pointer">
               Batal
             </button>
-            <button type="button" @click="savePackageModal" class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-taupe-700 hover:bg-taupe-800 shadow-xs min-h-[44px] cursor-pointer">
-              Simpan Paket
+            <button type="button" @click="savePackageModal" 
+                    class="px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs min-h-[44px] transition flex items-center gap-1.5 cursor-pointer"
+                    :class="packageNutritionCoverage.isComplete ? 'bg-caramel-500 hover:bg-caramel-600' : 'bg-taupe-400 hover:bg-taupe-500 opacity-80'">
+              <i :data-lucide="packageNutritionCoverage.isComplete ? 'check' : 'alert-circle'" class="w-3.5 h-3.5"></i>
+              <span>Simpan Paket</span>
             </button>
           </div>
         </div>
@@ -9310,6 +9377,77 @@
           return count;
         };
 
+        const getPackageAllFoods = (itemsObj) => {
+          if (!itemsObj || typeof itemsObj !== 'object') return [];
+          const foodIds = new Set();
+          Object.values(itemsObj).forEach(val => {
+            if (Array.isArray(val)) {
+              val.filter(Boolean).forEach(id => foodIds.add(id));
+            } else if (typeof val === 'string' && val.trim()) {
+              foodIds.add(val.trim());
+            }
+          });
+          return Array.from(foodIds).map(id => getFoodItem(id)).filter(Boolean);
+        };
+
+        const isFoodFulfillingCategory = (food, catId) => {
+          if (!food) return false;
+          const cats = getFoodCategories(food);
+          if (cats.includes(catId)) return true;
+          if (catId === 'serat_sayur' && (cats.includes('sayur') || cats.includes('serat'))) return true;
+          if (catId === 'karbohidrat' && cats.includes('karbo')) return true;
+          return false;
+        };
+
+        const getCrossCategoryContributors = (catId) => {
+          if (!modalPackage.value || !modalPackage.value.form || !modalPackage.value.form.items) return [];
+          const currentSlotFoodIds = new Set(getPackageCategoryFoodIds(catId));
+          const allFoods = getPackageAllFoods(modalPackage.value.form.items);
+          return allFoods.filter(f => !currentSlotFoodIds.has(f.id) && isFoodFulfillingCategory(f, catId));
+        };
+
+        const packageNutritionCoverage = computed(() => {
+          if (!modalPackage.value || !modalPackage.value.form || !modalPackage.value.form.items) {
+            return {
+              hasKarbo: false,
+              hasProtein: false,
+              hasSeratSayur: false,
+              isComplete: false,
+              missingList: ['Karbohidrat', 'Protein', 'Serat Sayur'],
+              karboContributors: [],
+              proteinContributors: [],
+              seratSayurContributors: []
+            };
+          }
+
+          const allFoods = getPackageAllFoods(modalPackage.value.form.items);
+          const karboFoods = allFoods.filter(f => isFoodFulfillingCategory(f, 'karbohidrat'));
+          const proteinFoods = allFoods.filter(f => isFoodFulfillingCategory(f, 'protein'));
+          const seratSayurFoods = allFoods.filter(f => isFoodFulfillingCategory(f, 'serat_sayur'));
+
+          // Check both category tags and calculated nutrition preview
+          const nutPreview = modalPackageNutritionPreview.value || {};
+          const hasKarbo = karboFoods.length > 0 || (Number(nutPreview.karbo) >= 15);
+          const hasProtein = proteinFoods.length > 0 || (Number(nutPreview.protein) >= 8);
+          const hasSeratSayur = seratSayurFoods.length > 0 || (Number(nutPreview.serat) >= 2);
+
+          const missing = [];
+          if (!hasKarbo) missing.push('Karbohidrat');
+          if (!hasProtein) missing.push('Protein');
+          if (!hasSeratSayur) missing.push('Serat Sayur');
+
+          return {
+            hasKarbo,
+            hasProtein,
+            hasSeratSayur,
+            isComplete: missing.length === 0,
+            missingList: missing,
+            karboContributors: karboFoods,
+            proteinContributors: proteinFoods,
+            seratSayurContributors: seratSayurFoods
+          };
+        });
+
         const openAddPackageModal = () => {
           modalPackage.value = {
             show: true,
@@ -9351,6 +9489,12 @@
         const savePackageModal = () => {
           if (!modalPackage.value.form.name.trim()) {
             showToast('Nama paket menu wajib diisi!', 'error');
+            return;
+          }
+
+          if (!packageNutritionCoverage.value.isComplete) {
+            const missingText = packageNutritionCoverage.value.missingList.join(', ');
+            showToast(`Gizi paket belum lengkap! Wajib mencakup: ${missingText}.`, 'error');
             return;
           }
 
@@ -10624,7 +10768,9 @@
           addFruitToAssignModal,
           removeFruitFromAssignModal,
           calculateSingleFruitNutrition,
-          calculateFruitsNutrition
+          calculateFruitsNutrition,
+          packageNutritionCoverage,
+          getCrossCategoryContributors
         };
       }
     }).mount('#app');
