@@ -2051,43 +2051,65 @@
               </p>
             </div>
 
-            <!-- Grid of Selected Fruits in Cycle -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <!-- Grid of Selected Fruits in Cycle with Cover Images -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div v-for="fr in activeCycleFruits" :key="fr.id"
-                   class="p-4 rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50/30 via-white to-cream-50/30 shadow-card flex flex-col justify-between gap-3">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-2.5 min-w-0">
-                    <span class="text-2xl p-2 rounded-xl bg-rose-50 border border-rose-100 flex-shrink-0">{{ fr.icon || '🍎' }}</span>
-                    <div class="min-w-0">
-                      <h4 class="font-bold text-sm text-espresso-900 truncate">{{ fr.name }}</h4>
-                      <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 mt-0.5">
-                        ✓ Masuk Belanja Jumat
-                      </span>
-                    </div>
-                  </div>
+                   class="rounded-3xl border border-rose-200 bg-white shadow-card overflow-hidden flex flex-col justify-between hover:shadow-hover transition duration-200 group">
+                
+                <!-- Card Image Cover Header -->
+                <div class="relative w-full h-36 bg-rose-50 overflow-hidden">
+                  <img :src="getFruitImageUrl(fr)" 
+                       :alt="fr.name" 
+                       loading="lazy"
+                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent"></div>
+                  
+                  <!-- Top Left Badge: Masuk Belanja -->
+                  <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-xl bg-emerald-600/90 backdrop-blur-xs text-white shadow-xs border border-emerald-400/30">
+                    <i data-lucide="check" class="w-3 h-3"></i>
+                    <span>Masuk Belanja Jumat</span>
+                  </span>
+
+                  <!-- Top Right: Delete Button -->
                   <button type="button" @click="removeFruitFromCycle(fr.id)" title="Hapus buah dari pekan ini"
-                          class="w-7 h-7 rounded-lg text-taupe-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                          class="absolute top-2.5 right-2.5 w-7 h-7 rounded-xl bg-black/45 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer backdrop-blur-xs shadow-xs active:scale-95">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
+
+                  <!-- Bottom Title & Emoji Overlay on Cover -->
+                  <div class="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
+                    <span class="text-lg p-1.5 rounded-xl bg-white/90 backdrop-blur-xs shadow-xs leading-none flex-shrink-0">
+                      {{ fr.icon || '🍎' }}
+                    </span>
+                    <h4 class="font-bold text-sm text-white drop-shadow-sm truncate">
+                      {{ fr.name }}
+                    </h4>
+                  </div>
                 </div>
 
-                <!-- Quantity Stepper & Unit -->
-                <div class="flex items-center justify-between pt-2 border-t border-rose-100/70">
-                  <span class="text-[11px] font-semibold text-taupe-600">Jumlah Beli:</span>
+                <!-- Quantity Stepper & Details -->
+                <div class="p-3.5 bg-white flex items-center justify-between">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] uppercase font-bold text-taupe-400">Takaran Belanja</span>
+                    <span class="text-xs font-bold text-espresso-900">Per Siklus</span>
+                  </div>
+                  
+                  <!-- Stepper -->
                   <div class="flex items-center gap-2">
                     <button type="button" @click="updateFruitQtyInCycle(fr.id, -1)"
-                            class="w-7 h-7 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 font-bold flex items-center justify-center transition cursor-pointer active:scale-95">
+                            class="w-8 h-8 rounded-xl bg-cream-100 hover:bg-cream-200 text-espresso-800 font-extrabold flex items-center justify-center transition cursor-pointer active:scale-95">
                       -
                     </button>
-                    <span class="font-bold text-xs text-espresso-900 min-w-[50px] text-center bg-white px-2 py-1 rounded-md border border-cream-200">
+                    <span class="font-bold text-xs text-espresso-900 min-w-[55px] text-center bg-cream-50 px-2.5 py-1.5 rounded-xl border border-cream-200">
                       {{ fr.qty }} {{ fr.unit }}
                     </span>
                     <button type="button" @click="updateFruitQtyInCycle(fr.id, 1)"
-                            class="w-7 h-7 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 font-bold flex items-center justify-center transition cursor-pointer active:scale-95">
+                            class="w-8 h-8 rounded-xl bg-cream-100 hover:bg-cream-200 text-espresso-800 font-extrabold flex items-center justify-center transition cursor-pointer active:scale-95">
                       +
                     </button>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -2125,44 +2147,66 @@
               </button>
             </div>
 
-            <!-- Fruit Cards Grid -->
-            <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+            <!-- Fruit Cards Grid with Cover Images -->
+            <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5 sm:gap-4">
               <div v-for="m in filteredMasterFruits" :key="m.id"
-                   class="p-3 rounded-2xl border transition shadow-card flex flex-col justify-between gap-2.5 bg-white"
-                   :class="isFruitSelectedInCycle(m.id) ? 'border-rose-400 bg-rose-50/20 ring-1 ring-rose-400/30' : 'border-cream-200 hover:border-cream-300'">
-                <div>
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-2xl">{{ m.icon || '🍎' }}</span>
-                    <span class="text-[10px] text-taupe-500 font-semibold bg-cream-100 px-1.5 py-0.5 rounded">
-                      {{ m.unit || m.defaultUnit || 'Buah' }}
-                    </span>
+                   class="rounded-3xl border transition shadow-card overflow-hidden flex flex-col justify-between bg-white hover:shadow-hover duration-200 group"
+                   :class="isFruitSelectedInCycle(m.id) ? 'border-rose-400 bg-rose-50/15 ring-2 ring-rose-400/20' : 'border-cream-200 hover:border-cream-300'">
+                
+                <!-- Card Image Cover Header -->
+                <div class="relative w-full h-28 sm:h-32 bg-cream-100 overflow-hidden">
+                  <img :src="getFruitImageUrl(m)" 
+                       :alt="m.name" 
+                       loading="lazy"
+                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/65 via-black/15 to-transparent"></div>
+                  
+                  <!-- Floating Emoji Icon -->
+                  <span class="absolute top-2 left-2 text-sm p-1 rounded-lg bg-white/90 backdrop-blur-xs shadow-xs border border-white/50 leading-none">
+                    {{ m.icon || '🍎' }}
+                  </span>
+
+                  <!-- Floating Unit Badge -->
+                  <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/55 backdrop-blur-xs text-white shadow-xs">
+                    {{ m.unit || m.defaultUnit || 'Buah' }}
+                  </span>
+
+                  <!-- Fruit Name overlay on bottom of cover -->
+                  <div class="absolute bottom-2 left-2.5 right-2.5">
+                    <h4 class="font-bold text-xs sm:text-sm text-white drop-shadow-sm truncate" :title="m.name">
+                      {{ m.name }}
+                    </h4>
                   </div>
-                  <h4 class="font-bold text-xs text-espresso-900 mt-1.5 line-clamp-1" :title="m.name">{{ m.name }}</h4>
                 </div>
 
-                <div v-if="isFruitSelectedInCycle(m.id)" class="space-y-1.5">
-                  <div class="text-[10px] font-bold text-rose-700 flex items-center justify-between">
-                    <span>✓ Terpilih:</span>
-                    <span>{{ getFruitInCycle(m.id)?.qty }} {{ getFruitInCycle(m.id)?.unit }}</span>
+                <!-- Card Body / Selection Actions -->
+                <div class="p-2.5 sm:p-3 bg-white space-y-2">
+                  <div v-if="isFruitSelectedInCycle(m.id)" class="space-y-1.5">
+                    <div class="text-[10.5px] font-bold text-rose-700 flex items-center justify-between">
+                      <span class="truncate">✓ Terpilih:</span>
+                      <span class="flex-shrink-0 font-extrabold">{{ getFruitInCycle(m.id)?.qty }} {{ getFruitInCycle(m.id)?.unit }}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" @click="updateFruitQtyInCycle(getFruitInCycle(m.id)?.id, 1)"
+                              class="flex-1 py-1.5 rounded-xl text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 transition cursor-pointer text-center active:scale-95">
+                        + Tambah
+                      </button>
+                      <button type="button" @click="removeFruitFromCycle(getFruitInCycle(m.id)?.id)"
+                              class="px-2.5 py-1.5 rounded-xl text-[10px] font-bold bg-cream-100 hover:bg-red-50 hover:text-red-600 text-taupe-500 transition cursor-pointer active:scale-95"
+                              title="Hapus dari pekan ini">
+                        ✕
+                      </button>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-1">
-                    <button type="button" @click="updateFruitQtyInCycle(getFruitInCycle(m.id)?.id, 1)"
-                            class="flex-1 py-1 rounded-lg text-[10px] font-bold bg-rose-100 hover:bg-rose-200 text-rose-800 transition cursor-pointer text-center">
-                      + Tambah
-                    </button>
-                    <button type="button" @click="removeFruitFromCycle(getFruitInCycle(m.id)?.id)"
-                            class="px-2 py-1 rounded-lg text-[10px] font-bold bg-cream-100 hover:bg-red-50 hover:text-red-600 text-taupe-500 transition cursor-pointer">
-                      ✕
+
+                  <div v-else>
+                    <button type="button" @click="addFruitToCycle(m, 1)"
+                            class="w-full py-2 rounded-xl text-xs font-bold bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-800 border border-rose-200 transition cursor-pointer flex items-center justify-center gap-1 shadow-2xs">
+                      <span>+ Pilih</span>
                     </button>
                   </div>
                 </div>
 
-                <div v-else>
-                  <button type="button" @click="addFruitToCycle(m, 1)"
-                          class="w-full py-1.5 rounded-xl text-[11px] font-bold bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-800 border border-rose-200 transition cursor-pointer flex items-center justify-center gap-1">
-                    <span>+ Pilih</span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -10981,6 +11025,54 @@
         });
 
         // Cycle Fruits (Buah-buahan untuk Pekan Ini) Logic
+          const FRUIT_IMAGE_MAP = {
+            'pisang': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80',
+            'banana': 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=400&auto=format&fit=crop&q=80',
+            'apel': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&auto=format&fit=crop&q=80',
+            'apple': 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=400&auto=format&fit=crop&q=80',
+            'jeruk': 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=400&auto=format&fit=crop&q=80',
+            'orange': 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?w=400&auto=format&fit=crop&q=80',
+            'semangka': 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&auto=format&fit=crop&q=80',
+            'watermelon': 'https://images.unsplash.com/photo-1587049352846-4a222e784d38?w=400&auto=format&fit=crop&q=80',
+            'melon': 'https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?w=400&auto=format&fit=crop&q=80',
+            'pepaya': 'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=400&auto=format&fit=crop&q=80',
+            'papaya': 'https://images.unsplash.com/photo-1517282009859-f000ec3b26fe?w=400&auto=format&fit=crop&q=80',
+            'alpukat': 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&auto=format&fit=crop&q=80',
+            'avocado': 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&auto=format&fit=crop&q=80',
+            'mangga': 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&auto=format&fit=crop&q=80',
+            'mango': 'https://images.unsplash.com/photo-1553279768-865429fa0078?w=400&auto=format&fit=crop&q=80',
+            'naga': 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=400&auto=format&fit=crop&q=80',
+            'dragon fruit': 'https://images.unsplash.com/photo-1527325678964-54921661f888?w=400&auto=format&fit=crop&q=80',
+            'anggur': 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&auto=format&fit=crop&q=80',
+            'grape': 'https://images.unsplash.com/photo-1537640538966-79f369143f8f?w=400&auto=format&fit=crop&q=80',
+            'nanas': 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400&auto=format&fit=crop&q=80',
+            'pineapple': 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=400&auto=format&fit=crop&q=80',
+            'stroberi': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&auto=format&fit=crop&q=80',
+            'strawberry': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&auto=format&fit=crop&q=80',
+            'pir': 'https://images.unsplash.com/photo-1615484477778-ca3b77940c25?w=400&auto=format&fit=crop&q=80',
+            'pear': 'https://images.unsplash.com/photo-1615484477778-ca3b77940c25?w=400&auto=format&fit=crop&q=80',
+            'lemon': 'https://images.unsplash.com/photo-1590502593747-42a996133562?w=400&auto=format&fit=crop&q=80',
+            'kiwi': 'https://images.unsplash.com/photo-1585059895524-72359e06133a?w=400&auto=format&fit=crop&q=80',
+            'jambu': 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&auto=format&fit=crop&q=80',
+            'guava': 'https://images.unsplash.com/photo-1546548970-71785318a17b?w=400&auto=format&fit=crop&q=80',
+            'beri': 'https://images.unsplash.com/photo-1543158181-e6f9f6712055?w=400&auto=format&fit=crop&q=80',
+            'berry': 'https://images.unsplash.com/photo-1543158181-e6f9f6712055?w=400&auto=format&fit=crop&q=80'
+          };
+
+          const DEFAULT_FRUIT_IMAGE = 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=400&auto=format&fit=crop&q=80';
+
+          const getFruitImageUrl = (itemOrName) => {
+            if (!itemOrName) return DEFAULT_FRUIT_IMAGE;
+            if (typeof itemOrName === 'object' && itemOrName.imageUrl) {
+              return itemOrName.imageUrl;
+            }
+            const name = (typeof itemOrName === 'string' ? itemOrName : (itemOrName.name || '')).toLowerCase().trim();
+            for (const [key, url] of Object.entries(FRUIT_IMAGE_MAP)) {
+              if (name.includes(key)) return url;
+            }
+            return DEFAULT_FRUIT_IMAGE;
+          };
+
           const saveCycleFruits = () => {
             localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
             triggerSyncServer();
@@ -11580,6 +11672,7 @@
             saveCycleFruits,
             activeCycleFruits,
             filteredMasterFruits,
+            getFruitImageUrl,
             addFruitToCycle,
             updateFruitQtyInCycle,
             removeFruitFromCycle,
