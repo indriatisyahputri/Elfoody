@@ -507,7 +507,7 @@
 
                 <!-- Slot Filled Grid -->
                 <div v-if="getMealForSlot(currentDate, slot.id)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  <div v-for="cat in nutritionCategories" :key="cat.id"
+                  <div v-for="cat in dailyNutritionCategories" :key="cat.id"
                        class="p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between"
                        :class="(getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id).length > 0 || (cat.id === 'serat_buah' && (getMealForSlot(currentDate, slot.id).fruits || []).length > 0)) ? 'bg-white border-cream-200 shadow-2xs' : 'bg-cream-50/40 border-dashed border-cream-200'">
                     
@@ -872,6 +872,163 @@
 
         </div>
 
+        <!-- ======================================================== -->
+        <!-- DAFTAR CEMILAN TERPISAH (FLEKSIBEL / REAL-TIME STATUS)  -->
+        <!-- ======================================================== -->
+        <div class="bg-white rounded-3xl border border-cream-200 shadow-card p-5 sm:p-7 space-y-5">
+          
+          <!-- Header Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cream-100">
+            <div>
+              <div class="flex items-center gap-2 text-caramel-600 text-xs font-bold uppercase tracking-wider mb-1">
+                <span>🍪</span>
+                <span>Ketersediaan Cemilan di Rumah</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-serif font-bold text-espresso-900">
+                Cemilan Saat Ini
+              </h3>
+              <p class="text-xs text-taupe-500 mt-1 max-w-xl">
+                Pantau cemilan yang tersedia atau sedang disiapkan secara fleksibel di luar jadwal makan harian.
+              </p>
+            </div>
+
+            <!-- Right Header Actions & Stats -->
+            <div class="flex flex-wrap items-center gap-2.5">
+              <!-- Status Counters Pills -->
+              <div class="flex items-center gap-1.5 bg-cream-50 p-1 rounded-xl border border-cream-200 text-[11px] font-bold">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  🟢 {{ availableSnackCount }} Tersedia
+                </span>
+                <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
+                  ⏳ {{ pendingSnackCount }} Belum Dibikin
+                </span>
+              </div>
+
+              <!-- Button + Tambah Cemilan -->
+              <button type="button" @click="openAddSnackModal()"
+                      class="min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 active:bg-caramel-700 text-white shadow-card transition flex items-center gap-1.5 cursor-pointer">
+                <span>+</span>
+                <span>Tambah Cemilan</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty State (No Active Snacks) -->
+          <div v-if="activeSnackList.length === 0" 
+               class="p-8 sm:p-10 rounded-2xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-3">
+            <div class="text-4xl">🍪</div>
+            <div class="text-sm font-bold text-espresso-900">Belum Ada Cemilan yang Aktif</div>
+            <p class="text-xs text-taupe-500 max-w-md mx-auto leading-relaxed">
+              Pilih cemilan dari resep Dapur Gizi untuk disiapkan. Bahannya akan otomatis masuk ke daftar belanja pekan yang Anda pilih!
+            </p>
+            <button type="button" @click="openAddSnackModal()"
+                    class="px-4 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+              <span>+</span>
+              <span>Pilih Cemilan Sekarang</span>
+            </button>
+          </div>
+
+          <!-- Active Snacks Grid -->
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <div v-for="snack in activeSnackList" :key="snack.id"
+                 class="p-4 rounded-2xl border transition shadow-card flex flex-col justify-between gap-3 bg-white"
+                 :class="snack.status === 'tersedia' ? 'border-emerald-200 bg-emerald-50/20' : 'border-amber-200 bg-amber-50/20'">
+              
+              <!-- Top info: Icon, Name, Shopping Cycle -->
+              <div class="space-y-1.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-2xl flex-shrink-0">{{ snack.foodIcon || '🍪' }}</span>
+                    <div class="min-w-0">
+                      <h4 class="text-sm font-bold text-espresso-900 truncate">
+                        {{ snack.foodName }}
+                      </h4>
+                      <div class="text-[10px] text-taupe-500 truncate">
+                        🛒 Belanja: {{ formatSnackCycleLabel(snack.cycleKey) }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Quick delete button -->
+                  <button type="button" @click="confirmDeleteSnack(snack)" title="Hapus cemilan ini"
+                          class="text-taupe-300 hover:text-red-500 p-1 rounded-lg hover:bg-cream-100 transition cursor-pointer">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+
+                <!-- Recipe Ingredients Mini Tags -->
+                <div v-if="getFoodItem(snack.foodId)?.ingredients?.length" class="flex flex-wrap gap-1 pt-1">
+                  <span v-for="ing in getFoodItem(snack.foodId).ingredients.slice(0, 3)" :key="ing.name"
+                        class="text-[9px] bg-white text-taupe-600 px-1.5 py-0.5 rounded border border-cream-200">
+                    {{ ing.name }}
+                  </span>
+                  <span v-if="getFoodItem(snack.foodId).ingredients.length > 3" class="text-[9px] text-taupe-400 self-center">
+                    +{{ getFoodItem(snack.foodId).ingredients.length - 3 }} bahan
+                  </span>
+                </div>
+              </div>
+
+              <!-- Status Selector Section -->
+              <div class="pt-2.5 border-t border-cream-200/70 space-y-2">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-taupe-500 font-medium">Status saat ini:</span>
+                  <span class="font-bold px-2 py-0.5 rounded-full text-[10px]"
+                        :class="snack.status === 'tersedia' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'">
+                    {{ snack.status === 'tersedia' ? '🟢 Tersedia' : '⏳ Belum Dibikin' }}
+                  </span>
+                </div>
+
+                <!-- Status Change Buttons with Confirmation -->
+                <div class="grid grid-cols-3 gap-1">
+                  <button type="button"
+                          @click="promptChangeSnackStatus(snack, 'belum_dibikin')"
+                          class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer"
+                          :class="snack.status === 'belum_dibikin' ? 'bg-amber-500 text-white border-amber-600 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-amber-50'">
+                    ⏳ Belum
+                  </button>
+                  <button type="button"
+                          @click="promptChangeSnackStatus(snack, 'tersedia')"
+                          class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer"
+                          :class="snack.status === 'tersedia' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-emerald-50'">
+                    🟢 Tersedia
+                  </button>
+                  <button type="button"
+                          @click="promptChangeSnackStatus(snack, 'habis')"
+                          class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer bg-cream-50 text-espresso-700 border-cream-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200">
+                    ⚪ Habis
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Accordion: Riwayat Cemilan Habis (Optional & Subtle) -->
+          <div v-if="finishedSnackList.length > 0" class="pt-2 border-t border-cream-100">
+            <button type="button" @click="showFinishedSnacks = !showFinishedSnacks"
+                    class="text-[11px] font-bold text-taupe-500 hover:text-espresso-800 flex items-center gap-1.5 cursor-pointer">
+              <i :data-lucide="showFinishedSnacks ? 'chevron-down' : 'chevron-right'" class="w-3.5 h-3.5"></i>
+              <span>Riwayat Cemilan Habis ({{ finishedSnackList.length }})</span>
+            </button>
+
+            <div v-if="showFinishedSnacks" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              <div v-for="snack in finishedSnackList" :key="snack.id"
+                   class="p-3 rounded-xl bg-cream-50/70 border border-cream-200 text-xs flex items-center justify-between gap-2 opacity-75 hover:opacity-100 transition">
+                <div class="flex items-center gap-2 truncate">
+                  <span>{{ snack.foodIcon || '🍪' }}</span>
+                  <span class="font-bold text-espresso-800 truncate line-through">{{ snack.foodName }}</span>
+                </div>
+                <button type="button" @click="promptChangeSnackStatus(snack, 'tersedia')"
+                        title="Tandai tersedia kembali"
+                        class="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 transition cursor-pointer flex-shrink-0">
+                  + Tersedia Lagi
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
       </section>
 
 
@@ -980,6 +1137,11 @@
                 <span>🥗</span>
                 <span>+ Tambah Menu Satuan</span>
               </button>
+              <button type="button" @click="openAddSnackModal(selectedWeeklyCycle)"
+                      class="flex-grow sm:flex-grow-0 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                <span>🍪</span>
+                <span>+ Tambah Cemilan</span>
+              </button>
               <button type="button" @click="openProteinPrepModal('cycle')"
                       class="flex-grow sm:flex-grow-0 min-h-[44px] px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
                 <span>⚖️</span>
@@ -990,6 +1152,26 @@
                 <span>🛒</span>
                 <span>Lihat Belanja →</span>
               </button>
+            </div>
+
+            <!-- Weekly Planned Snacks Strip -->
+            <div v-if="activeWeeklySnacks.length > 0"
+                 class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/90 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-base flex-shrink-0">🍪</span>
+                <div class="min-w-0">
+                  <span class="font-bold text-amber-950">Cemilan Terencana Pekan Ini:</span>
+                  <span class="text-amber-900 ml-1 font-medium truncate">{{ activeWeeklySnacks.map(s => s.foodName).join(', ') }}</span>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-white text-amber-800 border border-amber-300">
+                  {{ activeWeeklySnacks.length }} macam
+                </span>
+                <button type="button" @click="setTab('papan')" class="text-[11px] font-bold text-caramel-700 hover:text-caramel-900 underline cursor-pointer">
+                  Buka Papan Cemilan &rarr;
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1011,6 +1193,10 @@
               <button type="button" @click="openAddWeeklyMenuModal('satuan')"
                       class="min-h-[44px] px-5 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-900 border border-cream-300 cursor-pointer">
                 🥗 + Susun Menu Satuan
+              </button>
+              <button type="button" @click="openAddSnackModal(selectedWeeklyCycle)"
+                      class="min-h-[44px] px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 cursor-pointer">
+                🍪 + Tambah Cemilan
               </button>
             </div>
           </div>
@@ -1486,9 +1672,9 @@
                   </div>
                 </div>
 
-                <!-- 6 Clean Category Cards (Ringkas & Rapi Tanpa Tumpukan Tombol) -->
+                <!-- 5 Clean Category Cards untuk Menu Harian (Karbo, Protein, Sayur, Buah, Tambahan • Cemilan terpisah) -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div v-for="cat in nutritionCategories" :key="cat.id"
+                  <div v-for="cat in dailyNutritionCategories" :key="cat.id"
                        class="p-4 rounded-2xl bg-white border border-cream-200 shadow-card flex flex-col justify-between">
                     
                     <!-- Special Card for Buah: pulls directly from Master Bahan (Buah Buahan) -->
@@ -1857,7 +2043,7 @@
           </h3>
           <p class="text-xs sm:text-sm text-espresso-600 max-w-md mx-auto leading-relaxed">
             {{ foodCategoryFilter === 'all' && !foodSearchQuery 
-               ? 'Anda siap mengisinya dari 0! Tambahkan masakan pertama Anda untuk 6 kategori gizi (Karbohidrat, Protein, Sayur, Buah, Tambahan, Dessert) beserta daftar bahan belanjanya.' 
+               ? 'Anda siap mengisinya dari 0! Tambahkan masakan pertama Anda untuk 6 kategori gizi (Karbohidrat, Protein, Sayur, Buah, Tambahan, Cemilan) beserta daftar bahan belanjanya.' 
                : 'Tidak ada masakan yang cocok dengan filter kategori atau kata kunci pencarian.' }}
           </p>
           <button @click="openAddFoodModal" 
@@ -1892,8 +2078,16 @@
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   </a>
 
-                  <!-- Pindahkan Tombol Jadwalkan ke Atas Sesuai Request -->
-                  <button @click="quickAddToPlanner(item)" 
+                  <!-- Shortcut Tombol Jadwalkan atau Tambah Cemilan -->
+                  <button v-if="foodHasCategory(item, 'dessert')"
+                          @click="openAddSnackModalWithFood(item)" 
+                          title="Tambah ke Daftar Cemilan &amp; Belanja"
+                          class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 text-[11px] font-bold flex items-center gap-1 transition border border-amber-300 select-none cursor-pointer">
+                    <span>🍪</span>
+                    <span>+ Cemilan</span>
+                  </button>
+                  <button v-else
+                          @click="quickAddToPlanner(item)" 
                           title="Jadwalkan Menu Ini ke Papan Rencana"
                           class="px-2.5 py-1 rounded-lg bg-caramel-50 hover:bg-caramel-100 active:bg-caramel-200 text-caramel-700 text-[11px] font-bold flex items-center gap-1 transition border border-caramel-200/70 select-none cursor-pointer">
                     <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-caramel-600"></i>
@@ -5086,6 +5280,193 @@
       </div>
     </div>
 
+    <!-- ======================================================== -->
+    <!-- MODAL 12: TAMBAH CEMILAN KE BELANJA & PAPAN              -->
+    <!-- ======================================================== -->
+    <div v-if="modalAddSnack.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-lg w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-modal p-6 space-y-4 animate-in fade-in duration-200 max-h-[90vh] flex flex-col ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-2"></div>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100 flex-shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="w-10 h-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-xl flex-shrink-0 shadow-2xs">🍪</span>
+            <div>
+              <h3 class="font-serif font-bold text-base sm:text-lg text-espresso-900">Tambah Cemilan</h3>
+              <p class="text-[11px] text-taupe-500">Pilih cemilan untuk masuk ke daftar belanja &amp; papan</p>
+            </div>
+          </div>
+          <button @click="modalAddSnack.show = false" class="text-taupe-400 hover:text-espresso-800 p-1.5 rounded-xl hover:bg-cream-100 transition cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Cycle Selector -->
+        <div class="space-y-1.5 bg-amber-50/70 p-3 rounded-2xl border border-amber-200/80 flex-shrink-0">
+          <label class="text-[10px] font-bold uppercase tracking-wider text-amber-900 flex items-center gap-1">
+            <span>🛒</span>
+            <span>Pilih Pekan Belanja untuk Bahan:</span>
+          </label>
+          <select v-model="modalAddSnack.cycleType"
+                  class="w-full px-3 py-2 rounded-xl text-xs font-bold text-espresso-900 bg-white border border-amber-200 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[40px]">
+            <option value="ongoing">Pekan Berjalan: {{ formatShortDate(ongoingFridayRange.start) }} - {{ formatShortDate(ongoingFridayRange.end) }}</option>
+            <option value="current">Belanja Jumat Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
+            <option value="next">Jumat Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
+          </select>
+          <div class="text-[10px] text-amber-800/80">
+            Bahan baku dari cemilan yang dipilih otomatis dimasukkan ke Rincian Belanja Jumat pada pekan ini.
+          </div>
+        </div>
+
+        <!-- Search & Filter Options -->
+        <div class="space-y-2 flex-shrink-0">
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1 bg-cream-100 p-1 rounded-xl text-[11px] font-bold">
+              <button type="button" @click="modalAddSnack.filterCategory = 'dessert'"
+                      class="px-2.5 py-1 rounded-lg transition"
+                      :class="modalAddSnack.filterCategory === 'dessert' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600 hover:text-espresso-800'">
+                🍪 Kategori Cemilan
+              </button>
+              <button type="button" @click="modalAddSnack.filterCategory = 'all'"
+                      class="px-2.5 py-1 rounded-lg transition"
+                      :class="modalAddSnack.filterCategory === 'all' ? 'bg-white text-espresso-900 shadow-2xs' : 'text-taupe-600 hover:text-espresso-800'">
+                Semua Resep ({{ foodItems.length }})
+              </button>
+            </div>
+            <button type="button" @click="modalAddSnack.show = false; openAddFoodModalWithCategory('dessert')"
+                    class="text-[11px] font-bold text-caramel-600 hover:text-caramel-800 flex items-center gap-1 cursor-pointer">
+              <span>+ Resep Baru</span>
+            </button>
+          </div>
+
+          <div class="relative">
+            <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3 top-2.5"></i>
+            <input type="text" v-model="modalAddSnack.searchQuery" placeholder="Cari cemilan (puding, gorengan, kue, roti)..."
+                   class="w-full pl-9 pr-3 py-2 rounded-xl text-xs bg-cream-50 border border-cream-200 text-espresso-900 focus:outline-none focus:ring-2 focus:ring-caramel-400">
+          </div>
+        </div>
+
+        <!-- Dishes Multi-Select Grid/List -->
+        <div class="flex-grow overflow-y-auto space-y-2 pr-1 min-h-[160px]">
+          <div v-if="filteredSnackDishOptions.length === 0" class="text-center py-8 space-y-2.5">
+            <div class="text-3xl">🍪</div>
+            <div class="text-xs font-bold text-espresso-900">Belum Ada Resep Cemilan yang Cocok</div>
+            <p class="text-[11px] text-taupe-500 max-w-xs mx-auto leading-relaxed">
+              Tambahkan resep masakan dengan kategori <strong>Cemilan</strong> di Dapur Gizi agar bahannya bisa otomatis dibelanjakan.
+            </p>
+            <button type="button" @click="modalAddSnack.show = false; openAddFoodModalWithCategory('dessert')"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>+ Buat Resep Cemilan Baru</span>
+            </button>
+          </div>
+
+          <div v-else
+               v-for="dish in filteredSnackDishOptions" :key="dish.id"
+               @click="toggleSelectSnackDish(dish.id)"
+               class="p-3 rounded-2xl border transition flex items-center justify-between gap-3 cursor-pointer select-none"
+               :class="modalAddSnack.selectedFoodIds.includes(dish.id) ? 'bg-amber-50/80 border-amber-300 shadow-2xs' : 'bg-white border-cream-200 hover:bg-cream-50'">
+            
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="text-xl flex-shrink-0">{{ dish.icon || '🍪' }}</span>
+              <div class="min-w-0">
+                <div class="text-xs font-bold text-espresso-900 truncate">{{ dish.name }}</div>
+                <div class="text-[10px] text-taupe-500 truncate flex items-center gap-1 mt-0.5">
+                  <span class="font-medium text-amber-800">{{ getCategoryMeta(dish.category).label }}</span>
+                  <span>•</span>
+                  <span>{{ (dish.ingredients || []).length }} bahan baku</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 transition"
+                 :class="modalAddSnack.selectedFoodIds.includes(dish.id) ? 'bg-amber-600 text-white shadow-xs' : 'border border-cream-300 bg-cream-50 text-transparent'">
+              ✓
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-3 border-t border-cream-100 flex items-center justify-between gap-3 flex-shrink-0">
+          <div class="text-xs font-bold text-espresso-800">
+            <span>{{ modalAddSnack.selectedFoodIds.length }} cemilan dipilih</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button type="button" @click="modalAddSnack.show = false"
+                    class="px-4 py-2.5 rounded-xl text-xs font-bold text-espresso-700 bg-cream-100 hover:bg-cream-200 border border-cream-200 transition cursor-pointer min-h-[42px]">
+              Batal
+            </button>
+            <button type="button" @click="saveAddSnack"
+                    :disabled="modalAddSnack.selectedFoodIds.length === 0"
+                    class="px-5 py-2.5 rounded-xl text-xs font-bold text-white shadow-card transition cursor-pointer flex items-center gap-1.5 min-h-[42px]"
+                    :class="modalAddSnack.selectedFoodIds.length === 0 ? 'bg-cream-300 text-espresso-400 cursor-not-allowed' : 'bg-caramel-500 hover:bg-caramel-600'">
+              <span>+ Masukkan ke Cemilan &amp; Belanja</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- MODAL 13: KONFIRMASI GANTI STATUS CEMILAN                -->
+    <!-- ======================================================== -->
+    <div v-if="modalConfirmSnackStatus.show" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-sm w-full rounded-3xl border border-cream-200 shadow-modal p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+        
+        <div class="text-center space-y-2">
+          <div class="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-2xl shadow-inner border"
+               :class="modalConfirmSnackStatus.newStatus === 'habis' ? 'bg-red-50 text-red-600 border-red-200' : (modalConfirmSnackStatus.newStatus === 'tersedia' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-amber-50 text-amber-600 border-amber-200')">
+            <span v-if="modalConfirmSnackStatus.newStatus === 'habis'">⚪</span>
+            <span v-else-if="modalConfirmSnackStatus.newStatus === 'tersedia'">🟢</span>
+            <span v-else>⏳</span>
+          </div>
+          <h3 class="text-base font-serif font-bold text-espresso-900">
+            Konfirmasi Ubah Status
+          </h3>
+          <p class="text-xs text-taupe-600">
+            Apakah Anda yakin ingin mengubah status cemilan <strong>"{{ modalConfirmSnackStatus.snack?.foodName }}"</strong>?
+          </p>
+        </div>
+
+        <!-- Status Change Comparison Badge -->
+        <div class="p-3 rounded-2xl bg-cream-50 border border-cream-200 flex items-center justify-center gap-2 text-xs font-bold">
+          <span class="px-2.5 py-1 rounded-xl bg-white border border-cream-300 text-espresso-700">
+            {{ getSnackStatusLabel(modalConfirmSnackStatus.snack?.status) }}
+          </span>
+          <span class="text-taupe-400">&rarr;</span>
+          <span class="px-2.5 py-1 rounded-xl text-white shadow-2xs"
+                :class="modalConfirmSnackStatus.newStatus === 'habis' ? 'bg-taupe-700' : (modalConfirmSnackStatus.newStatus === 'tersedia' ? 'bg-emerald-600' : 'bg-amber-600')">
+            {{ getSnackStatusLabel(modalConfirmSnackStatus.newStatus) }}
+          </span>
+        </div>
+
+        <!-- Dynamic Note based on target status -->
+        <div v-if="modalConfirmSnackStatus.newStatus === 'habis'" 
+             class="p-2.5 rounded-xl bg-red-50/70 border border-red-200 text-[11px] text-red-800 leading-relaxed text-center">
+          💡 <em>Cemilan ini akan disembunyikan dari papan cemilan aktif karena stoknya sudah habis.</em>
+        </div>
+        <div v-else-if="modalConfirmSnackStatus.newStatus === 'tersedia'" 
+             class="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-[11px] text-emerald-800 leading-relaxed text-center">
+          ✨ <em>Cemilan ini siap dinikmati dan akan tampil sebagai "Tersedia" di papan utama.</em>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-1">
+          <button type="button" @click="modalConfirmSnackStatus.show = false"
+                  class="min-h-[42px] px-4 py-2 rounded-xl text-xs font-bold text-espresso-700 bg-cream-100 hover:bg-cream-200 border border-cream-300 transition cursor-pointer">
+            Batal
+          </button>
+          <button type="button" @click="confirmChangeSnackStatus"
+                  class="min-h-[42px] px-4 py-2 rounded-xl text-xs font-bold text-white shadow-xs transition cursor-pointer"
+                  :class="modalConfirmSnackStatus.newStatus === 'habis' ? 'bg-red-600 hover:bg-red-700' : (modalConfirmSnackStatus.newStatus === 'tersedia' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700')">
+            Ya, Ubah Status
+          </button>
+        </div>
+
+      </div>
+    </div>
+
 
     <!-- iOS NATIVE-STYLE BOTTOM TAB BAR (Optimized for iPhone 11 & 11 Pro) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-cream-200 ios-safe-bottom-nav shadow-ios-bottom">
@@ -5281,17 +5662,22 @@
           { id: 'belanja', label: 'Rincian Belanja', shortLabel: 'Belanja', icon: 'shopping-cart', badge: 'Auto' },
         ]);
 
-        // 6 Nutrition Categories
+        // 6 Nutrition Categories (Dessert diubah namanya menjadi Cemilan)
         const nutritionCategories = [
           { id: 'karbohidrat', label: 'Karbohidrat', icon: '🍚' },
           { id: 'protein', label: 'Protein', icon: '🍗' },
           { id: 'serat_sayur', label: 'Serat Sayur', icon: '🥦' },
           { id: 'serat_buah', label: 'Serat Buah', icon: '🍎' },
           { id: 'tambahan', label: 'Tambahan', icon: '🌶️' },
-          { id: 'dessert', label: 'Dessert', icon: '🍮' },
+          { id: 'dessert', label: 'Cemilan', icon: '🍪' },
         ];
 
-        // 4 Core Nutrition Categories for Paket Menu (Buah & Dessert diisi setelah belanja)
+        // 5 Kategori Gizi untuk Jadwal Harian (Cemilan tidak masuk ke jadwal harian)
+        const dailyNutritionCategories = computed(() => {
+          return nutritionCategories.filter(c => c.id !== 'dessert');
+        });
+
+        // 4 Core Nutrition Categories for Paket Menu (Buah & Cemilan diisi setelah belanja / fleksibel)
         const packageNutritionCategories = nutritionCategories.filter(
           c => c.id !== 'serat_buah' && c.id !== 'dessert'
         );
@@ -5308,7 +5694,7 @@
           { name: 'Instan', icon: '🍜' },
           { name: 'Alat', icon: '🛠️' },
           { name: 'Lainnya', icon: '🧺' },
-          { name: 'Dessert', icon: '🍮' },
+          { name: 'Cemilan', icon: '🍪' },
         ];
 
         const REMPAH_KEYWORDS = [
@@ -6191,7 +6577,7 @@
           if (low === 'tepung' || low === 'tepung-tepungan' || low === 'flour') return 'Tepung';
           if (low === 'instan' || low === 'instant' || low === 'makanan instan' || low === 'mie instan') return 'Instan';
           if (low === 'alat' || low === 'peralatan' || low === 'alat masak' || low === 'perlengkapan') return 'Alat';
-          if (low === 'desert') return 'Dessert';
+          if (low === 'desert' || low === 'dessert' || low === 'cemilan') return 'Cemilan';
           if (low === 'buah-buahan' || low === 'buah buahan') return 'Buah Buahan';
           if (low === 'daging & unggas') return 'Daging & Unggas';
           if (low === 'sayur mayur' || low === 'sayur') return 'Sayur Mayur';
@@ -6227,7 +6613,7 @@
 
           if (low === 'lainnya & dessert' || low === 'sembako & kering' || low === 'umum' || low === '') {
             if (DESSERT_KEYWORDS.some(k => itemLow.includes(k))) {
-              return 'Dessert';
+              return 'Cemilan';
             }
             return 'Lainnya';
           }
@@ -6442,6 +6828,22 @@
           fruits: []
         });
 
+        // Flexible Snack & Kudapan State (Terpisah di Papan & Fleksibel Tanpa Hari)
+        const snackList = ref([]);
+        const showFinishedSnacks = ref(false);
+        const modalAddSnack = ref({
+          show: false,
+          cycleType: 'current',
+          selectedFoodIds: [],
+          searchQuery: '',
+          filterCategory: 'dessert'
+        });
+        const modalConfirmSnackStatus = ref({
+          show: false,
+          snack: null,
+          newStatus: ''
+        });
+
         // Manual Shopping Items for Stock
         const manualShoppingItems = ref([]);
         const modalManualShopping = ref({
@@ -6592,6 +6994,9 @@
             if (storedWeeklyTarget && !isNaN(Number(storedWeeklyTarget))) {
               weeklyMenuTarget.value = Math.max(1, Math.min(28, Number(storedWeeklyTarget)));
             }
+
+            const storedSnacks = localStorage.getItem('seleraku_snack_list');
+            snackList.value = storedSnacks ? JSON.parse(storedSnacks) : [];
           } catch (e) {
             console.error('Error loading data from localStorage', e);
             foodItems.value = [];
@@ -6639,6 +7044,7 @@
               actualProteinWeights: actualProteinWeights.value,
               weeklyMenuPool: weeklyMenuPool.value,
               weeklyMenuTarget: weeklyMenuTarget.value,
+              snackList: snackList.value,
               updatedAt: lastLocalUpdate
             };
 
@@ -6768,6 +7174,10 @@
                 if (data.weeklyMenuTarget && !isNaN(Number(data.weeklyMenuTarget))) {
                   weeklyMenuTarget.value = Math.max(1, Math.min(28, Number(data.weeklyMenuTarget)));
                   localStorage.setItem('seleraku_weekly_menu_target', String(weeklyMenuTarget.value));
+                }
+                if (Array.isArray(data.snackList)) {
+                  snackList.value = data.snackList;
+                  localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
                 }
 
                 localStorage.setItem('seleraku_last_updated', data.updatedAt);
@@ -7974,7 +8384,11 @@
         };
 
         const foodHasCategory = (item, catId) => {
-          return getFoodCategories(item).includes(catId);
+          const cats = getFoodCategories(item);
+          if (catId === 'dessert' || catId === 'cemilan') {
+            return cats.includes('dessert') || cats.includes('cemilan');
+          }
+          return cats.includes(catId);
         };
 
         const getCategoryMeta = (catId) => {
@@ -9543,7 +9957,8 @@
             mealPlans: mealPlans.value,
             masterIngredients: masterIngredients.value,
             pantryStocks: pantryStocks.value,
-            manualStocks: manualStocks.value
+            manualStocks: manualStocks.value,
+            snackList: snackList.value
           };
           const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
           const dlAnchorElem = document.createElement('a');
@@ -9589,6 +10004,10 @@
                 if (imported.pantryStocks && typeof imported.pantryStocks === 'object') {
                   pantryStocks.value = migratePantryStocksGroups(imported.pantryStocks);
                   localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
+                }
+                if (Array.isArray(imported.snackList)) {
+                  snackList.value = imported.snackList;
+                  localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
                 }
                 deletedFoodIds.value = [];
                 deletedPackageIds.value = [];
@@ -9734,6 +10153,18 @@
               }
               usageMap[foodId].sessionLabels.push(`Rencana Pekan (${entry.label || ('Menu #' + (idx + 1))})`);
             });
+          });
+
+          // Also include CEMILAN for this cycleKey (so their ingredients are automatically bought for this Friday cycle!)
+          (snackList.value || []).forEach(snack => {
+            if (!snack || snack.cycleKey !== range.start) return;
+            const foodId = snack.foodId;
+            const food = getFoodItem(foodId);
+            if (!food) return;
+            if (!usageMap[foodId]) {
+              usageMap[foodId] = { food, sessionLabels: [] };
+            }
+            usageMap[foodId].sessionLabels.push(`Cemilan: ${snack.foodName || food.name}`);
           });
 
           return usageMap;
@@ -10401,6 +10832,164 @@
           });
         });
 
+        // ========================================================
+        // CEMILAN & KUDAPAN LOGIC (FLEKSIBEL & REAL-TIME STATUS)
+        // ========================================================
+        const activeSnackList = computed(() => {
+          return (snackList.value || []).filter(s => s && s.status !== 'habis');
+        });
+
+        const finishedSnackList = computed(() => {
+          return (snackList.value || []).filter(s => s && s.status === 'habis');
+        });
+
+        const availableSnackCount = computed(() => {
+          return activeSnackList.value.filter(s => s.status === 'tersedia').length;
+        });
+
+        const pendingSnackCount = computed(() => {
+          return activeSnackList.value.filter(s => s.status === 'belum_dibikin').length;
+        });
+
+        const activeWeeklySnacks = computed(() => {
+          const ck = activeWeeklyRange.value?.start;
+          if (!ck) return [];
+          return (snackList.value || []).filter(s => s && s.cycleKey === ck);
+        });
+
+        const filteredSnackDishOptions = computed(() => {
+          const q = (modalAddSnack.value.searchQuery || '').trim().toLowerCase();
+          const filterCat = modalAddSnack.value.filterCategory || 'dessert';
+          return foodItems.value.filter(dish => {
+            if (filterCat === 'dessert') {
+              const isSnack = foodHasCategory(dish, 'dessert');
+              if (!isSnack) return false;
+            }
+            if (!q) return true;
+            return (dish.name || '').toLowerCase().includes(q);
+          }).sort(compareFoodNameAZ);
+        });
+
+        const saveSnackList = () => {
+          localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
+          triggerSyncServer();
+        };
+
+        const getSnackStatusLabel = (status) => {
+          if (status === 'tersedia') return 'Tersedia';
+          if (status === 'habis') return 'Habis';
+          return 'Belum Dibikin';
+        };
+
+        const formatSnackCycleLabel = (cycleKey) => {
+          if (!cycleKey) return 'Pekan Bebas';
+          if (cycleKey === ongoingFridayRange.value.start) return 'Pekan Berjalan';
+          if (cycleKey === fridayRange.value.start) return 'Belanja Jumat Ini';
+          if (cycleKey === nextFridayRange.value.start) return 'Jumat Depan';
+          return formatShortDate(cycleKey);
+        };
+
+        const openAddSnackModal = (preselectedCycleType = null) => {
+          modalAddSnack.value = {
+            show: true,
+            cycleType: preselectedCycleType || selectedWeeklyCycle.value || 'current',
+            selectedFoodIds: [],
+            searchQuery: '',
+            filterCategory: 'dessert'
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const openAddSnackModalWithFood = (food) => {
+          if (!food) return;
+          modalAddSnack.value = {
+            show: true,
+            cycleType: selectedWeeklyCycle.value || 'current',
+            selectedFoodIds: [food.id],
+            searchQuery: '',
+            filterCategory: 'all'
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const toggleSelectSnackDish = (dishId) => {
+          const arr = modalAddSnack.value.selectedFoodIds;
+          const idx = arr.indexOf(dishId);
+          if (idx >= 0) {
+            arr.splice(idx, 1);
+          } else {
+            arr.push(dishId);
+          }
+        };
+
+        const saveAddSnack = () => {
+          const ids = modalAddSnack.value.selectedFoodIds || [];
+          if (ids.length === 0) return;
+          const ct = modalAddSnack.value.cycleType || 'current';
+          let cycleKey = fridayRange.value.start;
+          if (ct === 'ongoing') cycleKey = ongoingFridayRange.value.start;
+          else if (ct === 'next') cycleKey = nextFridayRange.value.start;
+
+          ids.forEach(foodId => {
+            const food = getFoodItem(foodId);
+            if (!food) return;
+            snackList.value.push({
+              id: 'snack_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+              foodId: food.id,
+              foodName: food.name,
+              foodIcon: food.icon || '🍪',
+              portion: food.portion || '',
+              cycleKey: cycleKey,
+              status: 'belum_dibikin',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+          });
+
+          saveSnackList();
+          modalAddSnack.value.show = false;
+          showToast(`${ids.length} cemilan ditambahkan! Bahannya masuk ke Rincian Belanja.`, 'success');
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const promptChangeSnackStatus = (snack, newStatus) => {
+          if (!snack || snack.status === newStatus) return;
+          modalConfirmSnackStatus.value = {
+            show: true,
+            snack,
+            newStatus
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmChangeSnackStatus = () => {
+          const { snack, newStatus } = modalConfirmSnackStatus.value;
+          if (!snack || !newStatus) return;
+          const target = snackList.value.find(s => s.id === snack.id);
+          if (target) {
+            target.status = newStatus;
+            target.updatedAt = new Date().toISOString();
+            saveSnackList();
+            if (newStatus === 'habis') {
+              showToast(`"${target.foodName}" ditandai Habis dan disembunyikan dari papan.`, 'success');
+            } else {
+              showToast(`Status "${target.foodName}" diubah menjadi ${getSnackStatusLabel(newStatus)}.`, 'success');
+            }
+          }
+          modalConfirmSnackStatus.value.show = false;
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmDeleteSnack = (snack) => {
+          if (!snack) return;
+          if (confirm(`Hapus cemilan "${snack.foodName}" dari daftar?`)) {
+            snackList.value = snackList.value.filter(s => s.id !== snack.id);
+            saveSnackList();
+            showToast(`Cemilan "${snack.foodName}" telah dihapus.`);
+            nextTick(() => { if (window.lucide) lucide.createIcons(); });
+          }
+        };
+
         return {
           syncStatus,
           pullSyncFromServer,
@@ -10674,7 +11263,28 @@
           calculateSingleFruitNutrition,
           calculateFruitsNutrition,
           packageNutritionCoverage,
-          getCrossCategoryContributors
+          getCrossCategoryContributors,
+          dailyNutritionCategories,
+          snackList,
+          activeSnackList,
+          finishedSnackList,
+          showFinishedSnacks,
+          availableSnackCount,
+          pendingSnackCount,
+          activeWeeklySnacks,
+          modalAddSnack,
+          modalConfirmSnackStatus,
+          filteredSnackDishOptions,
+          saveSnackList,
+          getSnackStatusLabel,
+          formatSnackCycleLabel,
+          openAddSnackModal,
+          openAddSnackModalWithFood,
+          toggleSelectSnackDish,
+          saveAddSnack,
+          promptChangeSnackStatus,
+          confirmChangeSnackStatus,
+          confirmDeleteSnack
         };
       }
     }).mount('#app');
