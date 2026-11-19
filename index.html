@@ -291,727 +291,504 @@
       <!-- ======================================================== -->
       <!-- TAB 1: PAPAN MENU (HALAMAN UTAMA)                        -->
       <!-- ======================================================== -->
-      <section v-if="activeTab === 'papan'" class="space-y-7">
+      <section v-if="activeTab === 'papan'" class="space-y-5">
         
-        <!-- Header Banner & View Mode Switcher -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-5 bg-gradient-to-r from-cream-100/90 via-white to-sage-50/60 p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-soft">
+        <!-- Header Bar (Simple, Clean, No Marketing Fluff) -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
           <div>
-            <div class="flex items-center gap-2 text-sage-600 text-xs font-bold uppercase tracking-wider mb-1.5">
-              <i data-lucide="calendar" class="w-4 h-4 text-sage-500"></i>
-              <span>Papan Menu Hidangan</span>
-            </div>
             <h1 class="font-serif text-2xl sm:text-3xl font-bold text-espresso-900">
-              Inspirasi Masak Hari Ini & Sepekan
+              Papan Menu
             </h1>
-            <p class="text-xs sm:text-sm text-espresso-700 mt-1.5 max-w-xl leading-relaxed">
-              Pantau jadwal hidangan sehat bergizi seimbang untuk keluarga tercinta setiap hari.
-            </p>
+            <div class="text-xs text-taupe-500 font-medium mt-0.5 flex items-center gap-2">
+              <span>📅 {{ formatTanggalIndo(currentDate, true) }}</span>
+              <span>•</span>
+              <span class="text-caramel-700 font-semibold">
+                {{ (getMealForSlot(currentDate, 'bekal') ? 1 : 0) + (getMealForSlot(currentDate, 'malam') ? 1 : 0) }}/2 Sesi Terisi
+              </span>
+            </div>
           </div>
 
-          <!-- Switcher: Hari Ini vs Minggu Ini -->
-          <div class="flex items-center bg-cream-200/80 p-1.5 rounded-2xl border border-cream-300 self-start md:self-center shadow-inner">
-            <button @click="boardView = 'today'"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200"
-                    :class="boardView === 'today' ? 'bg-white text-espresso-900 shadow-sm border border-cream-200' : 'text-espresso-700 hover:text-espresso-900'">
-              <i data-lucide="sparkles" class="w-4 h-4" :class="boardView === 'today' ? 'text-amber-500' : ''"></i>
-              <span>Menu Hari Ini</span>
-            </button>
-            <button @click="boardView = 'week'"
-                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200"
-                    :class="boardView === 'week' ? 'bg-white text-espresso-900 shadow-sm border border-cream-200' : 'text-espresso-700 hover:text-espresso-900'">
-              <i data-lucide="calendar-range" class="w-4 h-4" :class="boardView === 'week' ? 'text-caramel-600' : ''"></i>
-              <span>Minggu Ini (Geser)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- 1.A VIEW: MENU HARI INI (DEFAULT) -->
-        <div v-if="boardView === 'today'" class="space-y-7">
-          
-          <!-- Today Hero Card -->
-          <div class="bg-white rounded-3xl border border-cream-200 shadow-card p-6 sm:p-8 space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-5 border-b border-cream-200/80 gap-4">
-              <div>
-                <div class="flex flex-wrap items-center gap-2 mb-2.5">
-                  <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sage-100 text-sage-800 border border-sage-300 text-xs font-bold">
-                    <span class="w-2 h-2 rounded-full bg-sage-600 animate-pulse"></span>
-                    <span>Sedang Berlangsung Hari Ini</span>
-                  </div>
-                  <span class="text-[11px] font-bold px-2.5 py-1 rounded-full border"
-                        :class="hasAnyMealForDate(currentDate) ? 'bg-caramel-50 text-caramel-700 border-caramel-200' : 'bg-cream-100 text-taupe-500 border-cream-200'">
-                    {{ (getMealForSlot(currentDate, 'bekal') ? 1 : 0) + (getMealForSlot(currentDate, 'malam') ? 1 : 0) }}/2 Menu Terisi
-                  </span>
-                </div>
-                <h2 class="text-xl sm:text-2xl font-serif font-bold text-espresso-900">
-                  {{ formatTanggalIndo(currentDate, true) }}
-                </h2>
-                <p class="text-xs text-espresso-600 mt-1">
-                  <span v-if="hasAnyMealForDate(currentDate)">
-                    Jadwal harian terdiri dari <strong>Menu Bekal</strong> &amp; <strong>Menu Makan Malam</strong>.
-                  </span>
-                  <span v-else class="text-espresso-400">Belum ada menu bekal maupun makan malam yang diatur untuk hari ini</span>
-                </p>
-              </div>
-
-              <!-- Quick action buttons -->
-              <div class="flex flex-wrap items-center gap-3">
-                <button @click="editMenuForDate(currentDate, 'bekal')" 
-                        class="min-h-[42px] flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 active:bg-caramel-700 text-white shadow-card transition">
-                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                  <span>Atur Menu Hari Ini</span>
-                </button>
-                <button @click="openSwapModalWithDate(currentDate)"
-                        class="min-h-[42px] flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 active:bg-cream-300 text-caramel-700 border border-cream-300 transition shadow-xs">
-                  <i data-lucide="arrow-left-right" class="w-3.5 h-3.5 text-caramel-600"></i>
-                  <span>Tukar</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- RINGKASAN GIZI HARIAN (OTOMATIS DARI BAHAN RESEP) -->
-            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-cream-50 via-white to-sage-50/40 border border-cream-200 shadow-2xs space-y-4">
-              <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-cream-200/70">
-                <div class="flex items-center gap-2.5">
-                  <div class="w-9 h-9 rounded-xl bg-caramel-50 border border-caramel-200 flex items-center justify-center text-lg flex-shrink-0">
-                    📊
-                  </div>
-                  <div>
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                      <h3 class="text-xs sm:text-sm font-bold text-espresso-900">Ringkasan Gizi Harian</h3>
-                      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-100 text-espresso-700 border border-cream-200">Per Orang</span>
-                    </div>
-                    <p class="text-[10px] sm:text-[11px] text-taupe-500">Otomatis dihitung dari takaran bahan Menu Bekal + Makan Malam</p>
-                  </div>
-                </div>
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <button type="button" @click="openProteinPrepModal('day', currentDate)"
-                          class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <span>⚖️</span>
-                    <span>Timbang Protein</span>
-                    <span v-if="countActualWeightsForDate(currentDate) > 0" class="px-1.5 py-0.2 rounded-full text-[9px] bg-emerald-600 text-white">
-                      {{ countActualWeightsForDate(currentDate) }}
-                    </span>
-                  </button>
-                  <button type="button" @click="openNutritionTargetModal"
-                          class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 shadow-2xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer">
-                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-caramel-600"></i>
-                    <span>Atur Target</span>
-                  </button>
-                </div>
-              </div>
-
-              <!-- Main Kalori Progress Bar -->
-              <div class="p-3.5 rounded-xl bg-white border border-cream-200/90 space-y-2">
-                <div class="flex items-center justify-between gap-2">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-base">🔥</span>
-                    <span class="text-xs font-bold text-espresso-900">Total Energi / Kalori</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-sm sm:text-base font-extrabold text-espresso-900">{{ todayNutrition.kalori }}</span>
-                    <span class="text-[11px] text-taupe-500 font-semibold">/ {{ nutritionTargets.kalori }} kkal</span>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border"
-                          :class="getNutritionStatusBadge(todayNutrition.kalori, NUTRITION_METRICS[0]).cls">
-                      {{ getNutritionStatusBadge(todayNutrition.kalori, NUTRITION_METRICS[0]).text }}
-                    </span>
-                  </div>
-                </div>
-                <div class="w-full h-2.5 rounded-full bg-cream-200/80 overflow-hidden">
-                  <div class="h-full rounded-full transition-all duration-500"
-                       :class="getNutritionBarClass(todayNutrition.kalori, NUTRITION_METRICS[0])"
-                       :style="{ width: Math.min(100, getNutritionPercent(todayNutrition.kalori, 'kalori')) + '%' }"></div>
-                </div>
-              </div>
-
-              <!-- 6 Macro & Limit Progress Grid (2 cols on iPhone 11/11 Pro, 3 cols on desktop) -->
-              <div class="grid grid-cols-2 lg:grid-cols-3 gap-2.5">
-                <div v-for="m in NUTRITION_METRICS.slice(1)" :key="m.key"
-                     class="p-2.5 sm:p-3 rounded-xl bg-white border border-cream-200/80 space-y-1.5">
-                  <div class="flex items-center justify-between gap-1">
-                    <span class="text-[11px] font-bold text-espresso-800 flex items-center gap-1 truncate">
-                      <span>{{ m.icon }}</span>
-                      <span class="truncate">{{ m.label }}</span>
-                    </span>
-                    <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full border flex-shrink-0"
-                          :class="getNutritionStatusBadge(todayNutrition[m.key], m).cls">
-                      {{ m.isMaxLimit ? (getNutritionPercent(todayNutrition[m.key], m.key) > 100 ? 'Tinggi!' : getNutritionPercent(todayNutrition[m.key], m.key) + '%') : getNutritionPercent(todayNutrition[m.key], m.key) + '%' }}
-                    </span>
-                  </div>
-                  <div class="flex items-baseline justify-between text-[11px]">
-                    <span class="font-extrabold text-espresso-900">{{ todayNutrition[m.key] }} <span class="font-semibold text-[10px] text-taupe-500">{{ m.unit }}</span></span>
-                    <span class="text-[10px] text-taupe-400">{{ m.isMaxLimit ? 'maks ' : '/ ' }}{{ nutritionTargets[m.key] }}{{ m.unit }}</span>
-                  </div>
-                  <div class="w-full h-1.5 rounded-full bg-cream-200/80 overflow-hidden">
-                    <div class="h-full rounded-full transition-all duration-500"
-                         :class="getNutritionBarClass(todayNutrition[m.key], m)"
-                         :style="{ width: Math.min(100, getNutritionPercent(todayNutrition[m.key], m.key)) + '%' }"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- 2 Daily Meal Slots: Bekal & Makan Malam -->
-            <div class="space-y-6">
-              <div v-for="slot in mealSlots" :key="slot.id"
-                   class="p-4 sm:p-5 rounded-2xl border transition-all"
-                   :class="getMealForSlot(currentDate, slot.id) ? 'bg-cream-50/50 border-cream-200' : 'bg-cream-50/25 border-dashed border-cream-300'">
-                
-                <!-- Slot Header -->
-                <div class="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-cream-200/70 mb-4">
-                  <div class="flex items-center gap-2.5">
-                    <span class="w-9 h-9 rounded-xl bg-white border border-cream-200 shadow-2xs flex items-center justify-center text-lg">
-                      {{ slot.icon }}
-                    </span>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <h3 class="text-sm sm:text-base font-serif font-bold text-espresso-900">
-                          {{ slot.label }}
-                        </h3>
-                        <span v-if="getMealForSlot(currentDate, slot.id)"
-                              class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sage-100 text-sage-800 border border-sage-200">
-                          {{ getDishCount(getMealForSlot(currentDate, slot.id)) }} Hidangan
-                        </span>
-                        <span v-if="getMealForSlot(currentDate, slot.id) && calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori > 0"
-                              class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-caramel-50 text-caramel-800 border border-caramel-200">
-                          🔥 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori }} kkal • P {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).protein }}g
-                        </span>
-                      </div>
-                      <div class="text-[11px] text-taupe-500">
-                        <span v-if="getMealForSlot(currentDate, slot.id)">
-                          {{ getMealForSlot(currentDate, slot.id).type === 'paket' ? 'Paket: ' + getPackageName(getMealForSlot(currentDate, slot.id).packageId) : 'Kombinasi Menu Satuan' }}
-                        </span>
-                        <span v-else class="italic text-espresso-400">Belum dijadwalkan untuk sesi ini</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center gap-1.5">
-                    <button v-if="getMealForSlot(currentDate, slot.id)"
-                            type="button"
-                            @click="confirmCancelScheduledSlot(currentDate, slot.id)"
-                            title="Batal masak hari ini (beli di luar) & pindahkan ke stok minggu depan"
-                            class="min-h-[36px] px-3 py-1.5 rounded-xl text-[11px] font-bold bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 transition flex items-center gap-1 cursor-pointer">
-                      <span>⏭️</span>
-                      <span>Batal → Mgg Depan</span>
-                    </button>
-                    <button @click="editMenuForDate(currentDate, slot.id)"
-                            class="min-h-[36px] px-3.5 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5"
-                            :class="getMealForSlot(currentDate, slot.id) 
-                              ? 'bg-white hover:bg-cream-100 text-espresso-800 border-cream-300 shadow-2xs' 
-                              : 'bg-caramel-500 hover:bg-caramel-600 text-white border-caramel-600 shadow-xs'">
-                      <i :data-lucide="getMealForSlot(currentDate, slot.id) ? 'edit-2' : 'plus'" class="w-3.5 h-3.5"></i>
-                      <span>{{ getMealForSlot(currentDate, slot.id) ? 'Atur ' + slot.shortLabel : '+ Isi ' + slot.shortLabel }}</span>
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Slot Filled Grid -->
-                <div v-if="getMealForSlot(currentDate, slot.id)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  <div v-for="cat in dailyNutritionCategories" :key="cat.id"
-                       class="p-3.5 sm:p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between"
-                       :class="(getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id).length > 0 || (cat.id === 'serat_buah' && (getMealForSlot(currentDate, slot.id).fruits || []).length > 0)) ? 'bg-white border-cream-200 shadow-2xs' : 'bg-cream-50/40 border-dashed border-cream-200'">
-                    
-                    <div>
-                      <div class="flex items-center justify-between mb-2">
-                        <span class="inline-flex items-center gap-1.5 text-xs font-bold text-espresso-800">
-                          <span class="text-sm">{{ cat.icon }}</span>
-                          <span>{{ cat.id === 'serat_buah' ? 'Buah' : cat.label }}</span>
-                        </span>
-                        <span v-if="(getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id).length + (cat.id === 'serat_buah' ? (getMealForSlot(currentDate, slot.id).fruits || []).length : 0)) > 0" class="text-[10px] uppercase font-bold text-sage-800 bg-sage-100 px-2 py-0.5 rounded-full border border-sage-200">
-                          {{ getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id).length + (cat.id === 'serat_buah' ? (getMealForSlot(currentDate, slot.id).fruits || []).length : 0) }} {{ cat.id === 'serat_buah' ? 'Buah' : 'Menu' }}
-                        </span>
-                      </div>
-
-                      <!-- Dishes List + Master Bahan Fruits (for serat_buah) -->
-                      <div v-if="getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id).length > 0 || (cat.id === 'serat_buah' && (getMealForSlot(currentDate, slot.id).fruits || []).length > 0)" class="space-y-2">
-                        <!-- Master Bahan Fruits List (Filled on Saturday after grocery shopping) -->
-                        <template v-if="cat.id === 'serat_buah' && (getMealForSlot(currentDate, slot.id).fruits || []).length > 0">
-                          <div v-for="(fr, frIdx) in (getMealForSlot(currentDate, slot.id).fruits || [])" :key="fr.id || frIdx"
-                               class="p-2.5 rounded-xl bg-rose-50/50 border border-rose-200/80 space-y-1">
-                            <div class="flex items-center justify-between gap-1.5">
-                              <div class="font-bold text-espresso-900 text-xs sm:text-sm leading-snug">
-                                🍎 {{ fr.name }}
-                              </div>
-                              <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-rose-800 border border-rose-200 flex-shrink-0">
-                                {{ fr.qty }} {{ fr.unit }}
-                              </span>
-                            </div>
-                            <div v-if="calculateSingleFruitNutrition(fr).kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
-                              <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateSingleFruitNutrition(fr).kalori }} kkal</span>
-                              <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">K {{ calculateSingleFruitNutrition(fr).karbo }}g</span>
-                              <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200/80">S {{ calculateSingleFruitNutrition(fr).serat }}g</span>
-                              <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">Gula {{ calculateSingleFruitNutrition(fr).gula }}g</span>
-                            </div>
-                          </div>
-                        </template>
-                        <div v-for="f in getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id)" :key="f.id"
-                             class="p-2.5 rounded-xl bg-cream-50/70 border border-cream-200/80 space-y-1">
-                          <div class="flex items-center justify-between gap-1.5">
-                            <div class="font-bold text-espresso-900 text-xs sm:text-sm leading-snug">
-                              {{ f.name }}
-                            </div>
-                            <a v-if="f.recipeUrl" :href="f.recipeUrl" target="_blank" rel="noopener noreferrer"
-                               class="text-[10px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-lg flex items-center gap-1 flex-shrink-0 transition"
-                               title="Buka link resep masakan ini">
-                              <i data-lucide="external-link" class="w-3 h-3 text-emerald-600"></i>
-                              <span>Resep</span>
-                            </a>
-                          </div>
-                          <div v-if="f.portion || f.notes" class="text-[11px] text-espresso-600 line-clamp-1">
-                            {{ f.portion || 'Porsi Keluarga' }}
-                            <span v-if="f.notes"> • {{ f.notes }}</span>
-                          </div>
-                          <!-- Mini Nutrition Strip per Dish -->
-                          <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0" class="flex flex-wrap items-center gap-1 pt-0.5 text-[9.5px] font-bold">
-                            <span class="px-1.5 py-0.5 rounded-md bg-caramel-50 text-caramel-800 border border-caramel-200/80">🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">K {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.karbo }}g</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/80">P {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.protein }}g</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-white text-espresso-700 border border-cream-200">L {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.lemak }}g</span>
-                            <span class="px-1.5 py-0.5 rounded-md bg-sage-50 text-sage-800 border border-sage-200/80">S {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.serat }}g</span>
-                            <button v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasWeighableProtein"
-                                    type="button"
-                                    @click.stop="openProteinPrepModal('day', currentDate)"
-                                    class="px-1.5 py-0.5 rounded-md border transition cursor-pointer"
-                                    :class="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'">
-                              {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? '⚖️ Berat Aktual' : '⚖️ Edit Gram' }}
-                            </button>
-                          </div>
-                          <!-- Ingredients preview pills -->
-                          <div v-if="(f.ingredients || []).length > 0" class="flex flex-wrap gap-1 pt-1 border-t border-cream-200/60">
-                            <span v-for="ing in (f.ingredients || []).slice(0, 3)" :key="ing.name"
-                                  class="text-[10px] font-medium bg-white text-espresso-800 px-1.5 py-0.5 rounded border border-cream-200">
-                              {{ ing.name }} ({{ ing.qty }} {{ ing.unit }})
-                            </span>
-                            <span v-if="(f.ingredients || []).length > 3" 
-                                  class="text-[10px] text-espresso-500 self-center">
-                              +{{ (f.ingredients || []).length - 3 }}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div v-else class="text-center py-3 text-[11px] text-espresso-400">
-                        <span>Kosong</span>
-                        <button @click="editMenuForDate(currentDate, slot.id)" class="text-caramel-600 font-bold underline ml-1.5 cursor-pointer">
-                          + Pilih
-                        </button>
-                      </div>
-                    </div>
-
-                  </div>
-                </div>
-
-                <!-- Slot Empty Compact State -->
-                <div v-else class="py-5 text-center space-y-2">
-                  <p class="text-xs text-espresso-500">
-                    Belum ada hidangan untuk <strong>{{ slot.label }}</strong> hari ini.
-                  </p>
-                </div>
-
-              </div>
-            </div>
-
-            <!-- Today's Meal Bottom Note / Ingredients Summary -->
-            <div v-if="hasAnyMealForDate(currentDate)" class="pt-4 border-t border-cream-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-espresso-600">
-              <div class="flex items-center gap-2">
-                <i data-lucide="info" class="w-4 h-4 text-sage-600 flex-shrink-0"></i>
-                <span>Semua bahan untuk <strong>Bekal &amp; Makan Malam</strong> hari ini otomatis masuk ke <strong>Rincian Belanja</strong>.</span>
-              </div>
-              <button @click="setTab('belanja')" class="text-caramel-600 font-bold hover:underline flex items-center gap-1 self-start sm:self-auto">
-                <span>Cek Rincian Belanja</span>
-                <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+          <!-- Switcher: Hari Ini vs Minggu Ini + Tukar -->
+          <div class="flex items-center gap-2 self-start sm:self-center">
+            <div class="inline-flex bg-cream-100 p-1 rounded-2xl border border-cream-200">
+              <button @click="boardView = 'today'"
+                      class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      :class="boardView === 'today' ? 'bg-white text-espresso-900 shadow-xs' : 'text-taupe-600 hover:text-espresso-800'">
+                <span>Hari Ini</span>
+              </button>
+              <button @click="boardView = 'week'"
+                      class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
+                      :class="boardView === 'week' ? 'bg-white text-espresso-900 shadow-xs' : 'text-taupe-600 hover:text-espresso-800'">
+                <span>Minggu Ini</span>
               </button>
             </div>
 
+            <button @click="openSwapModalWithDate(currentDate)" title="Tukar Menu Hari Ini dengan Hari Lain"
+                    class="min-h-[38px] px-3.5 py-2 rounded-2xl text-xs font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 transition flex items-center gap-1.5 cursor-pointer shadow-xs">
+              <i data-lucide="arrow-left-right" class="w-3.5 h-3.5 text-caramel-600"></i>
+              <span class="hidden sm:inline">Tukar Hari</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- 1.A VIEW: MENU HARI INI (DEFAULT)                        -->
+        <!-- ======================================================== -->
+        <div v-if="boardView === 'today'" class="space-y-5">
+          
+          <!-- RINGKASAN NUTRISI HARI INI (CLEAN METRIC STRIP, NO NESTED CARDS) -->
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-card space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-base">🔥</span>
+                <span class="text-xs sm:text-sm font-bold text-espresso-900">Total Kalori Hari Ini:</span>
+                <span class="text-sm sm:text-base font-extrabold text-espresso-900">{{ todayNutrition.kalori }}</span>
+                <span class="text-xs text-taupe-400 font-medium">/ {{ nutritionTargets.kalori }} kkal</span>
+                <span class="text-[9.5px] font-bold px-2 py-0.5 rounded-full border"
+                      :class="getNutritionStatusBadge(todayNutrition.kalori, NUTRITION_METRICS[0]).cls">
+                  {{ getNutritionStatusBadge(todayNutrition.kalori, NUTRITION_METRICS[0]).text }}
+                </span>
+              </div>
+
+              <!-- Quick action buttons -->
+              <div class="flex items-center gap-1.5 self-start sm:self-center">
+                <button type="button" @click="openProteinPrepModal('day', currentDate)"
+                        class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1 cursor-pointer">
+                  <span>⚖️</span>
+                  <span>Timbang Protein</span>
+                  <span v-if="countActualWeightsForDate(currentDate) > 0" class="px-1.5 py-0.2 rounded-full text-[9px] bg-amber-600 text-white font-extrabold">
+                    {{ countActualWeightsForDate(currentDate) }}
+                  </span>
+                </button>
+                <button type="button" @click="openNutritionTargetModal"
+                        class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-cream-50 hover:bg-cream-100 text-espresso-800 border border-cream-200 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="sliders-horizontal" class="w-3 h-3 text-taupe-500"></i>
+                  <span>Target</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Kalori progress bar -->
+            <div class="w-full h-2 rounded-full bg-cream-100 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500"
+                   :class="getNutritionBarClass(todayNutrition.kalori, NUTRITION_METRICS[0])"
+                   :style="{ width: Math.min(100, getNutritionPercent(todayNutrition.kalori, 'kalori')) + '%' }"></div>
+            </div>
+
+            <!-- Macro metrics pills -->
+            <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-0.5 text-[11px]">
+              <div v-for="m in NUTRITION_METRICS.slice(1)" :key="m.key"
+                   class="px-2.5 py-1.5 rounded-xl bg-cream-50/70 border border-cream-200/60 flex flex-col justify-between">
+                <div class="text-[10px] text-taupe-500 font-semibold flex items-center gap-1 truncate">
+                  <span>{{ m.icon }}</span>
+                  <span class="truncate">{{ m.label }}</span>
+                </div>
+                <div class="font-extrabold text-espresso-900 text-xs mt-0.5">
+                  {{ todayNutrition[m.key] }}<span class="text-[10px] font-normal text-taupe-400">{{ m.unit }}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <!-- Quick Preview: Besok & Lusa -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
-            <div v-for="offset in [1, 2]" :key="offset"
-                 class="bg-white p-6 rounded-3xl border border-cream-200 shadow-card flex flex-col justify-between">
+          <!-- DUA SESI MAKAN HARI INI (BEKAL & MAKAN MALAM) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div v-for="slot in mealSlots" :key="slot.id"
+                 class="bg-white rounded-2xl border p-4 sm:p-5 transition shadow-card flex flex-col justify-between gap-4"
+                 :class="getMealForSlot(currentDate, slot.id) ? 'border-cream-200' : 'border-dashed border-cream-300 bg-cream-50/20'">
+              
+              <!-- Slot Header -->
               <div>
-                <div class="flex items-center justify-between mb-3">
-                  <span class="text-[11px] font-bold uppercase tracking-wider text-espresso-500">
-                    {{ offset === 1 ? 'Besok' : 'Lusa' }}
-                  </span>
-                  <span class="text-xs font-bold text-espresso-800">
-                    {{ formatTanggalIndo(getDateOffset(offset)) }}
-                  </span>
-                </div>
-
-                <!-- Show both slots summary -->
-                <div class="space-y-2">
-                  <div v-for="slot in mealSlots" :key="slot.id"
-                       class="p-2.5 rounded-xl bg-cream-50/80 border border-cream-200/70 flex items-center justify-between gap-2">
+                <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="w-8 h-8 rounded-xl bg-cream-100 flex items-center justify-center text-sm flex-shrink-0">
+                      {{ slot.icon }}
+                    </span>
                     <div class="min-w-0">
-                      <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500 flex items-center gap-1">
-                        <span>{{ slot.icon }}</span>
-                        <span>{{ slot.shortLabel }}</span>
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <h3 class="text-sm font-bold text-espresso-900">{{ slot.label }}</h3>
+                        <span v-if="getMealForSlot(currentDate, slot.id)"
+                              class="text-[9.5px] font-bold px-1.5 py-0.2 rounded-md bg-cream-100 text-espresso-800 border border-cream-200 truncate max-w-[130px]">
+                          {{ getSlotPackageName(getMealForSlot(currentDate, slot.id)) || 'Menu Satuan' }}
+                        </span>
                       </div>
-                      <div v-if="getMealForSlot(getDateOffset(offset), slot.id)" class="text-xs font-bold text-espresso-900 truncate mt-0.5">
-                        {{ getDishSummary(getMealForSlot(getDateOffset(offset), slot.id)) }}
-                      </div>
-                      <div v-else class="text-[11px] text-espresso-400 italic mt-0.5">
-                        Belum dijadwalkan
+                      <div v-if="getMealForSlot(currentDate, slot.id) && calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori > 0"
+                           class="text-[10.5px] text-taupe-500 font-semibold mt-0.5">
+                        🔥 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori }} kkal • 💪 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).protein }}g protein
                       </div>
                     </div>
-                    <button @click="editMenuForDate(getDateOffset(offset), slot.id)"
-                            class="text-[11px] font-bold text-caramel-600 hover:text-caramel-800 px-2 py-1 rounded-lg hover:bg-cream-100 flex-shrink-0">
-                      {{ getMealForSlot(getDateOffset(offset), slot.id) ? 'Edit' : '+ Isi' }}
+                  </div>
+
+                  <!-- Slot Action Buttons -->
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    <button v-if="getMealForSlot(currentDate, slot.id)"
+                            type="button" @click="confirmCancelScheduledSlot(currentDate, slot.id)"
+                            title="Batal masak hari ini & pindahkan ke stok minggu depan"
+                            class="px-2 py-1 rounded-lg text-[10px] font-bold text-sky-700 hover:bg-sky-50 border border-sky-200 transition cursor-pointer">
+                      ⏭️ Batal
+                    </button>
+                    <button v-if="getMealForSlot(currentDate, slot.id)"
+                            type="button" @click="openPickPackageForSlot(currentDate, slot.id)"
+                            class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition cursor-pointer">
+                      Ganti
+                    </button>
+                    <button v-if="getMealForSlot(currentDate, slot.id)"
+                            type="button" @click="unassignDaySlot(currentDate, slot.id)"
+                            title="Kosongkan sesi ini"
+                            class="w-6 h-6 rounded-lg text-taupe-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer">
+                      ✕
                     </button>
                   </div>
                 </div>
+
+                <!-- Slot Content: Filled Dishes List (Flat, No Multi-Layered Boxes) -->
+                <div v-if="getMealForSlot(currentDate, slot.id)" class="pt-3 space-y-2">
+                  <template v-for="cat in dailyNutritionCategories" :key="cat.id">
+                    
+                    <!-- Fruits from Saturday shopping (if cat is serat_buah) -->
+                    <template v-if="cat.id === 'serat_buah' && (getMealForSlot(currentDate, slot.id).fruits || []).length > 0">
+                      <div v-for="(fr, frIdx) in getMealForSlot(currentDate, slot.id).fruits" :key="fr.id || frIdx"
+                           class="flex items-center justify-between p-2.5 rounded-xl bg-rose-50/50 border border-rose-200/70 text-xs">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <span class="text-xs px-1.5 py-0.5 rounded bg-white border border-rose-200 text-rose-800 font-bold flex-shrink-0">
+                            🍎 Buah
+                          </span>
+                          <span class="font-bold text-espresso-900 truncate">{{ fr.name }}</span>
+                          <span class="text-[10px] text-taupe-500 font-medium truncate">({{ fr.qty }} {{ fr.unit }})</span>
+                        </div>
+                        <div class="text-[10px] font-bold text-rose-800 bg-white px-2 py-0.5 rounded-md border border-rose-200 flex-shrink-0">
+                          🔥 {{ calculateSingleFruitNutrition(fr).kalori }} kkal
+                        </div>
+                      </div>
+                    </template>
+
+                    <!-- Category Dishes -->
+                    <template v-for="f in getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id)" :key="f.id">
+                      <div class="p-2.5 rounded-xl bg-cream-50/60 border border-cream-200/80 space-y-1.5 text-xs">
+                        <div class="flex items-center justify-between gap-2">
+                          <div class="flex items-center gap-1.5 min-w-0">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-white border border-cream-200 font-bold text-espresso-700 flex-shrink-0">
+                              {{ cat.icon }} {{ cat.id === 'serat_buah' ? 'Buah' : cat.label }}
+                            </span>
+                            <span class="font-bold text-espresso-900 truncate">{{ f.name }}</span>
+                            <a v-if="f.recipeUrl" :href="f.recipeUrl" target="_blank" rel="noopener noreferrer"
+                               class="text-[10px] font-bold text-emerald-700 hover:underline flex items-center gap-0.5 flex-shrink-0"
+                               title="Lihat resep">
+                              <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                          </div>
+                          <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0"
+                               class="text-[10px] font-bold text-espresso-700 bg-white px-2 py-0.5 rounded-md border border-cream-200 flex-shrink-0">
+                            🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal
+                          </div>
+                        </div>
+
+                        <!-- Portion & Ingredients Summary -->
+                        <div class="flex items-center justify-between text-[11px] text-taupe-500 gap-2">
+                          <div class="truncate">
+                            <span v-if="f.portion" class="text-espresso-700 font-medium">{{ f.portion }}</span>
+                            <span v-if="(f.ingredients || []).length > 0" class="text-taupe-400">
+                              • {{ (f.ingredients || []).map(i => i.name).slice(0, 3).join(', ') }}{{ (f.ingredients || []).length > 3 ? '...' : '' }}
+                            </span>
+                          </div>
+                          <button v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasWeighableProtein"
+                                  type="button"
+                                  @click.stop="openProteinPrepModal('day', currentDate)"
+                                  class="text-[9.5px] font-bold px-1.5 py-0.5 rounded border transition cursor-pointer flex-shrink-0"
+                                  :class="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'">
+                            {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? '✓ Timbang' : '⚖️ Timbang' }}
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+
+                  </template>
+                </div>
+
+                <!-- Slot Empty State -->
+                <div v-else class="py-6 text-center space-y-2.5">
+                  <div class="text-2xl opacity-60">{{ slot.icon }}</div>
+                  <div class="text-xs text-taupe-500">
+                    Belum ada hidangan <strong>{{ slot.label }}</strong> hari ini
+                  </div>
+                  <button type="button" @click="openPickPackageForSlot(currentDate, slot.id)"
+                          class="px-4 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 active:bg-caramel-700 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                    <span>+ Pasang Paket {{ slot.shortLabel }}</span>
+                  </button>
+                </div>
               </div>
-              <div class="mt-4 pt-3 border-t border-cream-100 flex items-center justify-between">
-                <span class="text-[11px] font-medium text-sage-700 flex items-center gap-1">
-                  <span>✓</span>
-                  <span>Bisa diedit</span>
-                </span>
-                <button @click="editMenuForDate(getDateOffset(offset), 'bekal')" class="text-xs font-bold text-caramel-600 hover:text-caramel-700">
-                  Buka Menu &rarr;
-                </button>
+
+            </div>
+          </div>
+
+          <!-- PRATINJAU 2 HARI MENDATANG (BESOK & LUSA) -->
+          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-card space-y-3">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-taupe-500 flex items-center justify-between">
+              <span>👀 Pratinjau 2 Hari Mendatang</span>
+              <button @click="setTab('isi')" class="text-caramel-600 hover:underline normal-case font-semibold cursor-pointer">
+                Buka Jadwal 7 Hari &rarr;
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div v-for="offset in [1, 2]" :key="offset"
+                   class="p-3.5 rounded-xl bg-cream-50/60 border border-cream-200/80 flex items-center justify-between gap-3">
+                <div class="min-w-0 space-y-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white border border-cream-200 text-espresso-800">
+                      {{ offset === 1 ? 'Besok' : 'Lusa' }}
+                    </span>
+                    <span class="text-xs font-bold text-espresso-900 truncate">
+                      {{ formatTanggalIndo(getDateOffset(offset), true) }}
+                    </span>
+                  </div>
+                  <div class="text-[11px] text-taupe-600 truncate space-y-0.5">
+                    <div class="truncate">
+                      <span class="font-medium text-espresso-700">🎒 Bekal:</span>
+                      <span class="text-espresso-900 ml-1 font-semibold">
+                        {{ getSlotPackageName(getMealForSlot(getDateOffset(offset), 'bekal')) || getDishSummary(getMealForSlot(getDateOffset(offset), 'bekal')) || 'Belum diisi' }}
+                      </span>
+                    </div>
+                    <div class="truncate">
+                      <span class="font-medium text-espresso-700">🌙 Malam:</span>
+                      <span class="text-espresso-900 ml-1 font-semibold">
+                        {{ getSlotPackageName(getMealForSlot(getDateOffset(offset), 'malam')) || getDishSummary(getMealForSlot(getDateOffset(offset), 'malam')) || 'Belum diisi' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex flex-col gap-1 flex-shrink-0">
+                  <button @click="openPickPackageForSlot(getDateOffset(offset), 'bekal')"
+                          class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white hover:bg-cream-100 text-caramel-700 border border-cream-300 transition cursor-pointer">
+                    Atur
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
         </div>
-        <!-- 1.B VIEW: MINGGU INI (SLIDER / GESTURE SWIPEABLE DECK) -->
+
+        <!-- ======================================================== -->
+        <!-- 1.B VIEW: MINGGU INI (TAMPILAN SEPEKAN)                   -->
+        <!-- ======================================================== -->
         <div v-if="boardView === 'week'" class="space-y-4">
           
-          <!-- Week Navigation Bar (Clean & Spacious) -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-3xl border border-cream-200 shadow-card">
-            <div class="flex items-center gap-3">
+          <!-- Week Navigation Bar -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-cream-200 shadow-card">
+            <div class="flex items-center gap-2.5">
               <button @click="changeWeekOffset(-1)" 
                       title="Minggu Sebelumnya"
-                      class="w-10 h-10 rounded-2xl bg-cream-100 hover:bg-cream-200 active:scale-95 text-espresso-900 border border-cream-300 flex items-center justify-center transition shadow-xs">
-                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                      class="w-9 h-9 rounded-xl bg-cream-100 hover:bg-cream-200 active:scale-95 text-espresso-900 border border-cream-300 flex items-center justify-center transition shadow-xs cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
               </button>
               <div>
                 <div class="text-sm font-bold text-espresso-900">
                   {{ getWeekDisplayRange(weekOffset) }}
                 </div>
-                <div class="text-xs text-espresso-600 font-medium mt-0.5">
+                <div class="text-[11px] text-taupe-500 font-medium">
                   {{ weekOffset === 0 ? 'Pekan Berjalan Saat Ini' : (weekOffset > 0 ? weekOffset + ' pekan ke depan' : Math.abs(weekOffset) + ' pekan lalu') }}
                 </div>
               </div>
               <button @click="changeWeekOffset(1)" 
                       title="Minggu Berikutnya"
-                      class="w-10 h-10 rounded-2xl bg-cream-100 hover:bg-cream-200 active:scale-95 text-espresso-900 border border-cream-300 flex items-center justify-center transition shadow-xs">
-                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                      class="w-9 h-9 rounded-xl bg-cream-100 hover:bg-cream-200 active:scale-95 text-espresso-900 border border-cream-300 flex items-center justify-center transition shadow-xs cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
               </button>
             </div>
 
-            <!-- Swipe Instructions & Jump to Today -->
-            <div class="flex flex-wrap items-center gap-2.5">
+            <div class="flex items-center gap-2 self-start sm:self-center">
               <button v-if="weekOffset !== 0" @click="weekOffset = 0"
-                      class="text-xs font-bold px-3.5 py-2 rounded-xl bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition">
-                Kembali ke Minggu Ini
+                      class="text-xs font-bold px-3 py-1.5 rounded-xl bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition cursor-pointer">
+                Minggu Ini
               </button>
               <button type="button" @click="openProteinPrepModal('week')"
-                      class="text-xs font-bold px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center gap-1.5 cursor-pointer min-h-[38px]">
+                      class="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1.5 cursor-pointer">
                 <span>⚖️</span>
                 <span>Timbang Protein Pekan Ini</span>
               </button>
-              <div class="text-xs text-espresso-600 flex items-center gap-1.5 bg-cream-50 px-3.5 py-2 rounded-xl border border-cream-200">
-                <i data-lucide="move-horizontal" class="w-4 h-4 text-caramel-500"></i>
-                <span class="font-medium">Geser kartu ke samping</span>
-              </div>
-              <!-- Carousel scroll buttons for desktop -->
-              <div class="hidden sm:flex items-center gap-1.5">
-                <button @click="scrollWeekCarousel(-1)" title="Geser Hari ke Kiri" class="w-9 h-9 rounded-xl bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 flex items-center justify-center transition">
-                  <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                </button>
-                <button @click="scrollWeekCarousel(1)" title="Geser Hari ke Kanan" class="w-9 h-9 rounded-xl bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 flex items-center justify-center transition">
-                  <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                </button>
-              </div>
             </div>
           </div>
 
-          <!-- SWIPEABLE HORIZONTAL CAROUSEL OF 7 DAYS (Senin - Minggu) -->
+          <!-- Horizontal Carousel of 7 Days -->
           <div ref="weekCarousel" 
-               class="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-1 snap-x snap-mandatory ios-scroll">
+               class="flex items-stretch gap-3.5 sm:gap-4 overflow-x-auto hide-scrollbar scroll-smooth py-2 px-0.5 snap-x snap-mandatory ios-scroll">
             
             <div v-for="day in currentWeekDays" :key="day.dateStr"
-                 class="snap-start flex-shrink-0 w-[84vw] sm:w-[330px] max-w-[330px] rounded-3xl border transition-all duration-300 flex flex-col justify-between"
-                 :class="day.isToday 
-                   ? 'bg-gradient-to-b from-cream-100/90 to-white border-taupe-400 shadow-hover ring-2 ring-taupe-400/20' 
-                   : 'bg-white border-cream-200 shadow-card hover:shadow-hover'">
+                 class="snap-start flex-shrink-0 w-[84vw] sm:w-[320px] max-w-[320px] rounded-2xl border transition-all flex flex-col justify-between bg-white shadow-card"
+                 :class="day.isToday ? 'border-caramel-400 ring-2 ring-caramel-300/30' : 'border-cream-200'">
               
               <!-- Card Header -->
-              <div class="p-4 sm:p-5 border-b border-cream-100">
-                <div class="flex items-center justify-between mb-1.5">
+              <div class="p-4 border-b border-cream-100">
+                <div class="flex items-center justify-between mb-1">
                   <span class="text-xs font-bold uppercase tracking-wider"
-                        :class="day.isToday ? 'text-espresso-800 font-extrabold' : 'text-taupe-500'">
+                        :class="day.isToday ? 'text-caramel-700 font-extrabold' : 'text-taupe-500'">
                     {{ day.dayName }}
                   </span>
-                  
-                  <span v-if="day.isToday" class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-caramel-500 text-white shadow-xs">
+                  <span v-if="day.isToday" class="text-[9.5px] font-bold px-2 py-0.2 rounded-full bg-caramel-100 text-caramel-800 border border-caramel-300">
                     Hari Ini
                   </span>
-                  <span v-else class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sage-50 text-sage-600 border border-sage-200">
-                    Bisa Diisi
-                  </span>
                 </div>
-
                 <div class="flex items-center justify-between gap-2">
-                  <div class="text-base font-serif font-bold text-espresso-900">
+                  <div class="text-sm font-serif font-bold text-espresso-900">
                     {{ day.formattedDate }}
                   </div>
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        :class="(day.meals.bekal || day.meals.malam) ? 'bg-sage-50 text-sage-700 border border-sage-200' : 'bg-cream-100 text-taupe-400'">
+                        :class="(day.meals.bekal || day.meals.malam) ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-cream-100 text-taupe-400'">
                     {{ (day.meals.bekal ? 1 : 0) + (day.meals.malam ? 1 : 0) }}/2 Menu
                   </span>
                 </div>
               </div>
 
-              <!-- Card Body: 2 Meal Sections (Bekal & Makan Malam) -->
-              <div class="p-4 sm:p-5 flex-grow space-y-3">
+              <!-- Card Body: Bekal & Malam Summary -->
+              <div class="p-4 flex-grow space-y-3">
                 <div v-for="slot in mealSlots" :key="slot.id"
-                     class="p-3 rounded-2xl border transition"
-                     :class="day.meals[slot.id] ? 'bg-cream-50/90 border-cream-200' : 'bg-cream-50/35 border-dashed border-cream-200'">
-                  
-                  <!-- Slot Sub-Header -->
-                  <div class="flex items-center justify-between gap-2 mb-2">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                      <span class="text-sm">{{ slot.icon }}</span>
-                      <span class="text-[11px] font-bold uppercase tracking-wider text-espresso-800 truncate">
-                        {{ slot.shortLabel }}
-                      </span>
-                      <span v-if="day.meals[slot.id] && day.meals[slot.id].type === 'paket'"
-                            class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cream-200 text-espresso-800 truncate max-w-[90px]">
-                        {{ getPackageName(day.meals[slot.id].packageId) }}
-                      </span>
-                    </div>
-                    <button @click="editMenuForDate(day.dateStr, slot.id)"
-                            class="text-[10px] font-bold px-2 py-0.5 rounded-lg border transition flex-shrink-0"
-                            :class="day.meals[slot.id] 
-                              ? 'bg-white text-caramel-700 border-cream-300 hover:bg-cream-100' 
-                              : 'bg-caramel-50 text-caramel-700 border-caramel-200 hover:bg-caramel-100'">
-                      {{ day.meals[slot.id] ? 'Edit' : '+ Isi' }}
+                     class="p-2.5 rounded-xl border transition"
+                     :class="day.meals[slot.id] ? 'bg-cream-50/70 border-cream-200' : 'bg-cream-50/20 border-dashed border-cream-200'">
+                  <div class="flex items-center justify-between gap-1 mb-1">
+                    <span class="text-[10px] font-bold uppercase text-taupe-500 flex items-center gap-1">
+                      <span>{{ slot.icon }}</span>
+                      <span>{{ slot.shortLabel }}</span>
+                    </span>
+                    <button @click="openPickPackageForSlot(day.dateStr, slot.id)"
+                            class="text-[10px] font-bold text-caramel-600 hover:text-caramel-800 cursor-pointer">
+                      {{ day.meals[slot.id] ? 'Ganti' : '+ Isi' }}
                     </button>
                   </div>
-
-                  <!-- Filled Nutrition Categories for this Slot -->
-                  <div v-if="day.meals[slot.id]" class="space-y-1.5">
-                    <template v-for="cat in nutritionCategories" :key="cat.id">
-                      <div v-if="getMealCategoryFoods(day.meals[slot.id].items, cat.id).length > 0"
-                           class="flex items-start gap-2 px-2 py-1.5 rounded-lg bg-white border border-cream-200/70">
-                        <span class="text-xs flex-shrink-0 mt-0.5">{{ cat.icon }}</span>
-                        <div class="min-w-0 flex-grow">
-                          <div class="text-[9px] font-bold text-espresso-500 uppercase leading-none">
-                            {{ cat.label }}
-                          </div>
-                          <div class="font-bold text-espresso-900 text-xs leading-snug mt-0.5">
-                            {{ getMealCategoryFoods(day.meals[slot.id].items, cat.id).map(f => f.name).join(' + ') }}
-                          </div>
-                        </div>
-                      </div>
-                    </template>
-                    <div v-if="getDishCount(day.meals[slot.id]) === 0" class="text-[11px] text-taupe-400 italic py-1">
-                      Belum ada hidangan dipilih
-                    </div>
+                  <div v-if="day.meals[slot.id]" class="text-xs font-bold text-espresso-900 line-clamp-2">
+                    {{ getSlotPackageName(day.meals[slot.id]) || getDishSummary(day.meals[slot.id]) }}
                   </div>
-
-                  <!-- Empty Slot State -->
-                  <div v-else class="text-[11px] text-espresso-400 italic py-1.5 text-center">
-                    - Belum diisi -
+                  <div v-else class="text-[11px] text-taupe-400 italic">
+                    Kosong
                   </div>
+                </div>
 
-                </div>
-              </div>
-
-              <!-- Daily Nutrition Mini Bar on Week Card -->
-              <div v-if="calculateDayNutrition(day.dateStr).kalori > 0"
-                   class="mx-4 mb-3 p-2.5 rounded-2xl bg-gradient-to-r from-cream-50 to-sage-50/40 border border-cream-200 space-y-1.5">
-                <div class="flex items-center justify-between text-[11px]">
-                  <span class="font-bold text-espresso-900">🔥 {{ calculateDayNutrition(day.dateStr).kalori }} <span class="font-normal text-taupe-500">/ {{ nutritionTargets.kalori }} kkal</span></span>
-                  <span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full border"
-                        :class="getNutritionStatusBadge(calculateDayNutrition(day.dateStr).kalori, NUTRITION_METRICS[0]).cls">
-                    {{ getNutritionPercent(calculateDayNutrition(day.dateStr).kalori, 'kalori') }}%
-                  </span>
-                </div>
-                <div class="w-full h-1.5 rounded-full bg-cream-200 overflow-hidden">
-                  <div class="h-full rounded-full"
-                       :class="getNutritionBarClass(calculateDayNutrition(day.dateStr).kalori, NUTRITION_METRICS[0])"
-                       :style="{ width: Math.min(100, getNutritionPercent(calculateDayNutrition(day.dateStr).kalori, 'kalori')) + '%' }"></div>
-                </div>
-                <div class="flex flex-wrap gap-1 text-[9px] font-bold text-espresso-700">
-                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">K {{ calculateDayNutrition(day.dateStr).karbo }}g</span>
-                  <span class="bg-emerald-50 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">P {{ calculateDayNutrition(day.dateStr).protein }}g</span>
-                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">L {{ calculateDayNutrition(day.dateStr).lemak }}g</span>
-                  <span class="bg-sage-50 text-sage-800 px-1.5 py-0.5 rounded border border-sage-200">S {{ calculateDayNutrition(day.dateStr).serat }}g</span>
-                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">G {{ calculateDayNutrition(day.dateStr).gula }}g</span>
-                  <span class="bg-white px-1.5 py-0.5 rounded border border-cream-200">Na {{ calculateDayNutrition(day.dateStr).natrium }}mg</span>
+                <!-- Daily Kalori Mini Strip -->
+                <div v-if="calculateDayNutrition(day.dateStr).kalori > 0"
+                     class="pt-1 text-[10px] font-bold text-espresso-800 flex items-center justify-between">
+                  <span>🔥 {{ calculateDayNutrition(day.dateStr).kalori }} kkal</span>
+                  <span class="text-taupe-500 font-semibold">P {{ calculateDayNutrition(day.dateStr).protein }}g • K {{ calculateDayNutrition(day.dateStr).karbo }}g</span>
                 </div>
               </div>
 
               <!-- Card Footer: Quick Actions -->
-              <div class="p-4 bg-cream-50/80 rounded-b-3xl border-t border-cream-200 flex items-center justify-between gap-3">
+              <div class="p-3 bg-cream-50/60 rounded-b-2xl border-t border-cream-100 flex items-center justify-between gap-2">
                 <button @click="openSwapModalWithDate(day.dateStr)" 
-                        title="Tukar menu dengan hari lain di minggu ini"
-                        class="min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold text-espresso-700 hover:text-espresso-900 hover:bg-cream-200 flex items-center gap-1.5 transition">
-                  <i data-lucide="arrow-left-right" class="w-3.5 h-3.5 text-caramel-600"></i>
+                        title="Tukar menu hari ini dengan hari lain"
+                        class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold text-espresso-700 hover:bg-cream-200 transition flex items-center gap-1 cursor-pointer">
+                  <i data-lucide="arrow-left-right" class="w-3 h-3 text-caramel-600"></i>
                   <span>Tukar</span>
                 </button>
-
-                <button @click="editMenuForDate(day.dateStr, 'bekal')" 
-                        class="min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold text-white bg-caramel-500 hover:bg-caramel-600 shadow-xs transition flex items-center gap-1.5">
-                  <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                  <span>{{ (day.meals.bekal || day.meals.malam) ? 'Atur Menu' : 'Isi Menu' }}</span>
+                <button @click="openPickPackageForSlot(day.dateStr, 'bekal')" 
+                        class="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-caramel-500 hover:bg-caramel-600 transition cursor-pointer">
+                  {{ (day.meals.bekal || day.meals.malam) ? 'Atur Menu' : '+ Isi Menu' }}
                 </button>
               </div>
 
             </div>
-
-          </div>
-
-          <div class="text-center text-xs text-taupe-400 py-1">
-            💡 <em>Tip: Klik tombol <strong>Tukar</strong> untuk memindahkan hidangan antar hari dalam minggu yang sama secara fleksibel.</em>
           </div>
 
         </div>
 
         <!-- ======================================================== -->
-        <!-- DAFTAR CEMILAN TERPISAH (FLEKSIBEL / REAL-TIME STATUS)  -->
+        <!-- DAFTAR CEMILAN (CLEAN, TIDAK BERLAPIS)                   -->
         <!-- ======================================================== -->
-        <div class="bg-white rounded-3xl border border-cream-200 shadow-card p-5 sm:p-7 space-y-5">
+        <div class="bg-white rounded-2xl border border-cream-200 shadow-card p-4 sm:p-5 space-y-4">
           
           <!-- Header Bar -->
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-cream-100">
-            <div>
-              <div class="flex items-center gap-2 text-caramel-600 text-xs font-bold uppercase tracking-wider mb-1">
-                <span>🍪</span>
-                <span>Ketersediaan Cemilan di Rumah</span>
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-cream-100">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">🍪</span>
+              <div>
+                <h3 class="text-base sm:text-lg font-serif font-bold text-espresso-900">
+                  Cemilan di Rumah
+                </h3>
+                <div class="flex items-center gap-1.5 mt-0.5 text-[11px] font-bold">
+                  <span class="px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    🟢 {{ availableSnackCount }} Tersedia
+                  </span>
+                  <span class="px-2 py-0.2 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                    ⏳ {{ pendingSnackCount }} Belum Dibikin
+                  </span>
+                </div>
               </div>
-              <h3 class="text-xl sm:text-2xl font-serif font-bold text-espresso-900">
-                Cemilan Saat Ini
-              </h3>
-              <p class="text-xs text-taupe-500 mt-1 max-w-xl">
-                Pantau cemilan yang tersedia atau sedang disiapkan secara fleksibel di luar jadwal makan harian.
-              </p>
             </div>
 
-            <!-- Right Header Actions & Stats -->
-            <div class="flex flex-wrap items-center gap-2.5">
-              <!-- Status Counters Pills -->
-              <div class="flex items-center gap-1.5 bg-cream-50 p-1 rounded-xl border border-cream-200 text-[11px] font-bold">
-                <span class="px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  🟢 {{ availableSnackCount }} Tersedia
-                </span>
-                <span class="px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800 border border-amber-200">
-                  ⏳ {{ pendingSnackCount }} Belum Dibikin
-                </span>
-              </div>
-
-              <!-- Button + Tambah Cemilan -->
-              <button type="button" @click="openAddSnackModal()"
-                      class="min-h-[40px] px-4 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 active:bg-caramel-700 text-white shadow-card transition flex items-center gap-1.5 cursor-pointer">
-                <span>+</span>
-                <span>Tambah Cemilan</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Empty State (No Active Snacks) -->
-          <div v-if="activeSnackList.length === 0" 
-               class="p-8 sm:p-10 rounded-2xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-3">
-            <div class="text-4xl">🍪</div>
-            <div class="text-sm font-bold text-espresso-900">Belum Ada Cemilan yang Aktif</div>
-            <p class="text-xs text-taupe-500 max-w-md mx-auto leading-relaxed">
-              Pilih cemilan dari resep Dapur Gizi untuk disiapkan. Bahannya akan otomatis masuk ke daftar belanja pekan yang Anda pilih!
-            </p>
+            <!-- Button + Tambah Cemilan -->
             <button type="button" @click="openAddSnackModal()"
-                    class="px-4 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+                    class="min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 active:bg-caramel-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer self-start sm:self-center">
               <span>+</span>
-              <span>Pilih Cemilan Sekarang</span>
+              <span>Tambah Cemilan</span>
             </button>
           </div>
 
-          <!-- Active Snacks Grid -->
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            <div v-for="snack in activeSnackList" :key="snack.id"
-                 class="p-4 rounded-2xl border transition shadow-card flex flex-col justify-between gap-3 bg-white"
-                 :class="snack.status === 'tersedia' ? 'border-emerald-200 bg-emerald-50/20' : 'border-amber-200 bg-amber-50/20'">
-              
-              <!-- Top info: Icon, Name, Shopping Cycle -->
-              <div class="space-y-1.5">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-2xl flex-shrink-0">{{ snack.foodIcon || '🍪' }}</span>
-                    <div class="min-w-0">
-                      <h4 class="text-sm font-bold text-espresso-900 truncate">
-                        {{ snack.foodName }}
-                      </h4>
-                      <div class="text-[10px] text-taupe-500 truncate">
-                        🛒 Belanja: {{ formatSnackCycleLabel(snack.cycleKey) }}
-                      </div>
-                      <div class="flex items-center gap-1.5 text-[10px] text-taupe-500 mt-0.5">
-                        <span class="font-medium">📅 Rencana:</span>
-                        <button type="button" @click="openPlanSnackDateModal(snack)"
-                                class="font-semibold text-caramel-700 hover:text-caramel-900 hover:underline cursor-pointer flex items-center gap-0.5">
-                          <span>{{ snack.plannedDate ? formatTanggalIndo(snack.plannedDate, true) : '+ Atur Hari' }}</span>
-                          <i data-lucide="edit-2" class="w-2.5 h-2.5 text-taupe-400"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+          <!-- Empty State -->
+          <div v-if="activeSnackList.length === 0" 
+               class="p-6 rounded-xl bg-cream-50/60 border border-dashed border-cream-300 text-center space-y-2">
+            <div class="text-2xl">🍪</div>
+            <div class="text-xs font-bold text-espresso-900">Belum Ada Cemilan yang Aktif</div>
+            <p class="text-[11px] text-taupe-500 max-w-sm mx-auto">
+              Pilih cemilan untuk disiapkan. Bahannya akan otomatis masuk ke daftar belanja pekan yang Anda pilih.
+            </p>
+          </div>
 
-                  <!-- Quick delete button -->
+          <!-- Active Snacks Grid -->
+          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div v-for="snack in activeSnackList" :key="snack.id"
+                 class="p-3.5 rounded-xl border transition shadow-card flex flex-col justify-between gap-2.5 bg-white"
+                 :class="snack.status === 'tersedia' ? 'border-emerald-200 bg-emerald-50/15' : 'border-amber-200 bg-amber-50/15'">
+              
+              <!-- Info Bar: Icon, Name, Date, Delete -->
+              <div class="space-y-1">
+                <div class="flex items-start justify-between gap-1.5">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <span class="text-xl flex-shrink-0">{{ snack.foodIcon || '🍪' }}</span>
+                    <h4 class="text-xs font-bold text-espresso-900 truncate">
+                      {{ snack.foodName }}
+                    </h4>
+                  </div>
                   <button type="button" @click="confirmDeleteSnack(snack)" title="Hapus cemilan ini"
-                          class="text-taupe-300 hover:text-red-500 p-1 rounded-lg hover:bg-cream-100 transition cursor-pointer">
+                          class="text-taupe-300 hover:text-red-500 p-0.5 rounded transition cursor-pointer">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
 
-                <!-- Recipe Ingredients Mini Tags -->
-                <div v-if="getFoodItem(snack.foodId)?.ingredients?.length" class="flex flex-wrap gap-1 pt-1">
-                  <span v-for="ing in getFoodItem(snack.foodId).ingredients.slice(0, 3)" :key="ing.name"
-                        class="text-[9px] bg-white text-taupe-600 px-1.5 py-0.5 rounded border border-cream-200">
-                    {{ ing.name }}
-                  </span>
-                  <span v-if="getFoodItem(snack.foodId).ingredients.length > 3" class="text-[9px] text-taupe-400 self-center">
-                    +{{ getFoodItem(snack.foodId).ingredients.length - 3 }} bahan
-                  </span>
+                <!-- Belanja & Planned Date -->
+                <div class="flex items-center justify-between text-[10px] text-taupe-500 pt-0.5">
+                  <span>🛒 {{ formatSnackCycleLabel(snack.cycleKey) }}</span>
+                  <button type="button" @click="openPlanSnackDateModal(snack)"
+                          class="font-semibold text-caramel-700 hover:underline cursor-pointer flex items-center gap-0.5">
+                    <span>📅 {{ snack.plannedDate ? formatTanggalIndo(snack.plannedDate, true) : '+ Atur Hari' }}</span>
+                  </button>
                 </div>
               </div>
 
-              <!-- Status Selector Section -->
-              <div class="pt-2.5 border-t border-cream-200/70 space-y-2">
-                <div class="flex items-center justify-between text-[11px]">
-                  <span class="text-taupe-500 font-medium">Status saat ini:</span>
-                  <span class="font-bold px-2 py-0.5 rounded-full text-[10px]"
-                        :class="snack.status === 'tersedia' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'">
-                    {{ snack.status === 'tersedia' ? '🟢 Tersedia' : '⏳ Belum Dibikin' }}
-                  </span>
-                </div>
-
-                <!-- Status Change Buttons with Confirmation -->
-                <div class="grid grid-cols-3 gap-1">
-                  <button type="button"
-                          @click="promptChangeSnackStatus(snack, 'belum_dibikin')"
-                          class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer"
-                          :class="snack.status === 'belum_dibikin' ? 'bg-amber-500 text-white border-amber-600 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-amber-50'">
-                    ⏳ Belum
-                  </button>
-                  <button type="button"
-                          @click="promptChangeSnackStatus(snack, 'tersedia')"
-                          class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer"
-                          :class="snack.status === 'tersedia' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-emerald-50'">
-                    🟢 Tersedia
-                  </button>
-                  <button type="button"
-                          @click="promptChangeSnackStatus(snack, 'habis')"
-                          class="px-2 py-1.5 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer bg-cream-50 text-espresso-700 border-cream-200 hover:bg-red-50 hover:text-red-700 hover:border-red-200">
-                    ⚪ Habis
-                  </button>
-                </div>
+              <!-- Status Buttons (Clean, Flat Segmented Control) -->
+              <div class="pt-2 border-t border-cream-200/60 grid grid-cols-3 gap-1">
+                <button type="button"
+                        @click="promptChangeSnackStatus(snack, 'belum_dibikin')"
+                        class="py-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer"
+                        :class="snack.status === 'belum_dibikin' ? 'bg-amber-500 text-white border-amber-600 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-amber-50'">
+                  ⏳ Belum
+                </button>
+                <button type="button"
+                        @click="promptChangeSnackStatus(snack, 'tersedia')"
+                        class="py-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer"
+                        :class="snack.status === 'tersedia' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-emerald-50'">
+                  🟢 Tersedia
+                </button>
+                <button type="button"
+                        @click="promptChangeSnackStatus(snack, 'habis')"
+                        class="py-1 rounded-lg text-[10px] font-bold border transition text-center cursor-pointer bg-cream-50 text-espresso-700 border-cream-200 hover:bg-red-50 hover:text-red-700">
+                  ⚪ Habis
+                </button>
               </div>
 
             </div>
           </div>
 
-          <!-- Accordion: Riwayat Cemilan Habis (Optional & Subtle) -->
+          <!-- Riwayat Cemilan Habis -->
           <div v-if="finishedSnackList.length > 0" class="pt-2 border-t border-cream-100">
             <button type="button" @click="showFinishedSnacks = !showFinishedSnacks"
                     class="text-[11px] font-bold text-taupe-500 hover:text-espresso-800 flex items-center gap-1.5 cursor-pointer">
@@ -1019,16 +796,15 @@
               <span>Riwayat Cemilan Habis ({{ finishedSnackList.length }})</span>
             </button>
 
-            <div v-if="showFinishedSnacks" class="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+            <div v-if="showFinishedSnacks" class="mt-2.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               <div v-for="snack in finishedSnackList" :key="snack.id"
-                   class="p-3 rounded-xl bg-cream-50/70 border border-cream-200 text-xs flex items-center justify-between gap-2 opacity-75 hover:opacity-100 transition">
-                <div class="flex items-center gap-2 truncate">
+                   class="p-2.5 rounded-xl bg-cream-50/70 border border-cream-200 text-xs flex items-center justify-between gap-2 opacity-75 hover:opacity-100 transition">
+                <div class="flex items-center gap-1.5 truncate">
                   <span>{{ snack.foodIcon || '🍪' }}</span>
-                  <span class="font-bold text-espresso-800 truncate line-through">{{ snack.foodName }}</span>
+                  <span class="font-bold text-espresso-800 truncate line-through text-[11px]">{{ snack.foodName }}</span>
                 </div>
                 <button type="button" @click="promptChangeSnackStatus(snack, 'tersedia')"
-                        title="Tandai tersedia kembali"
-                        class="px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 transition cursor-pointer flex-shrink-0">
+                        class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white text-emerald-700 border border-emerald-300 hover:bg-emerald-50 transition cursor-pointer flex-shrink-0">
                   + Tersedia Lagi
                 </button>
               </div>
