@@ -1408,20 +1408,13 @@
                     <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
                   </a>
 
-                  <!-- Shortcut Tombol Jadwalkan atau Tambah Cemilan -->
+                  <!-- Shortcut Tambah Cemilan (Khusus Kategori Cemilan) -->
                   <button v-if="foodHasCategory(item, 'dessert')"
                           @click="openAddSnackModalWithFood(item)" 
                           title="Tambah ke Daftar Cemilan &amp; Belanja"
                           class="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 text-[11px] font-bold flex items-center gap-1 transition border border-amber-300 select-none cursor-pointer">
                     <span>🍪</span>
                     <span>+ Cemilan</span>
-                  </button>
-                  <button v-else
-                          @click="quickAddToPlanner(item)" 
-                          title="Jadwalkan Menu Ini ke Papan Rencana"
-                          class="px-2.5 py-1 rounded-lg bg-caramel-50 hover:bg-caramel-100 active:bg-caramel-200 text-caramel-700 text-[11px] font-bold flex items-center gap-1 transition border border-caramel-200/70 select-none cursor-pointer">
-                    <i data-lucide="calendar-plus" class="w-3.5 h-3.5 text-caramel-600"></i>
-                    <span>Jadwalkan</span>
                   </button>
 
                   <button @click="editFoodModal(item)" title="Edit Makanan & Bahan" class="w-8 h-8 rounded-lg bg-cream-50 hover:bg-cream-100 text-taupe-600 flex items-center justify-center transition border border-cream-200 cursor-pointer">
