@@ -945,7 +945,7 @@
               <button @click="setTab('paket')"
                       class="px-5 py-2.5 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card inline-flex items-center gap-2 cursor-pointer min-h-[42px]">
                 <i data-lucide="layers" class="w-4 h-4"></i>
-                <span>Buka Menu Paket &rarr;</span>
+                <span>Buka Menu Rencana &rarr;</span>
               </button>
             </div>
 
@@ -1744,13 +1744,13 @@
                 <span>Langkah 1: Perencanaan Menu Seminggu</span>
               </div>
               <h2 class="text-2xl font-serif font-bold text-espresso-900">
-                <span v-if="paketSubTab === 'menu'">Pilih Paket Menu untuk Seminggu</span>
-                <span v-else-if="paketSubTab === 'buah'">Pilih Buah-buahan untuk Seminggu</span>
-                <span v-else>Pilih Cemilan untuk Seminggu</span>
+                <span v-if="paketSubTab === 'menu'">Rencana Menu Masak Seminggu</span>
+                <span v-else-if="paketSubTab === 'buah'">Rencana Buah-buahan Seminggu</span>
+                <span v-else>Rencana Cemilan Seminggu</span>
               </h2>
               <p class="text-xs text-taupe-500 mt-1 max-w-xl leading-relaxed">
                 <span v-if="paketSubTab === 'menu'">
-                  Pilih paket-paket menu yang ingin dimasak dalam sepekan. Paket yang dipilih otomatis tersedia di <strong>Menu Isi</strong> dan seluruh bahan baku langsung tercantum di <strong>Menu Belanja</strong>.
+                  Pilih paket-paket menu yang ingin dimasak dalam sepekan. Paket yang dipilih otomatis tersedia di <strong>Menu Jadwal</strong> dan seluruh bahan baku langsung tercantum di <strong>Menu Belanja</strong>.
                 </span>
                 <span v-else-if="paketSubTab === 'buah'">
                   Pilih buah-buahan dari <strong>Master Bahan</strong> untuk stok konsumsi sepekan. Buah yang dipilih langsung otomatis tercantum di <strong>Menu Belanja</strong> hari Jumat.
@@ -1851,7 +1851,7 @@
             <div v-if="paketSubTab === 'menu'" class="flex items-center gap-2 self-start sm:self-center">
               <button @click="setTab('isi')"
                       class="min-h-[38px] px-4 py-2 rounded-xl text-xs font-bold bg-espresso-900 hover:bg-espresso-800 text-white shadow-card transition flex items-center gap-2 cursor-pointer">
-                <span>Lanjut ke Isi Jadwal</span>
+                <span>Lanjut ke Jadwal</span>
                 <span v-if="activeWeeklyPoolEntries.length > 0" class="px-2 py-0.5 rounded-full text-[10px] bg-caramel-500 text-white font-extrabold">
                   {{ activeWeeklyPoolEntries.length }} Paket
                 </span>
@@ -5619,12 +5619,12 @@
 
         // Navigation Tabs Metadata (with shortLabel for iPhone bottom bar)
         const navTabs = computed(() => [
-          { id: 'papan', label: 'Papan Menu', shortLabel: 'Papan', icon: 'calendar', badge: '' },
-          { id: 'isi', label: 'Isi Menu', shortLabel: 'Isi', icon: 'edit-3', badge: '' },
-          { id: 'nutrisi', label: 'Dapur Gizi', shortLabel: 'Gizi', icon: 'utensils', badge: '' },
-          { id: 'paket', label: 'Paket Menu', shortLabel: 'Paket', icon: 'layers', badge: '' },
+          { id: 'papan', label: 'Papan', shortLabel: 'Papan', icon: 'layout-dashboard', badge: '' },
+          { id: 'paket', label: 'Rencana', shortLabel: 'Rencana', icon: 'layers', badge: '' },
+          { id: 'belanja', label: 'Belanja', shortLabel: 'Belanja', icon: 'shopping-cart', badge: 'Auto' },
+          { id: 'isi', label: 'Jadwal', shortLabel: 'Jadwal', icon: 'calendar', badge: '' },
           { id: 'stok', label: 'Stok', shortLabel: 'Stok', icon: 'package', badge: totalAvailableStockCount.value > 0 ? String(totalAvailableStockCount.value) : (pantryItemCount.value > 0 ? String(pantryItemCount.value) : '') },
-          { id: 'belanja', label: 'Rincian Belanja', shortLabel: 'Belanja', icon: 'shopping-cart', badge: 'Auto' },
+          { id: 'nutrisi', label: 'Resep', shortLabel: 'Resep', icon: 'book-open', badge: '' },
         ]);
 
         // 6 Nutrition Categories (Dessert diubah namanya menjadi Cemilan)
