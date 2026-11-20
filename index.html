@@ -1899,9 +1899,95 @@
           </div>
         </div>
 
-        <!-- Packages Grid -->
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="pkg in sortedPackages" :key="pkg.id"
+        <!-- When packages exist: Toolbar & Grid -->
+        <div v-else class="space-y-5">
+          <!-- Toolbar Pencarian & Filter Paket Menu -->
+          <div class="bg-white p-4 sm:p-5 rounded-3xl border border-cream-200 shadow-card flex flex-col md:flex-row md:items-center justify-between gap-3.5">
+            <!-- Filter Pills: Semua vs Terpilih -->
+            <div class="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+              <button type="button"
+                      @click="packageFilter = 'all'"
+                      class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer min-h-[40px]"
+                      :class="packageFilter === 'all' ? 'bg-espresso-900 text-white shadow-xs' : 'bg-cream-50 text-espresso-700 hover:bg-cream-100 border border-cream-200'">
+                <span>🍱 Semua Paket</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                      :class="packageFilter === 'all' ? 'bg-white/20 text-white' : 'bg-cream-200 text-espresso-800'">
+                  {{ packages.length }}
+                </span>
+              </button>
+
+              <button type="button"
+                      @click="packageFilter = 'selected'"
+                      class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer min-h-[40px]"
+                      :class="packageFilter === 'selected' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-cream-50 text-espresso-700 hover:bg-cream-100 border border-cream-200'">
+                <span>✓ Terpilih Pekan Ini</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                      :class="packageFilter === 'selected' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'">
+                  {{ selectedPackagesCount }}
+                </span>
+              </button>
+            </div>
+
+            <!-- Search Input with Search Icon and Clear Button -->
+            <div class="relative w-full md:w-80 flex-shrink-0">
+              <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input type="text" 
+                     v-model="packageSearchQuery" 
+                     placeholder="Cari nama paket, masakan, bahan..."
+                     class="w-full pl-9 pr-9 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-300 text-espresso-900 placeholder:text-taupe-400 focus:outline-none focus:ring-2 focus:ring-caramel-400 focus:bg-white min-h-[40px] transition">
+              <button v-if="packageSearchQuery" 
+                      @click="packageSearchQuery = ''" 
+                      type="button" 
+                      title="Hapus pencarian"
+                      class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-taupe-200 hover:bg-taupe-300 text-espresso-800 flex items-center justify-center text-[11px] font-bold cursor-pointer transition">
+                ✕
+              </button>
+            </div>
+          </div>
+
+          <!-- Indikator Jumlah Hasil Pencarian jika Filter Aktif -->
+          <div v-if="packageSearchQuery || packageFilter === 'selected'" class="flex items-center justify-between text-xs text-taupe-500 px-1">
+            <span>
+              Menampilkan <strong class="text-espresso-900 font-bold">{{ filteredPackages.length }}</strong> paket
+              <span v-if="packageSearchQuery"> untuk pencarian "<strong class="text-espresso-900">{{ packageSearchQuery }}</strong>"</span>
+              <span v-if="packageFilter === 'selected'"> (terpilih pekan ini)</span>
+            </span>
+            <button @click="packageSearchQuery = ''; packageFilter = 'all'" 
+                    type="button" 
+                    class="font-semibold text-caramel-700 hover:underline cursor-pointer">
+              Reset filter &amp; pencarian
+            </button>
+          </div>
+
+          <!-- Empty State jika hasil pencarian / filter kosong -->
+          <div v-if="filteredPackages.length === 0" 
+               class="bg-white p-10 sm:p-14 rounded-3xl border border-cream-200 text-center space-y-3 shadow-card">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-cream-100 flex items-center justify-center text-2xl shadow-xs border border-cream-200">
+              🔍
+            </div>
+            <h3 class="text-base font-serif font-bold text-espresso-900">
+              Tidak Ada Paket yang Cocok
+            </h3>
+            <p class="text-xs text-taupe-500 max-w-md mx-auto leading-relaxed">
+              <span v-if="packageFilter === 'selected' && !packageSearchQuery">
+                Belum ada paket menu yang dipilih untuk pekan ini. Klik tab <strong>"Semua Paket"</strong> di atas lalu tekan <strong>"+ Pilih untuk Seminggu"</strong> pada paket favorit Anda.
+              </span>
+              <span v-else>
+                Tidak ditemukan paket dengan kata kunci <strong>"{{ packageSearchQuery }}"</strong>{{ packageFilter === 'selected' ? ' di daftar terpilih pekan ini' : '' }}. Coba cari dengan nama paket, jenis lauk, atau sayur lainnya.
+              </span>
+            </p>
+            <div class="pt-2">
+              <button type="button" 
+                      @click="packageSearchQuery = ''; packageFilter = 'all'" 
+                      class="px-5 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-900 border border-cream-300 transition cursor-pointer">
+                Tampilkan Semua Paket
+              </button>
+            </div>
+          </div>
+
+          <!-- Packages Grid -->
+          <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div v-for="pkg in filteredPackages" :key="pkg.id"
                class="bg-white rounded-3xl border border-cream-200 shadow-card hover:shadow-hover transition-all duration-200 p-6 flex flex-col justify-between">
             
             <div>
@@ -2026,6 +2112,7 @@
             </div>
 
           </div>
+        </div>
         </div>
         </div>
 
@@ -5044,23 +5131,40 @@
         <!-- Option 1: 1-Click Package Picker -->
         <div v-if="modalAddWeeklyMenu.mode === 'paket'" class="space-y-2.5 max-h-[50vh] overflow-y-auto pr-1 ios-scroll">
           <div v-if="packages.length === 0" class="py-8 text-center text-xs text-taupe-500 bg-cream-50 rounded-2xl border border-cream-200">
-            Belum ada Paket Menu. Buat paket di tab <strong>Paket</strong> atau pilih tab <strong>Susun Menu Satuan</strong>.
+            Belum ada Paket Menu. Buat paket di tab <strong>Rencana</strong> atau pilih tab <strong>Susun Menu Satuan</strong>.
           </div>
-          <div v-for="pkg in sortedPackages" :key="pkg.id"
-               class="p-3.5 rounded-2xl bg-cream-50/80 border border-cream-200 flex items-center justify-between gap-3">
-            <div class="min-w-0">
-              <div class="font-bold text-sm text-espresso-900 truncate">{{ pkg.name }}</div>
-              <div v-if="calculatePackageNutrition(pkg).kalori > 0" class="flex flex-wrap gap-1 mt-1 text-[9.5px] font-bold">
-                <span class="px-1.5 py-0.5 rounded bg-caramel-50 text-caramel-800 border border-caramel-200">🔥 {{ calculatePackageNutrition(pkg).kalori }} kkal</span>
-                <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">P {{ calculatePackageNutrition(pkg).protein }}g</span>
-                <span class="px-1.5 py-0.5 rounded bg-sage-50 text-sage-800 border border-sage-200">S {{ calculatePackageNutrition(pkg).serat }}g</span>
-              </div>
+          <template v-else>
+            <!-- Search bar in modal option 1 -->
+            <div class="relative sticky top-0 bg-white pt-0.5 pb-2 z-10">
+              <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3 top-3 pointer-events-none"></i>
+              <input type="text" v-model="modalAddWeeklyMenu.packageSearchQuery"
+                     placeholder="Cari nama paket atau masakan..."
+                     class="w-full pl-9 pr-8 py-2 rounded-xl text-xs bg-cream-50 border border-cream-200 focus:outline-none focus:ring-2 focus:ring-caramel-400 min-h-[38px]">
+              <button v-if="modalAddWeeklyMenu.packageSearchQuery" 
+                      @click="modalAddWeeklyMenu.packageSearchQuery = ''" 
+                      type="button" 
+                      class="absolute right-2.5 top-3 text-taupe-400 hover:text-espresso-800 text-xs">✕</button>
             </div>
-            <button type="button" @click="addPackageToWeeklyPool(pkg)"
-                    class="min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-2xs flex-shrink-0 cursor-pointer active:scale-95 transition">
-              + Masukkan
-            </button>
-          </div>
+            
+            <div v-if="modalFilteredPackages.length === 0" class="py-6 text-center text-xs text-taupe-500 bg-cream-50/70 rounded-2xl border border-cream-200">
+              Tidak ada paket dengan kata kunci "{{ modalAddWeeklyMenu.packageSearchQuery }}".
+            </div>
+            <div v-for="pkg in modalFilteredPackages" :key="pkg.id"
+                 class="p-3.5 rounded-2xl bg-cream-50/80 border border-cream-200 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-bold text-sm text-espresso-900 truncate">{{ pkg.name }}</div>
+                <div v-if="calculatePackageNutrition(pkg).kalori > 0" class="flex flex-wrap gap-1 mt-1 text-[9.5px] font-bold">
+                  <span class="px-1.5 py-0.5 rounded bg-caramel-50 text-caramel-800 border border-caramel-200">🔥 {{ calculatePackageNutrition(pkg).kalori }} kkal</span>
+                  <span class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200">P {{ calculatePackageNutrition(pkg).protein }}g</span>
+                  <span class="px-1.5 py-0.5 rounded bg-sage-50 text-sage-800 border border-sage-200">S {{ calculatePackageNutrition(pkg).serat }}g</span>
+                </div>
+              </div>
+              <button type="button" @click="addPackageToWeeklyPool(pkg)"
+                      class="min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-2xs flex-shrink-0 cursor-pointer active:scale-95 transition">
+                + Masukkan
+              </button>
+            </div>
+          </template>
         </div>
 
         <!-- Option 2: Multi-Dish Satuan Builder -->
@@ -6875,7 +6979,8 @@
           show: false,
           mode: 'paket', // 'paket' | 'satuan'
           items: createEmptyFormItems(),
-          searchQuery: ''
+          searchQuery: '',
+          packageSearchQuery: ''
         });
         const modalAssignWeeklyDay = ref({
           show: false,
@@ -7830,7 +7935,8 @@
             show: true,
             mode: mode || 'paket',
             items: createEmptyFormItems(),
-            searchQuery: ''
+            searchQuery: '',
+            packageSearchQuery: ''
           };
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
@@ -9983,6 +10089,108 @@
           );
         });
 
+        const packageSearchQuery = ref('');
+        const packageFilter = ref('all'); // 'all' | 'selected'
+
+        const selectedPackagesCount = computed(() => {
+          return (packages.value || []).filter(pkg => getPackageWeeklyCount(pkg.id) > 0).length;
+        });
+
+        const filteredPackages = computed(() => {
+          let list = sortedPackages.value || [];
+
+          if (packageFilter.value === 'selected') {
+            list = list.filter(pkg => getPackageWeeklyCount(pkg.id) > 0);
+          }
+
+          const rawQ = (packageSearchQuery.value || '').trim().toLowerCase();
+          if (!rawQ) return list;
+
+          // Smart culinary synonyms
+          const searchTerms = [rawQ];
+          if (rawQ === 'ayam') searchTerms.push('chicken');
+          if (rawQ === 'chicken') searchTerms.push('ayam');
+          if (rawQ === 'sapi' || rawQ === 'daging') searchTerms.push('beef');
+          if (rawQ === 'beef') searchTerms.push('sapi', 'daging');
+          if (rawQ === 'udang') searchTerms.push('shrimp', 'prawn');
+          if (rawQ === 'ikan') searchTerms.push('fish');
+          if (rawQ === 'telur' || rawQ === 'telor') searchTerms.push('egg');
+
+          return list.filter(pkg => {
+            const pkgName = (pkg?.name || '').toLowerCase();
+            const pkgDesc = (pkg?.description || '').toLowerCase();
+
+            for (const q of searchTerms) {
+              // 1. Package name
+              if (pkgName.includes(q)) return true;
+
+              // 2. Package description
+              if (pkgDesc.includes(q)) return true;
+
+              // 3. Dishes in all categories of this package
+              if (pkg?.items && typeof pkg.items === 'object') {
+                for (const catId of Object.keys(pkg.items)) {
+                  const foods = getMealCategoryFoods(pkg.items, catId);
+                  for (const food of foods) {
+                    if (food?.name && food.name.toLowerCase().includes(q)) return true;
+                  }
+                }
+              }
+
+              // 4. Extras (alat & sauces)
+              if (Array.isArray(pkg?.extras)) {
+                for (const ex of pkg.extras) {
+                  if (ex?.name && ex.name.toLowerCase().includes(q)) return true;
+                }
+              }
+            }
+
+            return false;
+          });
+        });
+
+        const modalFilteredPackages = computed(() => {
+          const rawQ = (modalAddWeeklyMenu.value.packageSearchQuery || '').trim().toLowerCase();
+          const sorted = sortedPackages.value || [];
+          if (!rawQ) return sorted;
+
+          const searchTerms = [rawQ];
+          if (rawQ === 'ayam') searchTerms.push('chicken');
+          if (rawQ === 'chicken') searchTerms.push('ayam');
+          if (rawQ === 'sapi' || rawQ === 'daging') searchTerms.push('beef');
+          if (rawQ === 'beef') searchTerms.push('sapi', 'daging');
+          if (rawQ === 'udang') searchTerms.push('shrimp', 'prawn');
+          if (rawQ === 'ikan') searchTerms.push('fish');
+          if (rawQ === 'telur' || rawQ === 'telor') searchTerms.push('egg');
+
+          return sorted.filter(pkg => {
+            const pkgName = (pkg?.name || '').toLowerCase();
+            const pkgDesc = (pkg?.description || '').toLowerCase();
+
+            for (const q of searchTerms) {
+              if (pkgName.includes(q)) return true;
+              if (pkgDesc.includes(q)) return true;
+              if (pkg?.items && typeof pkg.items === 'object') {
+                for (const catId of Object.keys(pkg.items)) {
+                  const foods = getMealCategoryFoods(pkg.items, catId);
+                  for (const f of foods) {
+                    if (f?.name && f.name.toLowerCase().includes(q)) return true;
+                  }
+                }
+              }
+            }
+            return false;
+          });
+        });
+
+        watch([packageSearchQuery, packageFilter], () => {
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        });
+
+        watch(paketSubTab, () => {
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        });
+
         const editPackageModal = (pkg) => {
           const formCopy = JSON.parse(JSON.stringify(pkg));
           formCopy.items = normalizeFormItems(formCopy.items);
@@ -11740,6 +11948,11 @@
           addExtraToPackage,
           removeExtraFromPackage,
           sortedPackages,
+          packageSearchQuery,
+          packageFilter,
+          selectedPackagesCount,
+          filteredPackages,
+          modalFilteredPackages,
           packageNutritionCategories,
           unitOptions: STANDARD_UNITS,
           formFruits,
