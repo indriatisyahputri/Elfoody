@@ -736,29 +736,37 @@
           <!-- Active Snacks Grid -->
           <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             <div v-for="snack in activeSnackList" :key="snack.id"
-                 class="p-3.5 rounded-xl border transition shadow-card flex flex-col justify-between gap-2.5 bg-white"
+                 class="p-3 rounded-2xl border transition shadow-card flex flex-col justify-between gap-2.5 bg-white"
                  :class="snack.status === 'tersedia' ? 'border-emerald-200 bg-emerald-50/15' : 'border-amber-200 bg-amber-50/15'">
               
-              <!-- Info Bar: Icon, Name, Date, Delete -->
-              <div class="space-y-1">
-                <div class="flex items-start justify-between gap-1.5">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <span class="text-xl flex-shrink-0">{{ snack.foodIcon || '🍪' }}</span>
-                    <h4 class="text-xs font-bold text-espresso-900 truncate">
-                      {{ snack.foodName }}
-                    </h4>
+              <!-- Info Bar: Mascot Thumbnail, Name, Date, Delete -->
+              <div class="space-y-1.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <img :src="getSnackImageUrl(snack)" 
+                         :alt="snack.foodName" 
+                         loading="lazy"
+                         class="w-11 h-11 rounded-xl object-cover border border-amber-200/80 shadow-2xs flex-shrink-0 bg-amber-50">
+                    <div class="min-w-0">
+                      <h4 class="text-xs font-bold text-espresso-900 truncate">
+                        {{ snack.foodName }}
+                      </h4>
+                      <span class="text-[10px] text-taupe-500 truncate block mt-0.5">
+                        🛒 {{ formatSnackCycleLabel(snack.cycleKey) }}
+                      </span>
+                    </div>
                   </div>
                   <button type="button" @click="confirmDeleteSnack(snack)" title="Hapus cemilan ini"
-                          class="text-taupe-300 hover:text-red-500 p-0.5 rounded transition cursor-pointer">
+                          class="text-taupe-300 hover:text-red-500 p-1 rounded transition cursor-pointer">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                   </button>
                 </div>
 
                 <!-- Belanja & Planned Date -->
-                <div class="flex items-center justify-between text-[10px] text-taupe-500 pt-0.5">
-                  <span>🛒 {{ formatSnackCycleLabel(snack.cycleKey) }}</span>
+                <div class="flex items-center justify-between text-[10px] text-taupe-600 bg-cream-50/80 px-2 py-1 rounded-lg border border-cream-200/50">
+                  <span class="font-semibold text-taupe-500">Rencana:</span>
                   <button type="button" @click="openPlanSnackDateModal(snack)"
-                          class="font-semibold text-caramel-700 hover:underline cursor-pointer flex items-center gap-0.5">
+                          class="font-bold text-caramel-700 hover:underline cursor-pointer flex items-center gap-0.5">
                     <span>📅 {{ snack.plannedDate ? formatTanggalIndo(snack.plannedDate, true) : '+ Atur Hari' }}</span>
                   </button>
                 </div>
@@ -2243,61 +2251,79 @@
               </p>
             </div>
 
-            <!-- Grid of Selected Snacks in Cycle -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <!-- Grid of Selected Snacks in Cycle with Cute 3D Covers -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div v-for="snack in activeWeeklySnacks" :key="snack.id"
-                   class="p-4 rounded-2xl border transition shadow-card flex flex-col justify-between gap-3 bg-white"
-                   :class="snack.status === 'tersedia' ? 'border-emerald-200 bg-emerald-50/15' : 'border-amber-200 bg-amber-50/15'">
-                <div class="space-y-1.5">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <span class="text-2xl p-2 rounded-xl bg-amber-50 border border-amber-100 flex-shrink-0">{{ snack.foodIcon || '🍪' }}</span>
-                      <div class="min-w-0">
-                        <h4 class="font-bold text-sm text-espresso-900 truncate">{{ snack.foodName }}</h4>
-                        <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 mt-0.5">
-                          ✓ Masuk Belanja Jumat
-                        </span>
-                      </div>
-                    </div>
-                    <button type="button" @click="confirmDeleteSnack(snack)" title="Hapus cemilan"
-                            class="w-7 h-7 rounded-lg text-taupe-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer">
-                      <i data-lucide="trash-2" class="w-4 h-4"></i>
-                    </button>
-                  </div>
+                   class="rounded-3xl border transition shadow-card overflow-hidden flex flex-col justify-between bg-white hover:shadow-hover duration-200 group"
+                   :class="snack.status === 'tersedia' ? 'border-emerald-300 bg-emerald-50/10' : 'border-amber-200 bg-amber-50/10'">
+                
+                <!-- Card Image Cover Header -->
+                <div class="relative w-full h-36 bg-amber-50 overflow-hidden">
+                  <img :src="getSnackImageUrl(snack)" 
+                       :alt="snack.foodName" 
+                       loading="lazy"
+                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                  
+                  <!-- Top Left Badge: Masuk Belanja Jumat -->
+                  <span class="absolute top-2.5 left-2.5 inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-xl bg-emerald-600/90 backdrop-blur-xs text-white shadow-xs border border-emerald-400/30">
+                    <i data-lucide="check" class="w-3 h-3"></i>
+                    <span>Masuk Belanja Jumat</span>
+                  </span>
 
+                  <!-- Top Right: Delete Button -->
+                  <button type="button" @click="confirmDeleteSnack(snack)" title="Hapus cemilan dari pekan ini"
+                          class="absolute top-2.5 right-2.5 w-7 h-7 rounded-xl bg-black/45 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer backdrop-blur-xs shadow-xs active:scale-95">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+
+                  <!-- Bottom Title & Emoji Overlay on Cover -->
+                  <div class="absolute bottom-2.5 left-3 right-3 flex items-center gap-2">
+                    <span class="text-base p-1.5 rounded-xl bg-white/90 backdrop-blur-xs shadow-xs leading-none flex-shrink-0">
+                      {{ snack.foodIcon || '🍪' }}
+                    </span>
+                    <h4 class="font-bold text-sm text-white drop-shadow-sm truncate">
+                      {{ snack.foodName }}
+                    </h4>
+                  </div>
+                </div>
+
+                <!-- Card Body: Date Planning & Status Switcher -->
+                <div class="p-3.5 sm:p-4 space-y-3 bg-white">
                   <!-- Date Planning Shortcut -->
-                  <div class="flex items-center justify-between text-[11px] pt-1">
-                    <span class="text-taupe-500 font-semibold">Rencana Bikin:</span>
+                  <div class="flex items-center justify-between text-xs bg-cream-50/80 p-2 rounded-xl border border-cream-200/70">
+                    <span class="text-taupe-500 font-semibold text-[11px]">Rencana Bikin:</span>
                     <button type="button" @click="openPlanSnackDateModal(snack)"
-                            class="font-semibold text-caramel-700 hover:underline cursor-pointer flex items-center gap-1">
+                            class="font-bold text-xs text-caramel-700 hover:text-caramel-800 hover:underline cursor-pointer flex items-center gap-1">
                       <span>📅 {{ snack.plannedDate ? formatTanggalIndo(snack.plannedDate, true) : '+ Atur Hari' }}</span>
                     </button>
                   </div>
-                </div>
 
-                <!-- Status Switcher with Confirmation -->
-                <div class="pt-2.5 border-t border-cream-100 space-y-1.5">
-                  <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Status Ketersediaan:</div>
-                  <div class="grid grid-cols-3 gap-1.5 text-center">
-                    <button type="button"
-                            @click="promptChangeSnackStatus(snack, 'belum_dibikin')"
-                            class="py-1.5 rounded-xl text-[10px] font-bold border transition cursor-pointer"
-                            :class="snack.status === 'belum_dibikin' ? 'bg-amber-500 text-white border-amber-600 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-amber-50'">
-                      ⏳ Belum
-                    </button>
-                    <button type="button"
-                            @click="promptChangeSnackStatus(snack, 'tersedia')"
-                            class="py-1.5 rounded-xl text-[10px] font-bold border transition cursor-pointer"
-                            :class="snack.status === 'tersedia' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-emerald-50'">
-                      🟢 Ada
-                    </button>
-                    <button type="button"
-                            @click="promptChangeSnackStatus(snack, 'habis')"
-                            class="py-1.5 rounded-xl text-[10px] font-bold border transition cursor-pointer bg-cream-50 text-espresso-700 border-cream-200 hover:bg-red-50 hover:text-red-700">
-                      🔴 Habis
-                    </button>
+                  <!-- Status Switcher with Confirmation -->
+                  <div class="space-y-1.5">
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Status Ketersediaan:</div>
+                    <div class="grid grid-cols-3 gap-1.5 text-center">
+                      <button type="button"
+                              @click="promptChangeSnackStatus(snack, 'belum_dibikin')"
+                              class="py-1.5 rounded-xl text-[10.5px] font-bold border transition cursor-pointer"
+                              :class="snack.status === 'belum_dibikin' ? 'bg-amber-500 text-white border-amber-600 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-amber-50'">
+                        ⏳ Belum
+                      </button>
+                      <button type="button"
+                              @click="promptChangeSnackStatus(snack, 'tersedia')"
+                              class="py-1.5 rounded-xl text-[10.5px] font-bold border transition cursor-pointer"
+                              :class="snack.status === 'tersedia' ? 'bg-emerald-600 text-white border-emerald-700 shadow-2xs' : 'bg-cream-50 text-espresso-700 border-cream-200 hover:bg-emerald-50'">
+                        🟢 Ada
+                      </button>
+                      <button type="button"
+                              @click="promptChangeSnackStatus(snack, 'habis')"
+                              class="py-1.5 rounded-xl text-[10.5px] font-bold border transition cursor-pointer bg-cream-50 text-espresso-700 border-cream-200 hover:bg-red-50 hover:text-red-700">
+                        🔴 Habis
+                      </button>
+                    </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -2335,56 +2361,71 @@
               </button>
             </div>
 
-            <!-- Cemilan Cards Grid -->
-            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            <!-- Cemilan Cards Grid with Cute 3D Covers -->
+            <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div v-for="dish in filteredSnackDishOptions" :key="dish.id"
-                   class="p-4 rounded-2xl border transition shadow-card flex flex-col justify-between gap-3 bg-white"
-                   :class="isSnackDishInCycle(dish.id) ? 'border-amber-400 bg-amber-50/20 ring-1 ring-amber-400/30' : 'border-cream-200 hover:border-cream-300'">
-                <div>
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex items-center gap-2 min-w-0">
-                      <span class="text-2xl">{{ dish.icon || '🍪' }}</span>
-                      <div class="min-w-0">
-                        <h4 class="font-bold text-sm text-espresso-900 truncate">{{ dish.name }}</h4>
-                        <p v-if="dish.portion" class="text-[11px] text-taupe-500 truncate">{{ dish.portion }}</p>
-                      </div>
-                    </div>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-100 text-espresso-800 border border-cream-200 flex-shrink-0">
-                      {{ (dish.ingredients || []).length }} Bahan
-                    </span>
-                  </div>
+                   class="rounded-3xl border transition shadow-card overflow-hidden flex flex-col justify-between bg-white hover:shadow-hover duration-200 group"
+                   :class="isSnackDishInCycle(dish.id) ? 'border-amber-400 bg-amber-50/15 ring-2 ring-amber-400/20' : 'border-cream-200 hover:border-cream-300'">
+                
+                <!-- Card Image Cover Header -->
+                <div class="relative w-full h-32 sm:h-36 bg-amber-50 overflow-hidden">
+                  <img :src="getSnackImageUrl(dish)" 
+                       :alt="dish.name" 
+                       loading="lazy"
+                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
+                  
+                  <!-- Floating Emoji Icon -->
+                  <span class="absolute top-2.5 left-2.5 text-sm p-1.5 rounded-xl bg-white/90 backdrop-blur-xs shadow-xs border border-white/50 leading-none">
+                    {{ dish.icon || '🍪' }}
+                  </span>
 
+                  <!-- Floating Ingredients Count Badge -->
+                  <span class="absolute top-2.5 right-2.5 text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/55 backdrop-blur-xs text-white shadow-xs">
+                    {{ (dish.ingredients || []).length }} Bahan
+                  </span>
+
+                  <!-- Dish Name overlay on bottom of cover -->
+                  <div class="absolute bottom-2.5 left-3 right-3">
+                    <h4 class="font-bold text-sm text-white drop-shadow-sm truncate" :title="dish.name">
+                      {{ dish.name }}
+                    </h4>
+                    <p v-if="dish.portion" class="text-[10.5px] text-white/85 drop-shadow-xs truncate">{{ dish.portion }}</p>
+                  </div>
+                </div>
+
+                <!-- Card Body / Selection Actions -->
+                <div class="p-3 sm:p-3.5 bg-white space-y-2.5 flex-1 flex flex-col justify-between">
                   <!-- Ingredients Preview -->
-                  <div v-if="(dish.ingredients || []).length > 0" class="mt-2.5 pt-2 border-t border-cream-100/80">
-                    <div class="text-[10px] text-taupe-500 line-clamp-1">
-                      Bahan: {{ dish.ingredients.map(i => i.name).filter(Boolean).slice(0, 3).join(', ') }}{{ dish.ingredients.length > 3 ? '...' : '' }}
+                  <div v-if="(dish.ingredients || []).length > 0" class="text-[10.5px] text-taupe-500 line-clamp-1">
+                    <span class="font-semibold text-taupe-700">Bahan:</span> {{ dish.ingredients.map(i => i.name).filter(Boolean).slice(0, 3).join(', ') }}{{ dish.ingredients.length > 3 ? '...' : '' }}
+                  </div>
+
+                  <div v-if="isSnackDishInCycle(dish.id)" class="pt-2 border-t border-cream-100 space-y-1.5">
+                    <div class="text-[11px] font-bold text-amber-800 flex items-center justify-between">
+                      <span>✓ Terpilih di Pekan Ini:</span>
+                      <span class="px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-extrabold">{{ getSnackDishCycleCount(dish.id) }}x disiapkan</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" @click="addSnackDishToCycle(dish)"
+                              class="flex-1 py-1.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-2xs transition cursor-pointer text-center">
+                        + Tambah Lagi
+                      </button>
+                      <button type="button" @click="removeSnackDishFromCycle(dish.id)"
+                              class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-red-50 hover:text-red-600 text-taupe-600 transition cursor-pointer">
+                        - Kurangi
+                      </button>
                     </div>
                   </div>
-                </div>
 
-                <div v-if="isSnackDishInCycle(dish.id)" class="pt-2 border-t border-cream-100/80 space-y-1.5">
-                  <div class="text-[11px] font-bold text-amber-800 flex items-center justify-between">
-                    <span>✓ Terpilih di Pekan Ini:</span>
-                    <span>{{ getSnackDishCycleCount(dish.id) }}x disiapkan</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
+                  <div v-else class="pt-2 border-t border-cream-100">
                     <button type="button" @click="addSnackDishToCycle(dish)"
-                            class="flex-1 py-1.5 rounded-xl text-[11px] font-bold bg-amber-100 hover:bg-amber-200 text-amber-900 transition cursor-pointer text-center">
-                      + Tambah Lagi
-                    </button>
-                    <button type="button" @click="removeSnackDishFromCycle(dish.id)"
-                            class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-cream-100 hover:bg-red-50 hover:text-red-600 text-taupe-500 transition cursor-pointer">
-                      - Kurangi
+                            class="w-full py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
+                      <span>+ Pilih untuk Pekan Ini</span>
                     </button>
                   </div>
                 </div>
 
-                <div v-else class="pt-2 border-t border-cream-100/80">
-                  <button type="button" @click="addSnackDishToCycle(dish)"
-                          class="w-full py-2 rounded-xl text-xs font-bold bg-amber-50 hover:bg-amber-100 active:bg-amber-200 text-amber-900 border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs">
-                    <span>+ Pilih untuk Pekan Ini</span>
-                  </button>
-                </div>
               </div>
             </div>
           </div>
@@ -5202,7 +5243,10 @@
                :class="modalAddSnack.selectedFoodIds.includes(dish.id) ? 'bg-amber-50/80 border-amber-300 shadow-2xs' : 'bg-white border-cream-200 hover:bg-cream-50'">
             
             <div class="flex items-center gap-2.5 min-w-0">
-              <span class="text-xl flex-shrink-0">{{ dish.icon || '🍪' }}</span>
+              <img :src="getSnackImageUrl(dish)" 
+                   :alt="dish.name" 
+                   loading="lazy"
+                   class="w-10 h-10 rounded-xl object-cover border border-amber-200/80 shadow-2xs flex-shrink-0 bg-amber-50">
               <div class="min-w-0">
                 <div class="text-xs font-bold text-espresso-900 truncate">{{ dish.name }}</div>
                 <div class="text-[10px] text-taupe-500 truncate flex items-center gap-1 mt-0.5">
@@ -11076,6 +11120,50 @@
             return DEFAULT_FRUIT_IMAGE;
           };
 
+          // Snack / Cemilan Cute 3D Illustrations Map
+          const SNACK_IMAGE_MAP = {
+            'jasuke': 'assets/snacks/jasuke.jpg',
+            'jagung': 'assets/snacks/jasuke.jpg',
+            'mochi': 'assets/snacks/mochi.jpg',
+            'pudding mangga': 'assets/snacks/pudding_mangga.jpg',
+            'puding mangga': 'assets/snacks/pudding_mangga.jpg',
+            'pudding coklat': 'assets/snacks/pudding_coklat.jpg',
+            'puding coklat': 'assets/snacks/pudding_coklat.jpg',
+            'pudding cokelat': 'assets/snacks/pudding_coklat.jpg',
+            'puding cokelat': 'assets/snacks/pudding_coklat.jpg',
+            'pudding': 'assets/snacks/pudding_coklat.jpg',
+            'puding': 'assets/snacks/pudding_coklat.jpg',
+            'pisang': 'assets/snacks/pisang_goreng.jpg',
+            'banana': 'assets/snacks/pisang_goreng.jpg',
+            'risol': 'assets/snacks/risol.jpg',
+            'risoles': 'assets/snacks/risol.jpg',
+            'salad buah': 'assets/snacks/salad_buah.jpg',
+            'donat': 'assets/snacks/donat.jpg',
+            'donut': 'assets/snacks/donat.jpg',
+            'martabak': 'assets/snacks/martabak.jpg',
+            'terang bulan': 'assets/snacks/martabak.jpg',
+            'bakwan': 'assets/snacks/bakwan.jpg',
+            'bala-bala': 'assets/snacks/bakwan.jpg',
+            'gorengan': 'assets/snacks/bakwan.jpg',
+            'cireng': 'assets/snacks/bakwan.jpg'
+          };
+
+          const DEFAULT_SNACK_IMAGE = 'assets/snacks/default_cemilan.jpg';
+
+          const getSnackImageUrl = (itemOrName) => {
+            if (!itemOrName) return DEFAULT_SNACK_IMAGE;
+            if (typeof itemOrName === 'object' && itemOrName.imageUrl && !itemOrName.imageUrl.includes('unsplash.com')) {
+              return itemOrName.imageUrl;
+            }
+            const name = (typeof itemOrName === 'string' 
+              ? itemOrName 
+              : (itemOrName.name || itemOrName.foodName || '')).toLowerCase().trim();
+            for (const [key, url] of Object.entries(SNACK_IMAGE_MAP)) {
+              if (name.includes(key)) return url;
+            }
+            return DEFAULT_SNACK_IMAGE;
+          };
+
           const saveCycleFruits = () => {
             localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
             triggerSyncServer();
@@ -11676,6 +11764,7 @@
             activeCycleFruits,
             filteredMasterFruits,
             getFruitImageUrl,
+            getSnackImageUrl,
             addFruitToCycle,
             updateFruitQtyInCycle,
             removeFruitFromCycle,
