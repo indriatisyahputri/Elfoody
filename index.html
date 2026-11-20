@@ -1537,14 +1537,14 @@
                       <span class="text-sage-700">Serat</span>
                       <span class="font-bold text-sage-900">{{ calculateFoodNutrition(item).perPortion.serat }}g</span>
                     </div>
-                    <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
-                         :class="calculateFoodNutrition(item).perPortion.gula >= 15 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
-                      <span class="text-taupe-500">Gula</span>
+                    <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between transition-colors"
+                         :class="getSugarColorClass(calculateFoodNutrition(item).perPortion.gula)">
+                      <span class="opacity-75 font-medium">Gula</span>
                       <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.gula }}g</span>
                     </div>
-                    <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between"
-                         :class="calculateFoodNutrition(item).perPortion.natrium >= 700 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
-                      <span class="text-taupe-500">Na</span>
+                    <div class="px-1.5 py-1 rounded-lg border flex items-center justify-between transition-colors"
+                         :class="getSodiumColorClass(calculateFoodNutrition(item).perPortion.natrium)">
+                      <span class="opacity-75 font-medium">Na</span>
                       <span class="font-bold">{{ calculateFoodNutrition(item).perPortion.natrium }}mg</span>
                     </div>
                   </div>
@@ -2039,14 +2039,14 @@
                     <span class="text-sage-700">Serat</span>
                     <span class="font-bold text-sage-900">{{ calculatePackageNutrition(pkg).serat }}g</span>
                   </div>
-                  <div class="px-2 py-1 rounded-lg border flex items-center justify-between"
-                       :class="calculatePackageNutrition(pkg).gula >= 25 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
-                    <span class="text-taupe-500">Gula</span>
+                  <div class="px-2 py-1 rounded-lg border flex items-center justify-between transition-colors"
+                       :class="getSugarColorClass(calculatePackageNutrition(pkg).gula, true)">
+                    <span class="opacity-75 font-medium">Gula</span>
                     <span class="font-bold">{{ calculatePackageNutrition(pkg).gula }}g</span>
                   </div>
-                  <div class="px-2 py-1 rounded-lg border flex items-center justify-between"
-                       :class="calculatePackageNutrition(pkg).natrium >= 1000 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-white border-cream-200/80'">
-                    <span class="text-taupe-500">Na</span>
+                  <div class="px-2 py-1 rounded-lg border flex items-center justify-between transition-colors"
+                       :class="getSodiumColorClass(calculatePackageNutrition(pkg).natrium, true)">
+                    <span class="opacity-75 font-medium">Na</span>
                     <span class="font-bold">{{ calculatePackageNutrition(pkg).natrium }}mg</span>
                   </div>
                 </div>
@@ -4011,13 +4011,15 @@
                 <span class="text-sage-700">🥦 Serat</span>
                 <span class="font-extrabold text-sage-900 text-xs">{{ modalFoodNutritionPreview.perPortion.serat }}g</span>
               </div>
-              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
-                <span class="text-taupe-500">🍬 Gula</span>
-                <span class="font-extrabold text-espresso-900 text-xs">{{ modalFoodNutritionPreview.perPortion.gula }}g</span>
+              <div class="p-2 rounded-xl border flex flex-col transition-colors"
+                   :class="getSugarColorClass(modalFoodNutritionPreview.perPortion.gula)">
+                <span class="opacity-80 font-medium">🍬 Gula</span>
+                <span class="font-extrabold text-xs">{{ modalFoodNutritionPreview.perPortion.gula }}g</span>
               </div>
-              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
-                <span class="text-taupe-500">🧂 Natrium</span>
-                <span class="font-extrabold text-espresso-900 text-xs">{{ modalFoodNutritionPreview.perPortion.natrium }}mg</span>
+              <div class="p-2 rounded-xl border flex flex-col transition-colors"
+                   :class="getSodiumColorClass(modalFoodNutritionPreview.perPortion.natrium)">
+                <span class="opacity-80 font-medium">🧂 Natrium</span>
+                <span class="font-extrabold text-xs">{{ modalFoodNutritionPreview.perPortion.natrium }}mg</span>
               </div>
             </div>
           </div>
@@ -4285,13 +4287,15 @@
                 <div class="text-[9px] text-sage-700">Serat</div>
                 <div class="font-bold text-sage-900">{{ modalPackageNutritionPreview.serat }}g</div>
               </div>
-              <div class="p-1.5 rounded-lg bg-white border border-cream-200 text-center">
-                <div class="text-[9px] text-taupe-500">Gula</div>
-                <div class="font-bold text-espresso-900">{{ modalPackageNutritionPreview.gula }}g</div>
+              <div class="p-1.5 rounded-lg border text-center transition-colors"
+                   :class="getSugarColorClass(modalPackageNutritionPreview.gula, true)">
+                <div class="text-[9px] opacity-80 font-medium">Gula</div>
+                <div class="font-bold text-xs">{{ modalPackageNutritionPreview.gula }}g</div>
               </div>
-              <div class="p-1.5 rounded-lg bg-white border border-cream-200 text-center">
-                <div class="text-[9px] text-taupe-500">Na</div>
-                <div class="font-bold text-espresso-900">{{ modalPackageNutritionPreview.natrium }}mg</div>
+              <div class="p-1.5 rounded-lg border text-center transition-colors"
+                   :class="getSodiumColorClass(modalPackageNutritionPreview.natrium, true)">
+                <div class="text-[9px] opacity-80 font-medium">Na</div>
+                <div class="font-bold text-xs">{{ modalPackageNutritionPreview.natrium }}mg</div>
               </div>
             </div>
           </div>
@@ -6613,6 +6617,35 @@
           if (pct >= 85 && pct <= 115) return { text: `${pct}% Ideal`, cls: 'text-emerald-700 bg-emerald-50 border-emerald-200' };
           if (pct > 115) return { text: `${pct}% Tinggi`, cls: 'text-amber-700 bg-amber-50 border-amber-200' };
           return { text: `${pct}%`, cls: 'text-espresso-700 bg-cream-100 border-cream-200' };
+        };
+
+        // Standar Pewarnaan Kotak Gizi (Natrium & Gula)
+        // Natrium lauk: >= 800 merah, 500-799 orange, < 500 kuning
+        // Gula lauk standar Kemenkes/BPOM/WHO: >= 15g merah, 5-14.9g orange, < 5g kuning
+        const getSodiumColorClass = (val, isPackage = false) => {
+          const n = Number(val) || 0;
+          const redThreshold = isPackage ? 1000 : 800;
+          const orangeThreshold = isPackage ? 600 : 500;
+          if (n >= redThreshold) {
+            return 'bg-red-50 border-red-300 text-red-900';
+          }
+          if (n >= orangeThreshold) {
+            return 'bg-orange-50 border-orange-300 text-orange-900';
+          }
+          return 'bg-yellow-50/90 border-yellow-300/80 text-yellow-900';
+        };
+
+        const getSugarColorClass = (val, isPackage = false) => {
+          const g = Number(val) || 0;
+          const redThreshold = isPackage ? 20 : 15;
+          const orangeThreshold = isPackage ? 8 : 5;
+          if (g >= redThreshold) {
+            return 'bg-red-50 border-red-300 text-red-900';
+          }
+          if (g >= orangeThreshold) {
+            return 'bg-orange-50 border-orange-300 text-orange-900';
+          }
+          return 'bg-yellow-50/90 border-yellow-300/80 text-yellow-900';
         };
 
         // Master Library of Common Ingredients with Standard Units & Groups
@@ -11887,6 +11920,8 @@
           getNutritionPercent,
           getNutritionBarClass,
           getNutritionStatusBadge,
+          getSodiumColorClass,
+          getSugarColorClass,
           modalFoodNutritionPreview,
           modalPackageNutritionPreview,
           modalMasterAutoNutritionPreview,
