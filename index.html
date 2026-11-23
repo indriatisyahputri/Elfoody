@@ -855,9 +855,6 @@
               <h2 class="text-xl sm:text-2xl font-serif font-bold text-espresso-900">
                 Jadwal Masak Pekan Ini
               </h2>
-              <p class="text-xs text-taupe-500 mt-1 max-w-xl leading-relaxed">
-                Pasang paket menu yang telah Anda pilih ke hari &amp; sesi makan (Makan Siang &amp; Malam), serta lakukan penimbangan ulang protein segar saat Food Prep Sabtu.
-              </p>
             </div>
 
             <!-- Quick Action: Go to Tab Paket to choose more packages -->
@@ -1267,14 +1264,6 @@
               <h2 class="text-2xl font-serif font-bold text-espresso-900">
                 {{ nutrisiSubTab === 'dishes' ? 'Dapur Gizi & Resep Masakan' : 'Master List Bahan & Standarisasi Satuan' }}
               </h2>
-              <p class="text-xs text-taupe-500 mt-1 max-w-2xl leading-relaxed">
-                <span v-if="nutrisiSubTab === 'dishes'">
-                  Katalog seluruh masakan dikelompokkan berdasarkan 6 kategori kandungan gizi. Setiap makanan dilengkapi <strong>daftar belanja bahan</strong> yang otomatis masuk ke Rincian Belanja.
-                </span>
-                <span v-else>
-                  Kelola daftar bahan dapur buatan Anda sendiri. Tentukan <strong>satuan standar</strong> (siung, gram, butir, sdm) dan <strong>kelompok kategori</strong> (Bumbu, Rempah, Sayur, Daging) agar belanja otomatis seragam.
-                </span>
-              </p>
             </div>
 
             <!-- SubTab Switcher & Context Action Buttons -->
@@ -1771,17 +1760,6 @@
                 <span v-else-if="paketSubTab === 'buah'">Rencana Buah-buahan Seminggu</span>
                 <span v-else>Rencana Cemilan Seminggu</span>
               </h2>
-              <p class="text-xs text-taupe-500 mt-1 max-w-xl leading-relaxed">
-                <span v-if="paketSubTab === 'menu'">
-                  Pilih paket-paket menu yang ingin dimasak dalam sepekan. Paket yang dipilih otomatis tersedia di <strong>Menu Jadwal</strong> dan seluruh bahan baku langsung tercantum di <strong>Menu Belanja</strong>.
-                </span>
-                <span v-else-if="paketSubTab === 'buah'">
-                  Pilih buah-buahan dari <strong>Master Bahan</strong> untuk stok konsumsi sepekan. Buah yang dipilih langsung otomatis tercantum di <strong>Menu Belanja</strong> hari Jumat.
-                </span>
-                <span v-else>
-                  Pilih cemilan lezat yang ingin dibuat sepekan ini. Bahan-bahan pembuatannya otomatis dimasukkan ke <strong>Menu Belanja</strong> dan status ketersediaannya terpantau di <strong>Menu Papan</strong>.
-                </span>
-              </p>
             </div>
 
             <!-- Action Buttons based on Active Subtab -->
@@ -2553,14 +2531,6 @@
               <h2 class="text-2xl font-serif font-bold text-espresso-900">
                 {{ stockSubTab === 'dishes' ? 'Stok Masakan & Sisa Porsi' : 'Stok Bahan Dapur (Pantry)' }}
               </h2>
-              <p class="text-xs text-taupe-500 mt-1 max-w-2xl leading-relaxed">
-                <span v-if="stockSubTab === 'dishes'">
-                  Lihat masakan <strong>Batch</strong> yang masih menyisakan jatah menu untuk minggu ini, atau catat sisa makanan di <strong>kulkas / freezer</strong> supaya tidak terlewat atau terbeli dua kali.
-                </span>
-                <span v-else>
-                  Pantau persediaan <strong>bumbu, rempah, dan bahan mentah</strong> di dapur. Bahan yang tercatat di sini otomatis muncul sebagai pengingat di <strong>Rincian Belanja</strong> agar tidak mubazir dibeli dobel.
-                </span>
-              </p>
             </div>
 
             <!-- SubTab Switcher & Context Action Buttons -->
@@ -3201,9 +3171,6 @@
               <h2 class="text-2xl font-serif font-bold text-espresso-900">
                 Rincian Belanja Mingguan
               </h2>
-              <p class="text-xs text-taupe-500 mt-1 max-w-2xl leading-relaxed">
-                Dirancang khusus untuk jadwal belanja Anda setiap <strong>Jumat, Sabtu, atau Minggu</strong>. Otomatis merangkum seluruh bahan makanan yang dibutuhkan untuk memasak 7 hari (<strong>Sabtu sampai Jumat</strong>).
-              </p>
             </div>
 
             <!-- Shopping Cycle Controls -->
