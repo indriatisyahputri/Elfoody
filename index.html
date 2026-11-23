@@ -421,6 +421,13 @@
                   <!-- Slot Action Buttons -->
                   <div class="flex items-center gap-1.5 flex-shrink-0">
                     <button v-if="getMealForSlot(currentDate, slot.id)"
+                            type="button" @click="toggleAllSlotIngredients(slot.id, currentDate)"
+                            :title="isSlotAllIngredientsExpanded(slot.id, currentDate) ? 'Tutup semua rincian bahan di sesi ini' : 'Buka semua rincian bahan masakan di sesi ini'"
+                            class="px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer border flex items-center gap-1"
+                            :class="isSlotAllIngredientsExpanded(slot.id, currentDate) ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-cream-100 hover:bg-cream-200 text-espresso-800 border-cream-200'">
+                      <span>{{ isSlotAllIngredientsExpanded(slot.id, currentDate) ? '📂 Tutup Bahan' : '📋 Buka Bahan' }}</span>
+                    </button>
+                    <button v-if="getMealForSlot(currentDate, slot.id)"
                             type="button" @click="confirmCancelScheduledSlot(currentDate, slot.id)"
                             title="Batal masak hari ini & pindahkan ke stok minggu depan"
                             class="px-2 py-1 rounded-lg text-[10px] font-bold text-sky-700 hover:bg-sky-50 border border-sky-200 transition cursor-pointer">
@@ -461,33 +468,60 @@
                       </div>
                     </template>
 
-                    <!-- Category Dishes -->
+                    <!-- Category Dishes (Clickable for Instant Recipe & Ingredients) -->
                     <template v-for="f in getMealCategoryFoods(getMealForSlot(currentDate, slot.id).items, cat.id)" :key="f.id">
-                      <div class="p-2.5 rounded-xl bg-cream-50/60 border border-cream-200/80 space-y-1.5 text-xs">
-                        <div class="flex items-center justify-between gap-2">
+                      <div class="rounded-xl border transition-all text-xs bg-white overflow-hidden shadow-2xs"
+                           :class="isBoardDishExpanded(f.id) ? 'border-amber-300 ring-1 ring-amber-200/50' : 'border-cream-200/80 hover:border-cream-300'">
+                        
+                        <!-- Dish Clickable Header Bar -->
+                        <div @click="toggleBoardDishIngredients(f.id)"
+                             class="p-2.5 flex items-center justify-between gap-2 cursor-pointer bg-cream-50/60 hover:bg-cream-100/50 transition select-none">
                           <div class="flex items-center gap-1.5 min-w-0">
                             <span class="text-[10px] px-1.5 py-0.5 rounded bg-white border border-cream-200 font-bold text-espresso-700 flex-shrink-0">
                               {{ cat.icon }} {{ cat.id === 'serat_buah' ? 'Buah' : cat.label }}
                             </span>
                             <span class="font-bold text-espresso-900 truncate">{{ f.name }}</span>
+                            <span v-if="getBaseBatchFood(f)" class="text-[9px] px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200 font-semibold flex-shrink-0">
+                              Batch
+                            </span>
                             <a v-if="f.recipeUrl" :href="f.recipeUrl" target="_blank" rel="noopener noreferrer"
+                               @click.stop
                                class="text-[10px] font-bold text-emerald-700 hover:underline flex items-center gap-0.5 flex-shrink-0"
-                               title="Lihat resep">
+                               title="Lihat resep asli">
                               <i data-lucide="external-link" class="w-3 h-3"></i>
                             </a>
                           </div>
-                          <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0"
-                               class="text-[10px] font-bold text-espresso-700 bg-white px-2 py-0.5 rounded-md border border-cream-200 flex-shrink-0">
-                            🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal
+
+                          <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <div v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori > 0"
+                                 class="text-[10px] font-bold text-espresso-700 bg-white px-2 py-0.5 rounded-md border border-cream-200 flex-shrink-0">
+                              🔥 {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).perPortion.kalori }} kkal
+                            </div>
+                            <button type="button"
+                                    @click.stop="toggleBoardDishIngredients(f.id)"
+                                    class="text-[10px] font-bold px-2 py-0.5 rounded-md border transition cursor-pointer flex items-center gap-1"
+                                    :class="isBoardDishExpanded(f.id) ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-white hover:bg-cream-100 text-espresso-700 border-cream-200'">
+                              <span>📋 {{ (f.ingredients || []).length }} Bahan</span>
+                              <span>{{ isBoardDishExpanded(f.id) ? '▲' : '▼' }}</span>
+                            </button>
+                            <button type="button"
+                                    @click.stop="openDishDetailModal(f, currentDate, slot.id)"
+                                    title="Buka detail resep & gizi lengkap"
+                                    class="text-[10px] font-bold p-1 rounded-md bg-white hover:bg-cream-100 text-taupe-500 hover:text-espresso-800 border border-cream-200 transition cursor-pointer">
+                              🔍
+                            </button>
                           </div>
                         </div>
 
-                        <!-- Portion & Ingredients Summary -->
-                        <div class="flex items-center justify-between text-[11px] text-taupe-500 gap-2">
+                        <!-- Portion & Quick Summary Bar -->
+                        <div class="px-2.5 py-1 bg-white border-t border-cream-100 flex items-center justify-between text-[11px] text-taupe-500 gap-2">
                           <div class="truncate">
                             <span v-if="f.portion" class="text-espresso-700 font-medium">{{ f.portion }}</span>
-                            <span v-if="(f.ingredients || []).length > 0" class="text-taupe-400">
+                            <span v-if="(f.ingredients || []).length > 0 && !isBoardDishExpanded(f.id)" class="text-taupe-400">
                               • {{ (f.ingredients || []).map(i => i.name).slice(0, 3).join(', ') }}{{ (f.ingredients || []).length > 3 ? '...' : '' }}
+                            </span>
+                            <span v-else-if="!isBoardDishExpanded(f.id)" class="text-taupe-400 italic">
+                              • Klik kartu untuk melihat takaran bahan
                             </span>
                           </div>
                           <button v-if="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasWeighableProtein"
@@ -497,6 +531,88 @@
                                   :class="calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'">
                             {{ calculateFoodNutrition(f, null, { dateStr: currentDate, slotId: slot.id }).hasActualWeight ? '✓ Timbang' : '⚖️ Timbang' }}
                           </button>
+                        </div>
+
+                        <!-- Expandable Ingredients Panel (Bahan & Takaran Resep) -->
+                        <div v-if="isBoardDishExpanded(f.id)"
+                             class="p-2.5 bg-cream-50/40 border-t border-cream-200/80 space-y-2 animate-in fade-in duration-150">
+                          
+                          <!-- Header of Panel -->
+                          <div class="flex items-center justify-between">
+                            <span class="text-[10.5px] font-bold text-espresso-900 flex items-center gap-1">
+                              <span>🛒 Bahan Resep</span>
+                              <span class="text-taupe-400 font-normal">({{ (f.ingredients || []).length }} item)</span>
+                            </span>
+                            <span class="text-[9.5px] text-taupe-400">Porsi: <strong>{{ f.portion || '1 porsi' }}</strong></span>
+                          </div>
+
+                          <!-- Ingredients List -->
+                          <div v-if="(f.ingredients || []).length > 0" class="space-y-1">
+                            <div v-for="(ing, ingIdx) in f.ingredients" :key="ingIdx"
+                                 class="flex items-center justify-between py-1 px-2 rounded-lg bg-white border border-cream-100 text-[11px]">
+                              <div class="flex items-center gap-1.5 min-w-0">
+                                <span class="w-1.5 h-1.5 rounded-full bg-caramel-400 flex-shrink-0"></span>
+                                <span class="font-semibold text-espresso-900 truncate">{{ ing.name }}</span>
+                                <span v-if="ing.group" class="text-[9px] px-1 py-0.2 rounded bg-cream-100 text-taupe-600 font-medium">
+                                  {{ ing.group }}
+                                </span>
+                              </div>
+                              <div class="flex items-center gap-1.5 flex-shrink-0">
+                                <span class="font-bold text-espresso-800 bg-cream-50 px-1.5 py-0.5 rounded border border-cream-200">
+                                  {{ ing.qty }} {{ ing.unit }}
+                                </span>
+                                <!-- Live Pantry Stock Badge if exists -->
+                                <span v-if="getPantryStockForIngredient(ing.name)"
+                                      class="text-[9.5px] px-1.5 py-0.5 rounded font-semibold border flex items-center gap-0.5"
+                                      :class="(Number(getPantryStockForIngredient(ing.name).qty) || 0) >= (Number(ing.qty) || 0)
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                        : (Number(getPantryStockForIngredient(ing.name).qty) || 0) > 0
+                                          ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                          : 'bg-rose-50 text-rose-800 border-rose-200'">
+                                  🥫 {{ getPantryStockForIngredient(ing.name).qty }} {{ getPantryStockForIngredient(ing.name).unit }}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div v-else class="text-[11px] text-taupe-400 italic py-1 text-center bg-white rounded-lg border border-cream-100">
+                            Belum ada takaran bahan. Klik "Ubah Resep" untuk menambahkan bahan.
+                          </div>
+
+                          <!-- Base Batch Link Notice -->
+                          <div v-if="getBaseBatchFood(f)"
+                               class="p-2 rounded-lg bg-amber-50/80 border border-amber-200 text-[10.5px] text-amber-900 flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-1 truncate">
+                              <span>ℹ️ Resep ini mengambil porsi dari <strong>{{ getBaseBatchFood(f).name }}</strong></span>
+                            </div>
+                            <button type="button"
+                                    @click.stop="openDishDetailModal(getBaseBatchFood(f))"
+                                    class="text-[9.5px] font-bold underline hover:text-amber-950 flex-shrink-0 cursor-pointer">
+                              Lihat Bahan Batch
+                            </button>
+                          </div>
+
+                          <!-- Card Actions Toolbar -->
+                          <div class="pt-1.5 flex items-center justify-between gap-1.5 border-t border-cream-100 text-[10px]">
+                            <div class="flex items-center gap-1">
+                              <button type="button"
+                                      @click.stop="openDishDetailModal(f, currentDate, slot.id)"
+                                      class="px-2 py-1 rounded-lg bg-caramel-50 hover:bg-caramel-100 text-caramel-800 border border-caramel-200 font-bold flex items-center gap-1 transition cursor-pointer">
+                                <span>🔍 Detail &amp; Gizi</span>
+                              </button>
+                              <button type="button"
+                                      @click.stop="editFoodModal(f)"
+                                      class="px-2 py-1 rounded-lg bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 font-bold flex items-center gap-1 transition cursor-pointer">
+                                <span>✏️ Edit Resep</span>
+                              </button>
+                            </div>
+                            <a v-if="f.recipeUrl" :href="f.recipeUrl" target="_blank" rel="noopener noreferrer"
+                               @click.stop
+                               class="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold flex items-center gap-1 transition">
+                              <span>🔗 Buka Link Resep</span>
+                              <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                          </div>
+
                         </div>
                       </div>
                     </template>
@@ -742,14 +858,17 @@
               <!-- Info Bar: Mascot Thumbnail, Name, Date, Delete -->
               <div class="space-y-1.5">
                 <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-2.5 min-w-0">
+                  <div @click="openSnackDetailModal(snack)"
+                       title="Klik untuk lihat resep & bahan cemilan ini"
+                       class="flex items-center gap-2.5 min-w-0 cursor-pointer hover:opacity-90 group">
                     <img :src="getSnackImageUrl(snack)" 
                          :alt="snack.foodName" 
                          loading="lazy"
-                         class="w-11 h-11 rounded-xl object-cover border border-amber-200/80 shadow-2xs flex-shrink-0 bg-amber-50">
+                         class="w-11 h-11 rounded-xl object-cover border border-amber-200/80 shadow-2xs flex-shrink-0 bg-amber-50 group-hover:scale-105 transition-transform">
                     <div class="min-w-0">
-                      <h4 class="text-xs font-bold text-espresso-900 truncate">
-                        {{ snack.foodName }}
+                      <h4 class="text-xs font-bold text-espresso-900 truncate group-hover:text-caramel-700 transition-colors flex items-center gap-1">
+                        <span>{{ snack.foodName }}</span>
+                        <span class="text-[10px] text-taupe-400 group-hover:text-caramel-600">📋</span>
                       </h4>
                       <span class="text-[10px] text-taupe-500 truncate block mt-0.5">
                         🛒 {{ formatSnackCycleLabel(snack.cycleKey) }}
@@ -5800,6 +5919,219 @@
       </div>
     </div>
 
+    <!-- ======================================================== -->
+    <!-- MODAL DETAIL RESEP & BAHAN MASAKAN (DARI PAPAN MENU)     -->
+    <!-- ======================================================== -->
+    <div v-if="modalDishDetail.show && modalDishDetail.food"
+         class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-espresso-950/60 backdrop-blur-xs animate-in fade-in duration-200"
+         @click.self="modalDishDetail.show = false">
+      <div class="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] flex flex-col shadow-2xl border border-cream-200 overflow-hidden">
+        
+        <!-- Modal Header -->
+        <div class="p-4 sm:p-5 border-b border-cream-100 flex items-start justify-between gap-3 bg-cream-50/50">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-cream-200 text-espresso-800 shadow-2xs">
+                {{ modalDishDetail.food.category || 'Menu Masakan' }}
+              </span>
+              <span v-if="getBaseBatchFood(modalDishDetail.food)"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">
+                Batch: {{ getBaseBatchFood(modalDishDetail.food).name }}
+              </span>
+              <span v-if="getFoodBatchLabel(modalDishDetail.food)"
+                    class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 border border-sky-300">
+                {{ getFoodBatchLabel(modalDishDetail.food) }}
+              </span>
+            </div>
+            <h3 class="text-base sm:text-lg font-serif font-bold text-espresso-900 truncate">
+              {{ modalDishDetail.food.name }}
+            </h3>
+            <p class="text-xs text-taupe-500 mt-0.5">
+              Porsi: <strong class="text-espresso-800">{{ modalDishDetail.food.portion || '1 porsi' }}</strong>
+              <span v-if="modalDishDetail.dateStr"> • Jadwal: {{ formatTanggalIndo(modalDishDetail.dateStr, true) }}</span>
+            </p>
+          </div>
+          <button type="button" @click="modalDishDetail.show = false"
+                  class="w-8 h-8 rounded-full text-taupe-400 hover:text-espresso-900 hover:bg-cream-100 flex items-center justify-center transition cursor-pointer flex-shrink-0">
+            ✕
+          </button>
+        </div>
+
+        <!-- Modal Body (Scrollable) -->
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs">
+          
+          <!-- Recipe Link Banner (if available) -->
+          <div v-if="modalDishDetail.food.recipeUrl"
+               class="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-base flex-shrink-0">🔗</span>
+              <div class="min-w-0">
+                <div class="font-bold text-emerald-950 text-xs">Tautan / Video Resep</div>
+                <div class="text-[10.5px] text-emerald-700 truncate">{{ modalDishDetail.food.recipeUrl }}</div>
+              </div>
+            </div>
+            <a :href="modalDishDetail.food.recipeUrl" target="_blank" rel="noopener noreferrer"
+               class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs flex-shrink-0">
+              <span>Buka</span>
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+
+          <!-- Nutritional Breakdown Preview -->
+          <div class="p-3 rounded-2xl bg-cream-50/60 border border-cream-200/80 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="text-xs font-bold text-espresso-900 flex items-center gap-1">
+                <span>🔥 Nilai Gizi Per Porsi</span>
+                <span class="text-[10px] text-taupe-400 font-normal">({{ modalDishDetail.food.portion || '1 porsi' }})</span>
+              </div>
+              <span class="text-xs font-extrabold text-caramel-700">
+                {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.kalori }} kkal
+              </span>
+            </div>
+
+            <div v-if="calculateFoodNutrition(modalDishDetail.food).methodExtraKalori > 0"
+                 class="text-[10px] font-semibold text-amber-800 bg-amber-50/80 p-1.5 rounded-lg border border-amber-200">
+              Termasuk metode masak: +{{ calculateFoodNutrition(modalDishDetail.food).methodExtraKalori }} kkal • +{{ calculateFoodNutrition(modalDishDetail.food).methodExtraLemak }}g lemak
+            </div>
+
+            <!-- Macros Grid -->
+            <div class="grid grid-cols-3 gap-1.5 text-xs">
+              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                <span class="text-[10px] text-taupe-500 font-medium">Karbo</span>
+                <span class="font-extrabold text-espresso-900 text-xs">
+                  {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.karbo }}g
+                </span>
+              </div>
+              <div class="p-2 rounded-xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col">
+                <span class="text-[10px] text-emerald-700 font-medium">Protein</span>
+                <span class="font-extrabold text-emerald-900 text-xs">
+                  {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.protein }}g
+                </span>
+              </div>
+              <div class="p-2 rounded-xl bg-white border border-cream-200/80 flex flex-col">
+                <span class="text-[10px] text-taupe-500 font-medium">Lemak</span>
+                <span class="font-extrabold text-espresso-900 text-xs">
+                  {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.lemak }}g
+                </span>
+              </div>
+              <div class="p-2 rounded-xl bg-sage-50/70 border border-sage-200/80 flex flex-col">
+                <span class="text-[10px] text-sage-700 font-medium">Serat</span>
+                <span class="font-extrabold text-sage-900 text-xs">
+                  {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.serat }}g
+                </span>
+              </div>
+              <div class="p-2 rounded-xl border flex flex-col transition-colors"
+                   :class="getSugarColorClass(calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.gula)">
+                <span class="text-[10px] opacity-80 font-medium">Gula</span>
+                <span class="font-extrabold text-xs">
+                  {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.gula }}g
+                </span>
+              </div>
+              <div class="p-2 rounded-xl border flex flex-col transition-colors"
+                   :class="getSodiumColorClass(calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.natrium)">
+                <span class="text-[10px] opacity-80 font-medium">Natrium</span>
+                <span class="font-extrabold text-xs">
+                  {{ calculateFoodNutrition(modalDishDetail.food, null, { dateStr: modalDishDetail.dateStr, slotId: modalDishDetail.slotId }).perPortion.natrium }}mg
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ingredients List with Pantry Status -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <h4 class="text-xs font-bold text-espresso-900 flex items-center gap-1.5">
+                <span>🛒 Daftar Bahan Resep</span>
+                <span class="text-taupe-400 font-normal text-[11px]">({{ (modalDishDetail.food.ingredients || []).length }} bahan)</span>
+              </h4>
+              <span class="text-[10px] text-taupe-500">Stok Dapur Terkini</span>
+            </div>
+
+            <div v-if="(modalDishDetail.food.ingredients || []).length > 0" class="space-y-1.5">
+              <div v-for="(ing, idx) in modalDishDetail.food.ingredients" :key="idx"
+                   class="p-2.5 rounded-xl bg-white border border-cream-200 flex items-center justify-between gap-2 shadow-2xs">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-2 h-2 rounded-full bg-caramel-400 flex-shrink-0"></span>
+                  <div class="min-w-0">
+                    <div class="font-bold text-espresso-900 text-xs truncate">{{ ing.name }}</div>
+                    <div v-if="ing.group" class="text-[10px] text-taupe-400 font-medium">Kategori: {{ ing.group }}</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-shrink-0">
+                  <!-- Takaran Resep -->
+                  <div class="text-right">
+                    <div class="text-xs font-bold text-espresso-800 bg-cream-50 px-2 py-0.5 rounded-md border border-cream-200">
+                      {{ ing.qty }} {{ ing.unit }}
+                    </div>
+                  </div>
+
+                  <!-- Stok Dapur Badge -->
+                  <div v-if="getPantryStockForIngredient(ing.name)"
+                       class="text-[10px] font-bold px-2 py-1 rounded-lg border flex items-center gap-1 shadow-2xs"
+                       :class="(Number(getPantryStockForIngredient(ing.name).qty) || 0) >= (Number(ing.qty) || 0)
+                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                         : (Number(getPantryStockForIngredient(ing.name).qty) || 0) > 0
+                           ? 'bg-amber-50 text-amber-800 border-amber-300'
+                           : 'bg-rose-50 text-rose-800 border-rose-200'">
+                    <span>🥫</span>
+                    <span>{{ getPantryStockForIngredient(ing.name).qty }} {{ getPantryStockForIngredient(ing.name).unit }}</span>
+                  </div>
+                  <div v-else class="text-[9.5px] text-taupe-400 italic px-1.5 py-0.5 rounded bg-cream-50 border border-cream-100">
+                    Belum ada stok
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div v-else class="p-6 text-center rounded-2xl bg-cream-50/50 border border-dashed border-cream-200 space-y-2">
+              <div class="text-xl opacity-60">🍳</div>
+              <div class="text-xs text-taupe-500">Belum ada takaran bahan yang disimpan untuk masakan ini.</div>
+              <button type="button"
+                      @click="editFoodModal(modalDishDetail.food); modalDishDetail.show = false;"
+                      class="px-3 py-1.5 rounded-xl bg-caramel-500 hover:bg-caramel-600 text-white font-bold text-xs shadow-xs cursor-pointer">
+                + Tambah Bahan Resep
+              </button>
+            </div>
+          </div>
+
+          <!-- Base Batch Parent Ingredients (if applicable) -->
+          <div v-if="getBaseBatchFood(modalDishDetail.food)" class="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
+            <div class="flex items-center justify-between">
+              <div class="font-bold text-amber-950 text-xs flex items-center gap-1">
+                <span>📦 Resep Induk Batch: {{ getBaseBatchFood(modalDishDetail.food).name }}</span>
+              </div>
+              <button type="button"
+                      @click="openDishDetailModal(getBaseBatchFood(modalDishDetail.food))"
+                      class="text-[10px] font-bold text-amber-800 underline hover:text-amber-950 cursor-pointer">
+                Buka Batch Induk
+              </button>
+            </div>
+            <p class="text-[10.5px] text-amber-800 leading-relaxed">
+              Menu ini dibuat sebagai turunan dari resep batch induk. Bahan dasar telah dimasak sekaligus dalam batch tersebut.
+            </p>
+          </div>
+
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-4 sm:p-5 border-t border-cream-100 flex items-center justify-between gap-3 bg-cream-50/30">
+          <button type="button"
+                  @click="editFoodModal(modalDishDetail.food); modalDishDetail.show = false;"
+                  class="px-4 py-2 rounded-xl text-xs font-bold text-espresso-800 bg-cream-100 hover:bg-cream-200 border border-cream-200 flex items-center gap-1.5 transition cursor-pointer">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>✏️ Edit di Dapur Gizi</span>
+          </button>
+
+          <button type="button" @click="modalDishDetail.show = false"
+                  class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-espresso-800 hover:bg-espresso-900 shadow-card transition cursor-pointer">
+            Tutup
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- iOS NATIVE-STYLE BOTTOM TAB BAR (Optimized for iPhone 11 & 11 Pro) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-cream-200 ios-safe-bottom-nav shadow-ios-bottom">
       <div class="grid grid-cols-6 items-center h-14 px-0.5 max-w-md mx-auto">
@@ -8961,6 +9293,78 @@
           const base = getFoodItem(food.baseBatchId);
           if (!base || getFoodBatchConfig(base).mode !== 'batch') return null;
           return base;
+        };
+
+        // --- PAPAN MENU: INTERACTIVE INGREDIENTS & RECIPE DETAIL ---
+        const expandedBoardDishIds = ref({});
+        const toggleBoardDishIngredients = (foodId) => {
+          if (!foodId) return;
+          expandedBoardDishIds.value[foodId] = !expandedBoardDishIds.value[foodId];
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+        const isBoardDishExpanded = (foodId) => {
+          return !!expandedBoardDishIds.value[foodId];
+        };
+
+        const isSlotAllIngredientsExpanded = (slotId, dateStr) => {
+          const meal = getMealForSlot(dateStr, slotId);
+          if (!meal || !meal.items) return false;
+          const foodIds = [];
+          const cats = dailyNutritionCategories.value || [];
+          cats.forEach(cat => {
+            const val = meal.items[cat.id];
+            if (Array.isArray(val)) val.forEach(id => { if (id) foodIds.push(id); });
+            else if (typeof val === 'string' && val) foodIds.push(val);
+          });
+          if (foodIds.length === 0) return false;
+          return foodIds.every(id => !!expandedBoardDishIds.value[id]);
+        };
+
+        const toggleAllSlotIngredients = (slotId, dateStr) => {
+          const meal = getMealForSlot(dateStr, slotId);
+          if (!meal || !meal.items) return;
+          const foodIds = [];
+          const cats = dailyNutritionCategories.value || [];
+          cats.forEach(cat => {
+            const val = meal.items[cat.id];
+            if (Array.isArray(val)) val.forEach(id => { if (id) foodIds.push(id); });
+            else if (typeof val === 'string' && val) foodIds.push(val);
+          });
+          if (foodIds.length === 0) return;
+          const anyClosed = foodIds.some(id => !expandedBoardDishIds.value[id]);
+          foodIds.forEach(id => {
+            expandedBoardDishIds.value[id] = anyClosed;
+          });
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        // Modal Detail Resep & Bahan Masakan (Buka Langsung dari Papan Menu)
+        const modalDishDetail = ref({
+          show: false,
+          food: null,
+          dateStr: null,
+          slotId: null
+        });
+
+        const openDishDetailModal = (food, dateStr = null, slotId = null) => {
+          if (!food) return;
+          modalDishDetail.value = {
+            show: true,
+            food,
+            dateStr: dateStr || currentDate.value,
+            slotId: slotId || null
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const openSnackDetailModal = (snack) => {
+          if (!snack) return;
+          const food = (snack.foodId ? getFoodItem(snack.foodId) : null) || (foodItems.value || []).find(f => f.name.toLowerCase() === (snack.foodName || '').toLowerCase());
+          if (food) {
+            openDishDetailModal(food);
+          } else {
+            showToast(`Resep untuk cemilan "${snack.foodName}" belum tersedia.`);
+          }
         };
 
         const getFoodBatchLabel = (food) => {
@@ -12254,6 +12658,7 @@
           executeMenuSwap,
           filteredFoodItems,
           getFoodBatchLabel,
+          getFoodBatchConfig,
           getBaseBatchFood,
           batchBaseFoods,
           getLinkedVariationFoods,
@@ -12511,7 +12916,15 @@
           openPlanSnackDateModal,
           confirmPlanSnackDate,
           getSnacksForDate,
-          openPlanSnackForDate
+          openPlanSnackForDate,
+          expandedBoardDishIds,
+          toggleBoardDishIngredients,
+          isBoardDishExpanded,
+          isSlotAllIngredientsExpanded,
+          toggleAllSlotIngredients,
+          modalDishDetail,
+          openDishDetailModal,
+          openSnackDetailModal
         };
       }
     }).mount('#app');
