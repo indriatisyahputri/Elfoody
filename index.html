@@ -3143,10 +3143,16 @@
               <!-- Card Actions -->
               <div class="flex items-center gap-2 pt-2 border-t border-cream-100">
                 <button type="button"
+                        @click="openUsePantryModal(item)"
+                        class="flex-grow min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <span>🍳</span>
+                  <span>Pakai / Kurangi</span>
+                </button>
+                <button type="button"
                         @click="editPantryModal(item)"
-                        class="flex-grow min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        class="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
                   <i data-lucide="edit-2" class="w-3.5 h-3.5 text-taupe-600"></i>
-                  <span>Ubah Stok</span>
+                  <span>Ubah</span>
                 </button>
                 <button type="button"
                         @click="confirmDeletePantryStock(item.id)"
@@ -3181,7 +3187,7 @@
                 Rincian Belanja Mingguan
               </h2>
               <p class="text-xs text-taupe-500 mt-1 max-w-2xl leading-relaxed">
-                Dirancang khusus untuk jadwal belanja Anda setiap <strong>hari Jumat</strong>. Otomatis merangkum seluruh bahan makanan yang dibutuhkan untuk memasak mulai <strong>Sabtu besok sampai Jumat depan</strong>.
+                Dirancang khusus untuk jadwal belanja Anda setiap <strong>Jumat, Sabtu, atau Minggu</strong>. Otomatis merangkum seluruh bahan makanan yang dibutuhkan untuk memasak 7 hari (<strong>Sabtu sampai Jumat</strong>).
               </p>
             </div>
 
@@ -3191,15 +3197,16 @@
                 <label class="text-[11px] font-bold uppercase tracking-wider text-taupe-400 mb-1">Pilih Siklus Belanja:</label>
                 <select v-model="selectedShoppingCycle" 
                         class="px-4 py-2.5 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-taupe-400">
-                  <option value="current">Siklus Jumat Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
-                  <option value="next">Siklus Jumat Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
+                  <option value="ongoing">Pekan Lalu / Berjalan: {{ formatShortDate(ongoingFridayRange.start) }} - {{ formatShortDate(ongoingFridayRange.end) }}</option>
+                  <option value="current">Siklus Pekan Ini: {{ formatShortDate(fridayRange.start) }} - {{ formatShortDate(fridayRange.end) }}</option>
+                  <option value="next">Siklus Pekan Depan: {{ formatShortDate(nextFridayRange.start) }} - {{ formatShortDate(nextFridayRange.end) }}</option>
                 </select>
               </div>
 
               <!-- Cycle Quick Summary Pill -->
               <div class="p-3 rounded-2xl bg-cream-100/70 border border-cream-200 text-center self-stretch sm:self-end">
                 <div class="text-[10px] uppercase font-bold text-taupe-400">Hari Belanja</div>
-                <div class="text-xs font-extrabold text-espresso-900">Tiap Jumat</div>
+                <div class="text-xs font-extrabold text-espresso-900">Jumat – Minggu</div>
               </div>
             </div>
           </div>
@@ -3217,7 +3224,7 @@
                 <div class="text-xs font-bold text-espresso-900">
                   {{ formatTanggalIndo(activeShoppingRange.start) }} s/d {{ formatTanggalIndo(activeShoppingRange.end) }}
                 </div>
-                <div class="text-[10px] text-taupe-500">Total 7 Hari Masak (Sabtu - Jumat)</div>
+                <div class="text-[10px] text-taupe-500">Total 7 Hari Masak (Sabtu - Jumat) • Belanja Fleksibel (Jumat–Minggu)</div>
               </div>
             </div>
 
@@ -3368,7 +3375,9 @@
                 <!-- Checkbox -->
                 <div class="w-5 h-5 rounded-lg border flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors"
                      :class="isItemChecked(ing.id) ? 'bg-taupe-600 border-taupe-600 text-white' : 'border-cream-300 bg-white'">
-                  <i v-if="isItemChecked(ing.id)" data-lucide="check" class="w-3.5 h-3.5"></i>
+                  <svg v-if="isItemChecked(ing.id)" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
                 </div>
 
                 <div class="flex-grow min-w-0">
@@ -3571,10 +3580,46 @@
           </select>
         </div>
 
+        <!-- Option: Schedule as a Complete Meal Package -->
+        <div v-if="getPackagesContainingFood(modalQuickSchedule.item?.id).length > 0"
+             class="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+              <span>🍱</span>
+              <span>Jadwalkan Paket Lengkap (Rekomendasi)</span>
+            </span>
+            <span class="text-[10px] font-semibold text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-full">
+              Gizi Komplit
+            </span>
+          </div>
+          <p class="text-[11px] text-amber-800 leading-relaxed">
+            Stok <strong>{{ modalQuickSchedule.item?.name }}</strong> ada di paket berikut. Jadwalkan langsung bersama nasi & sayur agar nutrisi terpenuhi:
+          </p>
+          <div class="space-y-2">
+            <div v-for="pkg in getPackagesContainingFood(modalQuickSchedule.item?.id)" :key="pkg.id"
+                 class="p-2.5 rounded-xl bg-white border border-amber-200/80 flex items-center justify-between gap-2 shadow-2xs hover:border-amber-400 transition">
+              <div class="min-w-0">
+                <div class="font-bold text-xs text-espresso-900 truncate">{{ pkg.name }}</div>
+                <div class="text-[10px] text-taupe-500 truncate mt-0.5">
+                  {{ (pkg.items ? Object.values(pkg.items).flat().filter(Boolean).map(id => (getFoodItem(id) || {}).name).filter(Boolean).join(' • ') : '') }}
+                </div>
+              </div>
+              <button type="button"
+                      @click="confirmQuickAddPackageToWeeklyPool(pkg)"
+                      class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition flex-shrink-0 cursor-pointer">
+                + Pasang Paket
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Primary Action: Add as New Unassigned Weekly Menu Card -->
         <div class="space-y-2.5">
+          <div v-if="getPackagesContainingFood(modalQuickSchedule.item?.id).length > 0" class="text-[11px] font-bold text-taupe-500">
+            Atau jadwalkan masakan ini saja (Satuan):
+          </div>
           <button type="button" @click="confirmQuickAddToWeeklyPool()"
-                  class="w-full min-h-[48px] py-3 px-4 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center justify-center gap-2 cursor-pointer active:scale-95">
+                  class="w-full min-h-[44px] py-2.5 px-4 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center justify-center gap-2 cursor-pointer active:scale-95">
             <span>📋</span>
             <span>+ Masukkan ke Daftar Pekan Ini (Tanpa Tanggal)</span>
           </button>
@@ -4536,6 +4581,111 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- MODAL 5B: PAKAI / KURANGI STOK BAHAN DAPUR (PANTRY)       -->
+    <!-- ======================================================== -->
+    <div v-if="modalUsePantry.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-md w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-6 space-y-4 max-h-[88vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-2"></div>
+
+        <div class="flex items-center justify-between pb-3 border-b border-cream-100">
+          <div>
+            <h3 class="font-bold text-base text-espresso-900">🍳 Pakai / Kurangi Stok Bahan</h3>
+            <p class="text-[11px] text-taupe-500">Catat pemakaian bahan saat proses memasak</p>
+          </div>
+          <button @click="modalUsePantry.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <div v-if="modalUsePantry.item" class="space-y-4 text-xs">
+          <!-- Item Info Card -->
+          <div class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 flex items-center justify-between">
+            <div>
+              <div class="font-bold text-sm text-espresso-900">{{ modalUsePantry.item.name }}</div>
+              <div class="text-[10px] text-taupe-500">{{ modalUsePantry.item.group }} • {{ modalUsePantry.item.note || 'Tersimpan di dapur' }}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[10px] uppercase font-bold text-taupe-400">Stok Saat Ini</div>
+              <div class="text-base font-extrabold text-espresso-900">{{ modalUsePantry.item.qty }} <span class="text-xs font-bold text-taupe-600">{{ modalUsePantry.item.unit }}</span></div>
+            </div>
+          </div>
+
+          <!-- Input Berapa Banyak Yang Dipakai -->
+          <div>
+            <label class="block font-bold text-espresso-800 mb-1.5">Berapa banyak yang dipakai memasak?</label>
+            <div class="flex items-center gap-2">
+              <input type="number" step="any" min="0" v-model.number="modalUsePantry.useAmount"
+                     :placeholder="'Contoh: 100 atau 1'"
+                     class="flex-grow px-3.5 py-2.5 rounded-xl text-sm font-bold bg-cream-50 border border-cream-300 text-espresso-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]">
+              <span class="px-3 py-2.5 rounded-xl bg-cream-100 text-espresso-800 font-bold border border-cream-200 text-xs">
+                {{ modalUsePantry.item.unit }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div>
+            <label class="block text-[11px] font-semibold text-taupe-500 mb-1">Pilihan Cepat:</label>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" @click="modalUsePantry.useAmount = 1"
+                      class="px-2.5 py-1 rounded-lg bg-cream-50 hover:bg-cream-100 border border-cream-200 font-bold text-[11px] text-espresso-800 cursor-pointer">
+                1 {{ modalUsePantry.item.unit }}
+              </button>
+              <button v-if="parseIngredientQtyNumber(modalUsePantry.item.qty) >= 10" type="button" @click="modalUsePantry.useAmount = 10"
+                      class="px-2.5 py-1 rounded-lg bg-cream-50 hover:bg-cream-100 border border-cream-200 font-bold text-[11px] text-espresso-800 cursor-pointer">
+                10 {{ modalUsePantry.item.unit }}
+              </button>
+              <button v-if="parseIngredientQtyNumber(modalUsePantry.item.qty) >= 50" type="button" @click="modalUsePantry.useAmount = 50"
+                      class="px-2.5 py-1 rounded-lg bg-cream-50 hover:bg-cream-100 border border-cream-200 font-bold text-[11px] text-espresso-800 cursor-pointer">
+                50 {{ modalUsePantry.item.unit }}
+              </button>
+              <button v-if="parseIngredientQtyNumber(modalUsePantry.item.qty) >= 100" type="button" @click="modalUsePantry.useAmount = 100"
+                      class="px-2.5 py-1 rounded-lg bg-cream-50 hover:bg-cream-100 border border-cream-200 font-bold text-[11px] text-espresso-800 cursor-pointer">
+                100 {{ modalUsePantry.item.unit }}
+              </button>
+              <button v-if="parseIngredientQtyNumber(modalUsePantry.item.qty) > 0" type="button"
+                      @click="modalUsePantry.useAmount = Math.round((parseIngredientQtyNumber(modalUsePantry.item.qty) / 2) * 10) / 10"
+                      class="px-2.5 py-1 rounded-lg bg-cream-50 hover:bg-cream-100 border border-cream-200 font-bold text-[11px] text-espresso-800 cursor-pointer">
+                1/2 Stok ({{ Math.round((parseIngredientQtyNumber(modalUsePantry.item.qty) / 2) * 10) / 10 }})
+              </button>
+              <button type="button" @click="modalUsePantry.useAmount = parseIngredientQtyNumber(modalUsePantry.item.qty)"
+                      class="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 font-bold text-[11px] text-red-700 cursor-pointer">
+                Habiskan Semua
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview Sisa -->
+          <div v-if="modalUsePantry.useAmount > 0" class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/80 text-[11px] text-emerald-900 flex items-center justify-between">
+            <span>Estimasi Sisa Stok:</span>
+            <span class="font-extrabold text-xs">
+              {{ Math.max(0, Math.round(((parseIngredientQtyNumber(modalUsePantry.item.qty) || 0) - modalUsePantry.useAmount) * 100) / 100) }} {{ modalUsePantry.item.unit }}
+            </span>
+          </div>
+
+          <!-- Catatan Penggunaan (Opsional) -->
+          <div>
+            <label class="block font-bold text-espresso-800 mb-1">Keterangan / Masakan (Opsional)</label>
+            <input type="text" v-model="modalUsePantry.customNote"
+                   placeholder="Contoh: Dipakai masak Sup Ayam & Gyoza"
+                   class="w-full px-3 py-2 rounded-xl text-xs bg-cream-50 border border-cream-200 text-espresso-900">
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-cream-100 flex items-center justify-end gap-2.5">
+          <button @click="modalUsePantry.show = false" class="px-4 py-2.5 rounded-xl text-xs font-semibold text-taupe-600 hover:bg-cream-100 min-h-[42px] cursor-pointer">
+            Batal
+          </button>
+          <button @click="confirmUsePantryStock()"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs min-h-[42px] flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Kurangi Stok Sekarang</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- MODAL 6: TAMBAH / EDIT MASTER BAHAN BAKU                 -->
     <!-- ======================================================== -->
     <div v-if="modalMasterIngredient.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
@@ -4905,17 +5055,38 @@
         <div v-else class="space-y-3 max-h-[45vh] overflow-y-auto pr-1 ios-scroll">
           <div v-for="entry in proteinPrepEntries" :key="entry.key"
                class="p-3.5 rounded-2xl border space-y-2.5 transition"
-               :class="entry.hasActual ? 'bg-emerald-50/40 border-emerald-300' : 'bg-cream-50/70 border-cream-200'">
+               :class="entry.hasActual
+                 ? (entry.isBatch ? 'bg-amber-50/50 border-amber-300' : 'bg-emerald-50/40 border-emerald-300')
+                 : (entry.isBatch ? 'bg-amber-50/20 border-amber-200' : 'bg-cream-50/70 border-cream-200')">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-bold text-taupe-500">
+                <!-- Batch Header Badge vs Schedule Date -->
+                <div v-if="entry.isBatch" class="flex items-center gap-1.5 flex-wrap text-[10px] font-bold text-amber-800">
+                  <span class="px-2 py-0.5 rounded-full bg-amber-100 border border-amber-200 flex items-center gap-1">
+                    <span>🍱</span>
+                    <span>Resep Batch {{ entry.batchServings }}x (Total 1 Batch)</span>
+                  </span>
+                  <span v-if="entry.usedInList && entry.usedInList.length > 0" class="text-taupe-500 font-medium">
+                    • Dipakai di {{ entry.usedInList.length }} jadwal: {{ entry.usedInList.join(', ') }}
+                  </span>
+                </div>
+                <div v-else class="flex items-center gap-1.5 flex-wrap text-[10px] font-bold text-taupe-500">
                   <span>📅 {{ entry.dateLabel }}</span>
                   <span>•</span>
                   <span class="px-1.5 py-0.5 rounded bg-white border border-cream-200 text-espresso-800">{{ entry.slotIcon }} {{ entry.slotLabel }}</span>
                 </div>
-                <div class="text-xs sm:text-sm font-bold text-espresso-900 mt-1">{{ entry.foodName }}</div>
+
+                <div class="text-xs sm:text-sm font-bold text-espresso-900 mt-1 flex items-center gap-1.5">
+                  <span>{{ entry.foodName }}</span>
+                  <span v-if="entry.isBatch" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-900">
+                    Timbang 1x untuk semua batch
+                  </span>
+                </div>
                 <div class="text-[11px] font-semibold text-caramel-700 mt-0.5">
-                  🥩 {{ entry.ingName }} <span class="text-taupe-500 font-normal">(resep: {{ entry.recipeQtyUnit }} ≈ {{ entry.stdGrams }}g)</span>
+                  🥩 {{ entry.ingName }}
+                  <span class="text-taupe-500 font-normal">
+                    (standar 1 resep batch: {{ entry.recipeQtyUnit }} ≈ {{ entry.stdGrams }}g)
+                  </span>
                 </div>
               </div>
               <span v-if="entry.hasActual" class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white flex-shrink-0">
@@ -4928,7 +5099,7 @@
               <div class="relative flex-grow">
                 <input type="number" inputmode="decimal" step="1" min="0"
                        v-model="modalProteinPrep.draftWeights[entry.key]"
-                       :placeholder="'Standar: ' + entry.stdGrams + ' gram'"
+                       :placeholder="'Standar total 1 batch: ' + entry.stdGrams + ' gram'"
                        class="w-full pl-3.5 pr-14 py-2.5 rounded-xl bg-white border border-cream-300 text-xs font-extrabold text-espresso-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[44px]">
                 <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-bold text-taupe-400">gram</span>
               </div>
@@ -4941,9 +5112,11 @@
 
             <!-- Live Per-Portion Nutrition Impact Preview -->
             <div class="flex items-center justify-between text-[10px] pt-1 border-t border-cream-200/70">
-              <span class="text-taupe-500">Kontribusi bahan ini (÷{{ entry.servings }} porsi):</span>
+              <span class="text-taupe-500">
+                {{ entry.isBatch ? `Otomatis terbagi (÷${entry.totalServings} porsi):` : `Kontribusi bahan ini (÷${entry.servings} porsi):` }}
+              </span>
               <span class="font-bold" :class="entry.hasActual ? 'text-emerald-800' : 'text-espresso-700'">
-                🔥 {{ entry.liveKaloriPerPortion }} kkal • 🍗 {{ entry.liveProtPerPortion }}g prot
+                🔥 {{ entry.liveKaloriPerPortion }} kkal • 🍗 {{ entry.liveProtPerPortion }}g prot / porsi
               </span>
             </div>
           </div>
@@ -5791,6 +5964,12 @@
             note: ''
           }
         });
+        const modalUsePantry = ref({
+          show: false,
+          item: null,
+          useAmount: 1,
+          customNote: ''
+        });
         const pantrySearchQuery = ref('');
         const pantryGroupFilter = ref('all');
         const activeIngSuggestIdx = ref(-1);
@@ -6296,27 +6475,66 @@
           return (!isNaN(defServ) && defServ >= 1) ? defServ : 2;
         };
 
-        // Detect fresh Ayam, Udang, and Sapi ingredients eligible for Saturday actual-weight weighing
+        // Detect fresh meat/fish/seafood ingredients eligible for Saturday actual-weight weighing
+        // EXCLUDE eggs (telur distandarisasi) and processed meats/powders
         const isWeighableProteinIngredient = (ingName) => {
           const low = (ingName || '').trim().toLowerCase();
           if (!low) return false;
-          if (/(royco|masako|kaldu|bumbu|racik|saus|saos|kecap|penyedap|tepung|bubuk|mie|indomie|soto|kari|abon|bakso|sosis|nugget|kornet)/i.test(low)) {
+          if (/(royco|masako|kaldu|bumbu|racik|saus|saos|kecap|penyedap|tepung|bubuk|mie|indomie|soto|kari|abon|bakso|sosis|nugget|kornet|telur|egg)/i.test(low)) {
             return false;
           }
-          return /(ayam|udang|sapi|beef|tenderloin|sirloin|iga|buntut|tetelan|has dalam|ati ampela|ceker)/i.test(low);
+          return /(ayam|udang|sapi|beef|tenderloin|sirloin|iga|buntut|tetelan|has dalam|ati ampela|ceker|dada|paha|fillet|ikan|tenggiri|tongkol|salmon|dori|gurame|kakap|lele|tuna|bebek|cumi)/i.test(low);
         };
 
         const makeProteinWeightKey = (dateStr, slotId, foodId, ingName) => {
           return `${dateStr}__${slotId}__${foodId}__${(ingName || '').trim().toLowerCase()}`;
         };
 
+        const makeBatchProteinWeightKey = (cycleKey, baseFoodId, ingName) => {
+          return `batch__${cycleKey}__${baseFoodId}__${(ingName || '').trim().toLowerCase()}`;
+        };
+
+        const getCycleRangeForDate = (dateStr) => {
+          if (!dateStr) return fridayRange.value;
+          const [y, m, d] = dateStr.split('-').map(Number);
+          const dt = new Date(y, m - 1, d);
+          const dayOfWeek = dt.getDay(); // 0: Sun, 1: Mon, ... 6: Sat
+          const daysSinceSaturday = (dayOfWeek - 6 + 7) % 7;
+          const startSat = new Date(dt.getTime() - daysSinceSaturday * 86400000);
+          const endFri = new Date(startSat.getTime() + 6 * 86400000);
+          return {
+            start: formatDateObj(startSat),
+            end: formatDateObj(endFri)
+          };
+        };
+
         const getActualProteinWeight = (dateStr, slotId, foodId, ingName) => {
-          if (!dateStr || !slotId || !foodId || !ingName) return null;
-          const key = makeProteinWeightKey(dateStr, slotId, foodId, ingName);
-          const rec = (actualProteinWeights.value || {})[key];
-          if (rec && rec.grams !== undefined && rec.grams !== null && Number(rec.grams) > 0) {
-            return Number(rec.grams);
+          if (!ingName || !foodId) return null;
+          const food = getFoodItem(foodId);
+          const baseBatch = food ? (getBaseBatchFood(food) || (getFoodBatchConfig(food).mode === 'batch' ? food : null)) : null;
+
+          // 1. Cek berat konsolidasi batch untuk siklus masak ini
+          if (baseBatch) {
+            const cycleRange = dateStr ? getCycleRangeForDate(dateStr) : (activeWeeklyRange.value || fridayRange.value);
+            const cycleKey = cycleRange?.start || (fridayRange.value ? fridayRange.value.start : '');
+            if (cycleKey) {
+              const batchKey = makeBatchProteinWeightKey(cycleKey, baseBatch.id, ingName);
+              const batchRec = (actualProteinWeights.value || {})[batchKey];
+              if (batchRec && batchRec.grams !== undefined && batchRec.grams !== null && Number(batchRec.grams) > 0) {
+                return Number(batchRec.grams);
+              }
+            }
           }
+
+          // 2. Cek berat spesifik jadwal tanggal & sesi (untuk masakan non-batch satuan)
+          if (dateStr && slotId) {
+            const key = makeProteinWeightKey(dateStr, slotId, foodId, ingName);
+            const rec = (actualProteinWeights.value || {})[key];
+            if (rec && rec.grams !== undefined && rec.grams !== null && Number(rec.grams) > 0) {
+              return Number(rec.grams);
+            }
+          }
+
           return null;
         };
 
@@ -6360,8 +6578,10 @@
             const weighable = isWeighableProteinIngredient(ing.name);
             if (weighable) hasWeighableProtein = true;
             let overrideG = null;
-            if (weighable && weightCtx && weightCtx.dateStr && weightCtx.slotId && food.id) {
-              overrideG = getActualProteinWeight(weightCtx.dateStr, weightCtx.slotId, food.id, ing.name);
+            if (weighable && food.id) {
+              const dateStr = weightCtx ? weightCtx.dateStr : null;
+              const slotId = weightCtx ? weightCtx.slotId : null;
+              overrideG = getActualProteinWeight(dateStr, slotId, food.id, ing.name);
             }
             const res = calculateIngredientNutrition(ing, overrideG);
             if (res.isActualWeight) hasActualWeight = true;
@@ -8371,14 +8591,115 @@
           setTab('belanja');
         };
 
-        // Upgraded Protein Prep Entries: supports BOTH scheduled mealPlans AND unassigned weeklyMenuPool menus!
+        function isRecipeProteinCategory(item) {
+          if (!item) return false;
+          if (Array.isArray(item.categories) && item.categories.includes('protein')) return true;
+          if (item.category === 'protein') return true;
+          return false;
+        }
+
+        // Upgraded Protein Prep Entries:
+        // 1. HANYA resep dengan kategori protein (tanpa telur)
+        // 2. Resep batch dikonsolidasi menjadi 1 entri timbang total per pekan
         const proteinPrepEntries = computed(() => {
           const entries = [];
           const dates = proteinPrepDateList.value;
           const seenPoolIds = new Set();
           const focusPoolId = modalProteinPrep.value.focusPoolId || '';
+          const scope = modalProteinPrep.value.scope || 'cycle';
+          const cycleKey = activeWeeklyRange.value?.start || fridayRange.value.start;
+          const shopCycleKey = activeShoppingRange.value?.start || fridayRange.value.start;
 
-          // 1. Scheduled mealPlans entries
+          // Map for batch recipe consolidation: bKey -> batchGroup
+          const batchGroups = new Map();
+
+          const processFood = (food, ctx) => {
+            if (!food) return;
+            const baseBatch = getBaseBatchFood(food) || (getFoodBatchConfig(food).mode === 'batch' ? food : null);
+            const targetFoodForCategory = baseBatch || food;
+            // Syarat user: Hanya resep dengan kategori protein!
+            if (!isRecipeProteinCategory(targetFoodForCategory)) return;
+
+            // Jika masakan variasi mengambil bahan dari baseBatch dan variasi tidak memiliki bahan sendiri
+            const foodWithIngs = (baseBatch && (!food.ingredients || food.ingredients.length === 0)) ? baseBatch : food;
+            const weighableIngs = (foodWithIngs.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
+            if (weighableIngs.length === 0) return;
+
+            weighableIngs.forEach(ing => {
+              if (baseBatch) {
+                // KONSOLIDASI BATCH: Hanya timbang 1x untuk keseluruhan batch resep!
+                const bKey = `${baseBatch.id}__${(ing.name || '').trim().toLowerCase()}`;
+                if (!batchGroups.has(bKey)) {
+                  const batchCfg = getFoodBatchConfig(baseBatch);
+                  const batchServings = batchCfg.servings || 2;
+                  const totalServings = Math.max(1, getFoodNutritionServings(baseBatch));
+                  const fullKey = makeBatchProteinWeightKey(cycleKey, baseBatch.id, ing.name);
+                  const stdCalc = calculateIngredientNutrition(ing, null);
+                  const draftVal = modalProteinPrep.value.draftWeights[fullKey];
+                  const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
+                  const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
+
+                  batchGroups.set(bKey, {
+                    key: fullKey,
+                    isBatch: true,
+                    baseBatchId: baseBatch.id,
+                    foodId: baseBatch.id,
+                    foodName: baseBatch.name,
+                    batchServings,
+                    totalServings,
+                    ingName: ing.name,
+                    recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
+                    stdGrams: stdCalc.grams,
+                    stdKaloriPerPortion: Math.round(stdCalc.kalori / totalServings),
+                    stdProtPerPortion: Math.round((stdCalc.protein / totalServings) * 10) / 10,
+                    liveKaloriPerPortion: Math.round(liveCalc.kalori / totalServings),
+                    liveProtPerPortion: Math.round((liveCalc.protein / totalServings) * 10) / 10,
+                    hasActual: hasDraft,
+                    usedInList: []
+                  });
+                }
+                const grp = batchGroups.get(bKey);
+                const schedLabel = ctx.label || (ctx.dateStr ? `${formatTanggalIndo(ctx.dateStr, true)} (${ctx.slotLabel || ''})` : 'Rencana Pekan');
+                if (!grp.usedInList.includes(schedLabel)) {
+                  grp.usedInList.push(schedLabel);
+                }
+              } else {
+                // RESEP NON-BATCH (Satuan): Dihitung per jadwal/slot
+                const key = ctx.key || makeProteinWeightKey(ctx.dateStr, ctx.slotId, food.id, ing.name);
+                const servings = Math.max(1, getFoodNutritionServings(food));
+                const stdCalc = calculateIngredientNutrition(ing, null);
+                const draftVal = modalProteinPrep.value.draftWeights[key];
+                const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
+                const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
+
+                entries.push({
+                  key,
+                  isBatch: false,
+                  source: ctx.source,
+                  poolId: ctx.poolId,
+                  pwSubKey: `${food.id}__${ing.name.trim().toLowerCase()}`,
+                  dateStr: ctx.dateStr,
+                  dateLabel: ctx.dateLabel,
+                  slotId: ctx.slotId,
+                  slotIcon: ctx.slotIcon,
+                  slotLabel: ctx.slotLabel,
+                  foodId: food.id,
+                  foodName: food.name,
+                  servings,
+                  ingName: ing.name,
+                  recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
+                  stdGrams: stdCalc.grams,
+                  stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
+                  stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
+                  liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
+                  liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
+                  hasActual: hasDraft
+                });
+              }
+            });
+          };
+
+          // 1. Scan Scheduled Meals
           if (!focusPoolId) {
             dates.forEach(dateStr => {
               mealSlots.forEach(slot => {
@@ -8395,47 +8716,23 @@
                 uniqueFoodIds.forEach(fid => {
                   const food = getFoodItem(fid);
                   if (!food) return;
-                  const servings = getFoodNutritionServings(food);
-                  const weighableIngs = (food.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
-                  weighableIngs.forEach(ing => {
-                    const key = makeProteinWeightKey(dateStr, slot.id, food.id, ing.name);
-                    const stdCalc = calculateIngredientNutrition(ing, null);
-                    const draftVal = modalProteinPrep.value.draftWeights[key];
-                    const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
-                    const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
-
-                    entries.push({
-                      key,
-                      source: 'schedule',
-                      poolId: slotObj.poolId || null,
-                      pwSubKey: `${food.id}__${ing.name.trim().toLowerCase()}`,
-                      dateStr,
-                      dateLabel: formatTanggalIndo(dateStr, true),
-                      slotId: slot.id,
-                      slotIcon: slot.icon,
-                      slotLabel: slot.shortLabel,
-                      foodId: food.id,
-                      foodName: food.name,
-                      servings,
-                      ingName: ing.name,
-                      recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
-                      stdGrams: stdCalc.grams,
-                      stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
-                      stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
-                      liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
-                      liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
-                      hasActual: hasDraft
-                    });
+                  processFood(food, {
+                    source: 'schedule',
+                    poolId: slotObj.poolId || null,
+                    dateStr,
+                    dateLabel: formatTanggalIndo(dateStr, true),
+                    slotId: slot.id,
+                    slotIcon: slot.icon,
+                    slotLabel: slot.shortLabel,
+                    key: makeProteinWeightKey(dateStr, slot.id, food.id, ''),
+                    label: `${formatTanggalIndo(dateStr, true)} (${slot.shortLabel})`
                   });
                 });
               });
             });
           }
 
-          // 2. Unassigned (or focused) weeklyMenuPool entries in scope!
-          const scope = modalProteinPrep.value.scope || 'cycle';
-          const cycleKey = activeWeeklyRange.value?.start;
-          const shopCycleKey = activeShoppingRange.value?.start;
+          // 2. Scan Weekly Menu Pool
           (weeklyMenuPool.value || []).forEach(poolEntry => {
             if (!poolEntry || poolEntry.status === 'cancelled') return;
             if (focusPoolId) {
@@ -8447,45 +8744,25 @@
             }
             const foods = getWeeklyEntryUniqueFoods(poolEntry);
             foods.forEach(food => {
-              const servings = getFoodNutritionServings(food);
-              const weighableIngs = (food.ingredients || []).filter(ing => ing && isWeighableProteinIngredient(ing.name));
-              weighableIngs.forEach(ing => {
-                const pwSubKey = `${food.id}__${ing.name.trim().toLowerCase()}`;
-                const key = (poolEntry.assignedDate && poolEntry.assignedSlot)
-                  ? makeProteinWeightKey(poolEntry.assignedDate, poolEntry.assignedSlot, food.id, ing.name)
-                  : `pool__${poolEntry.id}__${pwSubKey}`;
-                const stdCalc = calculateIngredientNutrition(ing, null);
-                const draftVal = modalProteinPrep.value.draftWeights[key];
-                const hasDraft = draftVal !== undefined && draftVal !== '' && !isNaN(Number(draftVal)) && Number(draftVal) > 0;
-                const liveCalc = hasDraft ? calculateIngredientNutrition(ing, Number(draftVal)) : stdCalc;
-
-                entries.push({
-                  key,
-                  source: (poolEntry.assignedDate && poolEntry.assignedSlot) ? 'schedule' : 'pool',
-                  poolId: poolEntry.id,
-                  pwSubKey,
-                  dateStr: poolEntry.assignedDate || null,
-                  dateLabel: poolEntry.assignedDate ? formatTanggalIndo(poolEntry.assignedDate, true) : `Pekan ${formatCycleRangeLabel(poolEntry.cycleKey)}`,
-                  slotId: poolEntry.assignedSlot || null,
-                  slotIcon: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? '🎒' : '🌙') : '📌',
-                  slotLabel: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam') : 'Belum Tentukan Hari',
-                  foodId: food.id,
-                  foodName: food.name,
-                  servings,
-                  ingName: ing.name,
-                  recipeQtyUnit: `${ing.qty || ''} ${ing.unit || ''}`.trim(),
-                  stdGrams: stdCalc.grams,
-                  stdKaloriPerPortion: Math.round(stdCalc.kalori / servings),
-                  stdProtPerPortion: Math.round((stdCalc.protein / servings) * 10) / 10,
-                  liveKaloriPerPortion: Math.round(liveCalc.kalori / servings),
-                  liveProtPerPortion: Math.round((liveCalc.protein / servings) * 10) / 10,
-                  hasActual: hasDraft
-                });
+              const isAssigned = poolEntry.assignedDate && poolEntry.assignedSlot;
+              processFood(food, {
+                source: isAssigned ? 'schedule' : 'pool',
+                poolId: poolEntry.id,
+                dateStr: poolEntry.assignedDate || null,
+                dateLabel: poolEntry.assignedDate ? formatTanggalIndo(poolEntry.assignedDate, true) : `Pekan ${formatCycleRangeLabel(poolEntry.cycleKey)}`,
+                slotId: poolEntry.assignedSlot || null,
+                slotIcon: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? '🎒' : '🌙') : '📌',
+                slotLabel: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam') : 'Belum Tentukan Hari',
+                key: isAssigned
+                  ? makeProteinWeightKey(poolEntry.assignedDate, poolEntry.assignedSlot, food.id, '')
+                  : `pool__${poolEntry.id}__${food.id}__`,
+                label: poolEntry.assignedDate ? `${formatTanggalIndo(poolEntry.assignedDate, true)} (${poolEntry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam'})` : poolEntry.label
               });
             });
           });
 
-          return entries;
+          const batchList = Array.from(batchGroups.values());
+          return [...batchList, ...entries];
         });
 
         const openProteinPrepModal = (scope = 'cycle', focusDate = '', focusPoolId = '') => {
@@ -8535,7 +8812,21 @@
             const num = parseFloat(raw);
             const validNum = (!isNaN(num) && num > 0) ? Math.round(num * 10) / 10 : null;
 
-            if (e.source === 'schedule') {
+            if (e.isBatch) {
+              // Simpan langsung bobot batch ke actualProteinWeights dengan key batch
+              if (validNum !== null) {
+                nextMap[e.key] = {
+                  grams: validNum,
+                  isBatch: true,
+                  baseBatchId: e.baseBatchId,
+                  ingName: e.ingName,
+                  updatedAt: new Date().toISOString()
+                };
+                updatedCount++;
+              } else {
+                delete nextMap[e.key];
+              }
+            } else if (e.source === 'schedule') {
               if (validNum !== null) {
                 nextMap[e.key] = { grams: validNum, updatedAt: new Date().toISOString() };
                 updatedCount++;
@@ -9697,6 +9988,55 @@
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
+        const openUsePantryModal = (item) => {
+          modalUsePantry.value = {
+            show: true,
+            item,
+            useAmount: 1,
+            customNote: ''
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmUsePantryStock = () => {
+          const item = modalUsePantry.value.item;
+          if (!item || !item.id) return;
+          const target = pantryStocks.value[item.id] || item;
+          const amt = parseFloat(modalUsePantry.value.useAmount);
+          if (isNaN(amt) || amt <= 0) {
+            showToast('Masukkan jumlah pemakaian yang valid!', 'error');
+            return;
+          }
+          const cur = parseIngredientQtyNumber(target.qty);
+          if (cur === null) {
+            showToast('Jumlah stok saat ini tidak berupa angka.', 'error');
+            return;
+          }
+          const next = Math.max(0, cur - amt);
+          const unit = target.unit || '';
+          if (next === 0) {
+            delete pantryStocks.value[item.id];
+            if (!deletedPantryIds.value.includes(item.id)) {
+              deletedPantryIds.value.push(item.id);
+              localStorage.setItem('seleraku_deleted_pantry_stocks', JSON.stringify(deletedPantryIds.value));
+            }
+            savePantryStocks();
+            modalUsePantry.value.show = false;
+            showToast(`Stok "${target.name}" telah habis dipakai memasak.`);
+          } else {
+            target.qty = String(Math.round(next * 100) / 100);
+            target.updatedAt = new Date().toISOString();
+            if (modalUsePantry.value.customNote && modalUsePantry.value.customNote.trim()) {
+              target.note = modalUsePantry.value.customNote.trim();
+            }
+            pantryStocks.value[item.id] = { ...target };
+            savePantryStocks();
+            modalUsePantry.value.show = false;
+            showToast(`Stok "${target.name}" dikurangi ${amt} ${unit}. Sisa sekarang: ${target.qty} ${unit}.`);
+          }
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
         const getPantryStockForIngredient = (ingName) => {
           if (!ingName || !pantryStocks.value) return null;
           const low = ingName.toLowerCase().trim();
@@ -9877,6 +10217,47 @@
           const ck = getQuickScheduleCycleKey();
           return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === ck && e.status !== 'cancelled');
         });
+
+        const getPackagesContainingFood = (foodId) => {
+          if (!foodId || !packages.value) return [];
+          return packages.value.filter(pkg => {
+            if (!pkg || !pkg.items) return false;
+            return Object.values(pkg.items).some(val => {
+              if (Array.isArray(val)) return val.includes(foodId);
+              return val === foodId;
+            });
+          });
+        };
+
+        const confirmQuickAddPackageToWeeklyPool = (pkg) => {
+          const item = modalQuickSchedule.value.item;
+          if (!pkg) return;
+          const ck = getQuickScheduleCycleKey();
+
+          weeklyMenuPool.value.push({
+            id: 'wm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            cycleKey: ck,
+            label: pkg.name,
+            type: 'paket',
+            packageId: pkg.id,
+            items: normalizeFormItems(pkg.items),
+            assignedDate: null,
+            assignedSlot: null,
+            status: 'planned',
+            isRollover: false,
+            rolloverFromCycle: null,
+            rolloverChildId: null,
+            actualWeights: {},
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+
+          selectedWeeklyCycle.value = modalQuickSchedule.value.cycleType || 'current';
+          saveWeeklyMenuPool();
+          modalQuickSchedule.value.show = false;
+          showToast(`Paket "${pkg.name}" (lengkap dengan ${item?.name || 'stok batch'}) berhasil masuk Rencana Pekan!`);
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
 
         const confirmQuickAddToWeeklyPool = () => {
           const item = modalQuickSchedule.value.item;
@@ -10489,14 +10870,15 @@
           const base = new Date(cY, cM - 1, cD);
           const dayOfWeek = base.getDay(); // 0: Sun, 1: Mon, ... 5: Fri, 6: Sat
 
-          // Calculate this week's Friday
-          // If today is Friday (5), it's today. If before Friday (e.g. Thu 4), it's +1 day. If Sat (6), next Friday is +6 days.
-          let daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-          if (daysUntilFriday === 0 && dayOfWeek !== 5) daysUntilFriday = 7;
+          // Hitung jarak hari ke hari Jumat pembuka siklus masak Sabtu s/d Jumat ini:
+          // Jumat (5): 0 hari lalu (hari ini)
+          // Sabtu (6): 1 hari lalu (kemarin)
+          // Minggu (0): 2 hari lalu
+          // Senin (1): 3 hari lalu ... Kamis (4): 6 hari lalu
+          const daysSinceFriday = (dayOfWeek - 5 + 7) % 7;
+          const targetFriday = new Date(base.getTime() + (-daysSinceFriday + (cycleOffset * 7)) * 86400000);
           
-          const targetFriday = new Date(base.getTime() + (daysUntilFriday + (cycleOffset * 7)) * 86400000);
-          
-          // Menu window starts: Saturday (tomorrow of target Friday) -> Friday next week (7 days)
+          // Rentang menu masak 7 hari: Sabtu (besoknya targetFriday) s/d Jumat depan
           const startSaturday = new Date(targetFriday.getTime() + 1 * 86400000);
           const endFriday = new Date(startSaturday.getTime() + 6 * 86400000);
 
@@ -10518,11 +10900,15 @@
         });
 
         const activeShoppingRange = computed(() => {
-          return selectedShoppingCycle.value === 'next' ? nextFridayRange.value : fridayRange.value;
+          if (selectedShoppingCycle.value === 'ongoing') return ongoingFridayRange.value;
+          if (selectedShoppingCycle.value === 'next') return nextFridayRange.value;
+          return fridayRange.value;
         });
 
         const activeStockRange = computed(() => {
-          return selectedStockCycle.value === 'next' ? nextFridayRange.value : fridayRange.value;
+          if (selectedStockCycle.value === 'ongoing') return ongoingFridayRange.value;
+          if (selectedStockCycle.value === 'next') return nextFridayRange.value;
+          return fridayRange.value;
         });
 
         // Collect all unique scheduled dishes AND unassigned weeklyMenuPool dishes across a 7-day cycle
@@ -10612,6 +10998,7 @@
           return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === cycleKey && e.isRollover && e.status !== 'cancelled').length;
         });
 
+        const ongoingCycleUsageMap = computed(() => getCycleFoodUsageMap(ongoingFridayRange.value));
         const currentCycleUsageMap = computed(() => getCycleFoodUsageMap(fridayRange.value));
         const nextCycleUsageMap = computed(() => getCycleFoodUsageMap(nextFridayRange.value));
 
@@ -10635,16 +11022,17 @@
           return poolMap;
         };
 
+        const ongoingCyclePooledMap = computed(() => buildCyclePooledMap(ongoingCycleUsageMap.value));
         const currentCyclePooledMap = computed(() => buildCyclePooledMap(currentCycleUsageMap.value));
         const nextCyclePooledMap = computed(() => buildCyclePooledMap(nextCycleUsageMap.value));
 
         const getCycleEffectiveLabels = (food, cycleType) => {
           if (!food) return [];
           if (getFoodBatchConfig(food).mode === 'batch') {
-            const poolMap = cycleType === 'next' ? nextCyclePooledMap.value : currentCyclePooledMap.value;
+            const poolMap = cycleType === 'next' ? nextCyclePooledMap.value : (cycleType === 'ongoing' ? ongoingCyclePooledMap.value : currentCyclePooledMap.value);
             return poolMap[food.id] || [];
           }
-          const usageMap = cycleType === 'next' ? nextCycleUsageMap.value : currentCycleUsageMap.value;
+          const usageMap = cycleType === 'next' ? nextCycleUsageMap.value : (cycleType === 'ongoing' ? ongoingCycleUsageMap.value : currentCycleUsageMap.value);
           return usageMap[food.id]?.sessionLabels || [];
         };
 
@@ -11103,9 +11491,61 @@
           });
         };
 
+        const autoAddShoppingItemToPantry = (item) => {
+          if (!item || !item.name) return;
+          const trimmedName = (item.name || '').trim();
+          if (!trimmedName) return;
+
+          let qtyVal = 1;
+          if (Array.isArray(item.quantities) && item.quantities.length > 0) {
+            const rawSum = item.quantities.reduce((a, b) => (typeof b === 'number' ? a + b : a), 0);
+            if (rawSum > 0) {
+              qtyVal = Math.round(rawSum * 100) / 100;
+            } else {
+              qtyVal = parseIngredientQtyNumber(item.qtyText) || 1;
+            }
+          } else {
+            qtyVal = parseIngredientQtyNumber(item.qtyText) || 1;
+          }
+
+          const unitVal = (item.unit || '').trim() || 'buah';
+          const groupVal = normalizeIngredientGroup(item.group, trimmedName);
+
+          // Cek apakah bahan ini sudah ada di stok pantry
+          const existing = getPantryStockForIngredient(trimmedName);
+          if (existing && existing.id) {
+            const curNum = parseIngredientQtyNumber(existing.qty) || 0;
+            const newQty = Math.round((curNum + qtyVal) * 100) / 100;
+            existing.qty = String(newQty);
+            existing.updatedAt = new Date().toISOString();
+            savePantryStocks();
+            showToast(`✅ Stok "${trimmedName}" bertambah +${qtyVal} ${unitVal} (Total: ${newQty} ${existing.unit})!`);
+          } else {
+            const safeId = 'ps_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            pantryStocks.value[safeId] = {
+              id: safeId,
+              name: trimmedName,
+              qty: String(qtyVal),
+              unit: unitVal,
+              group: groupVal,
+              note: 'Otomatis dari Centang Belanja',
+              updatedAt: new Date().toISOString()
+            };
+            savePantryStocks();
+            showToast(`✅ "${trimmedName}" (${qtyVal} ${unitVal}) otomatis masuk ke Stok Bahan!`);
+          }
+        };
+
         const toggleItemCheck = (itemId) => {
-          checkedItems.value[itemId] = !checkedItems.value[itemId];
+          const wasChecked = !!checkedItems.value[itemId];
+          checkedItems.value[itemId] = !wasChecked;
           saveCheckedItems();
+          if (!wasChecked) {
+            const item = aggregatedShoppingList.value.find(i => i.id === itemId);
+            if (item) {
+              autoAddShoppingItemToPantry(item);
+            }
+          }
         };
 
         const isItemChecked = (itemId) => {
@@ -11129,11 +11569,20 @@
         };
 
         const checkAllShopping = () => {
+          let addedCount = 0;
           aggregatedShoppingList.value.forEach(item => {
-            checkedItems.value[item.id] = true;
+            if (!checkedItems.value[item.id]) {
+              checkedItems.value[item.id] = true;
+              autoAddShoppingItemToPantry(item);
+              addedCount++;
+            }
           });
           saveCheckedItems();
-          showToast('Semua bahan telah ditandai selesai dibeli.');
+          if (addedCount > 0) {
+            showToast(`Semua bahan telah ditandai selesai dibeli & ${addedCount} bahan ditambahkan ke Stok Bahan!`);
+          } else {
+            showToast('Semua bahan telah ditandai selesai dibeli.');
+          }
         };
 
         // Export to WhatsApp Formatted Text
@@ -11823,6 +12272,8 @@
           isFoodIngredientsExpanded,
           quickAddToPlanner,
           confirmQuickSchedule,
+          getPackagesContainingFood,
+          confirmQuickAddPackageToWeeklyPool,
           openAddPackageModal,
           editPackageModal,
           savePackageModal,
@@ -11888,11 +12339,16 @@
           editPantryModal,
           savePantryModal,
           adjustPantryStock,
+          modalUsePantry,
+          openUsePantryModal,
+          confirmUsePantryStock,
+          parseIngredientQtyNumber,
           confirmDeletePantryStock,
           deletePantryStock,
           getPantryStockForIngredient,
           aggregatedShoppingList,
           getIngredientsInGroup,
+          autoAddShoppingItemToPantry,
           toggleItemCheck,
           isItemChecked,
           checkedCount,
@@ -11977,6 +12433,8 @@
           toggleFoodNutrition,
           isFoodNutritionExpanded,
           quickScheduleCycleEntries,
+          getPackagesContainingFood,
+          confirmQuickAddPackageToWeeklyPool,
           confirmQuickAddToWeeklyPool,
           confirmQuickMergeIntoWeeklyEntry,
           packageExtraOptions,
