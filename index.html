@@ -556,7 +556,7 @@
                   </div>
                   <div class="text-[11px] text-taupe-600 truncate space-y-0.5">
                     <div class="truncate">
-                      <span class="font-medium text-espresso-700">🎒 Bekal:</span>
+                      <span class="font-medium text-espresso-700">☀️ Siang:</span>
                       <span class="text-espresso-900 ml-1 font-semibold">
                         {{ getSlotPackageName(getMealForSlot(getDateOffset(offset), 'bekal')) || getDishSummary(getMealForSlot(getDateOffset(offset), 'bekal')) || 'Belum diisi' }}
                       </span>
@@ -653,7 +653,7 @@
                 </div>
               </div>
 
-              <!-- Card Body: Bekal & Malam Summary -->
+              <!-- Card Body: Makan Siang & Malam Summary -->
               <div class="p-4 flex-grow space-y-3">
                 <div v-for="slot in mealSlots" :key="slot.id"
                      class="p-2.5 rounded-xl border transition"
@@ -856,7 +856,7 @@
                 Jadwal Masak Pekan Ini
               </h2>
               <p class="text-xs text-taupe-500 mt-1 max-w-xl leading-relaxed">
-                Pasang paket menu yang telah Anda pilih ke hari &amp; sesi makan (Bekal &amp; Malam), serta lakukan penimbangan ulang protein segar saat Food Prep Sabtu.
+                Pasang paket menu yang telah Anda pilih ke hari &amp; sesi makan (Makan Siang &amp; Malam), serta lakukan penimbangan ulang protein segar saat Food Prep Sabtu.
               </p>
             </div>
 
@@ -1011,7 +1011,7 @@
                   <!-- Assignment indicator -->
                   <div v-if="entry.assignedDate" class="text-[11px] font-semibold text-emerald-800 flex items-center gap-1 bg-emerald-50/80 px-2.5 py-1 rounded-xl border border-emerald-200">
                     <span>📅</span>
-                    <span>{{ formatTanggalIndo(entry.assignedDate, true) }} ({{ entry.assignedSlot === 'bekal' ? '🎒 Bekal' : '🌙 Makan Malam' }})</span>
+                    <span>{{ formatTanggalIndo(entry.assignedDate, true) }} ({{ entry.assignedSlot === 'bekal' ? '☀️ Makan Siang' : '🌙 Makan Malam' }})</span>
                   </div>
                 </div>
 
@@ -1099,12 +1099,12 @@
                 <!-- Day Slots Content -->
                 <div class="space-y-3 flex-grow">
                   
-                  <!-- Slot 1: Bekal -->
+                  <!-- Slot 1: Makan Siang -->
                   <div class="space-y-1.5">
                     <div class="flex items-center justify-between text-[11px]">
                       <span class="font-bold text-espresso-800 flex items-center gap-1">
-                        <span>🎒</span>
-                        <span>Bekal</span>
+                        <span>☀️</span>
+                        <span>Makan Siang</span>
                       </span>
                       <span v-if="day.bekalNut && day.bekalNut.kalori > 0" class="text-[10px] font-semibold text-taupe-500">
                         🔥 {{ day.bekalNut.kalori }} kkal
@@ -1145,7 +1145,7 @@
                       <button type="button" @click="openPickPackageForSlot(day.dateStr, 'bekal')"
                               class="w-full py-2.5 px-3 rounded-2xl border border-dashed border-cream-300 hover:border-caramel-400 bg-cream-50/50 hover:bg-cream-100 text-taupe-600 hover:text-espresso-900 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
                         <i data-lucide="plus" class="w-3.5 h-3.5 text-caramel-600"></i>
-                        <span>Pasang Paket Bekal</span>
+                        <span>Pasang Paket Makan Siang</span>
                       </button>
                     </div>
                   </div>
@@ -3486,7 +3486,7 @@
               <button type="button" @click="modalSwap.slot = 'bekal'"
                       class="py-2 px-2 rounded-xl font-bold border text-[11px] transition"
                       :class="modalSwap.slot === 'bekal' ? 'bg-caramel-500 text-white border-caramel-600' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
-                🎒 Bekal saja
+                ☀️ Makan Siang saja
               </button>
               <button type="button" @click="modalSwap.slot = 'malam'"
                       class="py-2 px-2 rounded-xl font-bold border text-[11px] transition"
@@ -3502,7 +3502,7 @@
             <input type="date" v-model="modalSwap.date1" 
                    class="w-full px-3.5 py-2.5 rounded-xl font-semibold text-espresso-900 bg-cream-50 border border-cream-200">
             <div v-if="hasAnyMealForDate(modalSwap.date1)" class="mt-1.5 p-2.5 rounded-xl bg-cream-100 text-[11px] text-espresso-800 space-y-1">
-              <div>🎒 Bekal: <strong>{{ getMealForSlot(modalSwap.date1, 'bekal') ? getDishSummary(getMealForSlot(modalSwap.date1, 'bekal')) : '- Kosong -' }}</strong></div>
+              <div>☀️ Makan Siang: <strong>{{ getMealForSlot(modalSwap.date1, 'bekal') ? getDishSummary(getMealForSlot(modalSwap.date1, 'bekal')) : '- Kosong -' }}</strong></div>
               <div>🌙 Malam: <strong>{{ getMealForSlot(modalSwap.date1, 'malam') ? getDishSummary(getMealForSlot(modalSwap.date1, 'malam')) : '- Kosong -' }}</strong></div>
             </div>
             <div v-else class="mt-1 text-[11px] text-taupe-400 italic">Belum ada menu di tanggal ini</div>
@@ -3519,7 +3519,7 @@
             <input type="date" v-model="modalSwap.date2" 
                    class="w-full px-3.5 py-2.5 rounded-xl font-semibold text-espresso-900 bg-cream-50 border border-cream-200">
             <div v-if="hasAnyMealForDate(modalSwap.date2)" class="mt-1.5 p-2.5 rounded-xl bg-cream-100 text-[11px] text-espresso-800 space-y-1">
-              <div>🎒 Bekal: <strong>{{ getMealForSlot(modalSwap.date2, 'bekal') ? getDishSummary(getMealForSlot(modalSwap.date2, 'bekal')) : '- Kosong -' }}</strong></div>
+              <div>☀️ Makan Siang: <strong>{{ getMealForSlot(modalSwap.date2, 'bekal') ? getDishSummary(getMealForSlot(modalSwap.date2, 'bekal')) : '- Kosong -' }}</strong></div>
               <div>🌙 Malam: <strong>{{ getMealForSlot(modalSwap.date2, 'malam') ? getDishSummary(getMealForSlot(modalSwap.date2, 'malam')) : '- Kosong -' }}</strong></div>
             </div>
             <div v-else class="mt-1 text-[11px] text-taupe-400 italic">Belum ada menu di tanggal ini</div>
@@ -3676,8 +3676,8 @@
             <div class="grid grid-cols-2 gap-2">
               <button type="button" @click="confirmQuickSchedule('bekal')"
                       class="min-h-[42px] py-2 px-3 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
-                <span>🎒</span>
-                <span>Menu Bekal</span>
+                <span>☀️</span>
+                <span>Menu Makan Siang</span>
               </button>
               <button type="button" @click="confirmQuickSchedule('malam')"
                       class="min-h-[42px] py-2 px-3 rounded-xl text-xs font-bold bg-espresso-800 hover:bg-espresso-900 text-white transition flex items-center justify-center gap-1.5 cursor-pointer">
@@ -5183,7 +5183,7 @@
                 </div>
                 <div class="flex items-center gap-1 text-[10px] font-bold">
                   <span class="px-1.5 py-0.5 rounded-md border" :class="d.hasBekal ? 'bg-sage-100 text-sage-800 border-sage-200' : 'bg-white text-taupe-400 border-cream-200'">
-                    🎒 {{ d.hasBekal ? 'Terisi' : 'Kosong' }}
+                    ☀️ {{ d.hasBekal ? 'Terisi' : 'Kosong' }}
                   </span>
                   <span class="px-1.5 py-0.5 rounded-md border" :class="d.hasMalam ? 'bg-sage-100 text-sage-800 border-sage-200' : 'bg-white text-taupe-400 border-cream-200'">
                     🌙 {{ d.hasMalam ? 'Terisi' : 'Kosong' }}
@@ -5200,8 +5200,8 @@
               <button type="button" @click="modalAssignWeeklyDay.slotId = 'bekal'"
                       class="min-h-[46px] py-2.5 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
                       :class="modalAssignWeeklyDay.slotId === 'bekal' ? 'bg-caramel-500 text-white border-caramel-600 shadow-xs' : 'bg-cream-50 text-espresso-800 border-cream-200'">
-                <span>🎒</span>
-                <span>Menu Bekal</span>
+                <span>☀️</span>
+                <span>Menu Makan Siang</span>
               </button>
               <button type="button" @click="modalAssignWeeklyDay.slotId = 'malam'"
                       class="min-h-[46px] py-2.5 px-3 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
@@ -5654,7 +5654,7 @@
           <div>
             <div class="text-[10px] font-bold uppercase tracking-wider text-caramel-600 mb-0.5">
               <span>📅</span>
-              <span>{{ formatTanggalIndo(modalPickSlotPackage.dateStr, true) }} • {{ modalPickSlotPackage.slotId === 'bekal' ? '🎒 Menu Bekal' : '🌙 Makan Malam' }}</span>
+              <span>{{ formatTanggalIndo(modalPickSlotPackage.dateStr, true) }} • {{ modalPickSlotPackage.slotId === 'bekal' ? '☀️ Menu Makan Siang' : '🌙 Makan Malam' }}</span>
             </div>
             <h3 class="font-serif font-bold text-base sm:text-lg text-espresso-900">
               Pilih Paket untuk Sesi Ini
@@ -5705,7 +5705,7 @@
               </span>
               <span v-else-if="entry.assignedDate"
                     class="text-[9.5px] font-semibold px-2 py-0.5 rounded-full bg-cream-100 text-taupe-600 border border-cream-200">
-                Terjadwal di {{ formatTanggalIndo(entry.assignedDate, true) }} ({{ entry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam' }})
+                Terjadwal di {{ formatTanggalIndo(entry.assignedDate, true) }} ({{ entry.assignedSlot === 'bekal' ? 'Makan Siang' : 'Malam' }})
               </span>
               <span v-else
                     class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
@@ -6094,7 +6094,7 @@
 
         // Meal slots (2 Menus per Day: Bekal & Makan Malam)
         const mealSlots = [
-          { id: 'bekal', label: 'Menu Bekal', shortLabel: 'Bekal', icon: '🎒' },
+          { id: 'bekal', label: 'Menu Makan Siang', shortLabel: 'Makan Siang', icon: '☀️' },
           { id: 'malam', label: 'Menu Makan Malam', shortLabel: 'Makan Malam', icon: '🌙' }
         ];
 
@@ -8627,7 +8627,7 @@
           localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
           saveWeeklyMenuPool();
           modalAssignWeeklyDay.value.show = false;
-          const slotTxt = slotId === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          const slotTxt = slotId === 'bekal' ? 'Menu Makan Siang' : 'Menu Makan Malam';
           showToast(`"${entry.label}" dijadwalkan ke ${formatTanggalIndo(dateStr, true)} (${slotTxt})!`);
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
@@ -8729,7 +8729,7 @@
           const curCycle = getCycleKeyForDate(dateStr);
           const nextCycle = getNextCycleKey(curCycle);
           const label = getDishSummary(slotObj);
-          const slotName = slotId === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          const slotName = slotId === 'bekal' ? 'Menu Makan Siang' : 'Menu Makan Malam';
 
           modalConfirm.value = {
             show: true,
@@ -8979,12 +8979,12 @@
                 dateStr: poolEntry.assignedDate || null,
                 dateLabel: poolEntry.assignedDate ? formatTanggalIndo(poolEntry.assignedDate, true) : `Pekan ${formatCycleRangeLabel(poolEntry.cycleKey)}`,
                 slotId: poolEntry.assignedSlot || null,
-                slotIcon: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? '🎒' : '🌙') : '📌',
-                slotLabel: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam') : 'Belum Tentukan Hari',
+                slotIcon: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? '☀️' : '🌙') : '📌',
+                slotLabel: poolEntry.assignedSlot ? (poolEntry.assignedSlot === 'bekal' ? 'Makan Siang' : 'Malam') : 'Belum Tentukan Hari',
                 key: isAssigned
                   ? makeProteinWeightKey(poolEntry.assignedDate, poolEntry.assignedSlot, food.id, '')
                   : `pool__${poolEntry.id}__${food.id}__`,
-                label: poolEntry.assignedDate ? `${formatTanggalIndo(poolEntry.assignedDate, true)} (${poolEntry.assignedSlot === 'bekal' ? 'Bekal' : 'Malam'})` : poolEntry.label
+                label: poolEntry.assignedDate ? `${formatTanggalIndo(poolEntry.assignedDate, true)} (${poolEntry.assignedSlot === 'bekal' ? 'Makan Siang' : 'Malam'})` : poolEntry.label
               });
             });
           });
@@ -9496,14 +9496,14 @@
             items: normalizeFormItems(src.items)
           };
           isDraftDirty.value = true;
-          const targetLabel = activeMealSlot.value === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          const targetLabel = activeMealSlot.value === 'bekal' ? 'Menu Makan Siang' : 'Menu Makan Malam';
           showToast(`Menu berhasil disalin ke ${targetLabel}! Jangan lupa klik Simpan.`);
         };
 
         const clearActiveSlotDraft = () => {
           draftMeals.value[activeMealSlot.value] = createEmptySlotDraft();
           isDraftDirty.value = true;
-          const targetLabel = activeMealSlot.value === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          const targetLabel = activeMealSlot.value === 'bekal' ? 'Menu Makan Siang' : 'Menu Makan Malam';
           showToast(`Pilihan ${targetLabel} dikosongkan. Klik Simpan untuk menerapkan.`);
         };
 
@@ -9671,7 +9671,7 @@
               saveMealPlans();
               showToast(`Menu untuk ${formatTanggalIndo(selectedDate.value, true)} telah dikosongkan.`);
             } else {
-              showToast('Pilih minimal 1 hidangan untuk Menu Bekal atau Makan Malam terlebih dahulu!', 'error');
+              showToast('Pilih minimal 1 hidangan untuk Menu Makan Siang atau Makan Malam terlebih dahulu!', 'error');
             }
             return;
           }
@@ -9689,9 +9689,9 @@
           saveMealPlans();
 
           if (bekalObj && malamObj) {
-            showToast(`Menu Bekal & Makan Malam untuk ${formatTanggalIndo(selectedDate.value, true)} berhasil disimpan!`);
+            showToast(`Menu Makan Siang & Makan Malam untuk ${formatTanggalIndo(selectedDate.value, true)} berhasil disimpan!`);
           } else if (bekalObj) {
-            showToast(`Menu Bekal untuk ${formatTanggalIndo(selectedDate.value, true)} berhasil disimpan!`);
+            showToast(`Menu Makan Siang untuk ${formatTanggalIndo(selectedDate.value, true)} berhasil disimpan!`);
           } else {
             showToast(`Menu Makan Malam untuk ${formatTanggalIndo(selectedDate.value, true)} berhasil disimpan!`);
           }
@@ -9701,7 +9701,7 @@
           modalConfirm.value = {
             show: true,
             title: 'Hapus Menu Tanggal Ini?',
-            message: `Apakah Anda yakin ingin menghapus Menu Bekal & Makan Malam untuk ${formatTanggalIndo(dateStr, true)}?`,
+            message: `Apakah Anda yakin ingin menghapus Menu Makan Siang & Makan Malam untuk ${formatTanggalIndo(dateStr, true)}?`,
             confirmButtonText: 'Ya, Hapus Menu',
             cancelButtonText: 'Batal',
             onConfirm: () => {
@@ -9798,7 +9798,7 @@
 
           saveMealPlans();
           modalSwap.value.show = false;
-          const labelMap = { all: 'Bekal & Makan Malam', bekal: 'Menu Bekal', malam: 'Menu Makan Malam' };
+          const labelMap = { all: 'Makan Siang & Makan Malam', bekal: 'Menu Makan Siang', malam: 'Menu Makan Malam' };
           showToast(`Berhasil menukar ${labelMap[slotChoice]} antara ${formatTanggalIndo(d1)} & ${formatTanggalIndo(d2)}!`);
         };
 
@@ -10655,7 +10655,7 @@
           isDraftDirty.value = true;
           modalQuickSchedule.value.show = false;
           setTab('isi');
-          const slotName = slotId === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          const slotName = slotId === 'bekal' ? 'Menu Makan Siang' : 'Menu Makan Malam';
           showToast(`${item.name} dimasukkan ke ${slotName} (${formatTanggalIndo(targetDate)})!`);
         };
 
@@ -11159,7 +11159,7 @@
           };
           isDraftDirty.value = true;
           setTab('isi');
-          const slotName = activeMealSlot.value === 'bekal' ? 'Menu Bekal' : 'Menu Makan Malam';
+          const slotName = activeMealSlot.value === 'bekal' ? 'Menu Makan Siang' : 'Menu Makan Malam';
           showToast(`Paket "${pkg.name}" dipasang ke ${slotName}. Klik Simpan atau ganti sesi.`);
         };
 
