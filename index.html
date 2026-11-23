@@ -3161,11 +3161,7 @@
                 </select>
               </div>
 
-              <!-- Cycle Quick Summary Pill -->
-              <div class="p-3 rounded-2xl bg-cream-100/70 border border-cream-200 text-center self-stretch sm:self-end">
-                <div class="text-[10px] uppercase font-bold text-taupe-400">Hari Belanja</div>
-                <div class="text-xs font-extrabold text-espresso-900">Jumat – Minggu</div>
-              </div>
+
             </div>
           </div>
 
@@ -3182,7 +3178,7 @@
                 <div class="text-xs font-bold text-espresso-900">
                   {{ formatTanggalIndo(activeShoppingRange.start) }} s/d {{ formatTanggalIndo(activeShoppingRange.end) }}
                 </div>
-                <div class="text-[10px] text-taupe-500">Total 7 Hari Masak (Sabtu - Jumat) • Belanja Fleksibel (Jumat–Minggu)</div>
+                <div class="text-[10px] text-taupe-500">Total 7 Hari Masak (Sabtu - Jumat)</div>
               </div>
             </div>
 
@@ -3239,11 +3235,7 @@
                 <i data-lucide="share-2" class="w-4 h-4"></i>
                 <span>Salin ke WhatsApp</span>
               </button>
-              <button @click="printShoppingList" 
-                      class="px-4 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-300 transition flex items-center gap-1.5">
-                <i data-lucide="printer" class="w-4 h-4 text-taupe-500"></i>
-                <span>Cetak / PDF</span>
-              </button>
+
             </div>
 
             <div class="flex items-center gap-2 text-xs">
