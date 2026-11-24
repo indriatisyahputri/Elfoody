@@ -2990,29 +2990,73 @@
                   </div>
                 </div>
 
-                <!-- Highlighted Stock Display -->
-                <div class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 flex items-center justify-between gap-3">
-                  <div>
-                    <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Tersedia di Dapur:</div>
-                    <div class="flex items-baseline gap-1.5 mt-0.5">
-                      <span class="text-2xl font-extrabold text-espresso-900">{{ item.qty }}</span>
-                      <span class="text-xs font-bold text-taupe-700 uppercase tracking-wide">{{ item.unit }}</span>
+                <!-- Highlighted Stock Display & 3-State Level Indicator -->
+                <div class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 space-y-3">
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Tersedia di Dapur:</div>
+                      <div class="flex items-baseline gap-1.5 mt-0.5">
+                        <span class="text-2xl font-extrabold text-espresso-900">{{ item.qty }}</span>
+                        <span class="text-xs font-bold text-taupe-700 uppercase tracking-wide">{{ item.unit }}</span>
+                      </div>
+                    </div>
+                    <!-- Quick Increment / Decrement Buttons -->
+                    <div class="flex items-center gap-1.5">
+                      <button type="button"
+                              @click="adjustPantryStock(item.id, -1)"
+                              title="Kurangi 1 unit"
+                              class="w-8 h-8 rounded-xl bg-white border border-cream-300 text-espresso-800 font-bold text-sm hover:bg-cream-100 flex items-center justify-center cursor-pointer shadow-xs min-h-[32px]">
+                        -
+                      </button>
+                      <button type="button"
+                              @click="adjustPantryStock(item.id, 1)"
+                              title="Tambah 1 unit"
+                              class="w-8 h-8 rounded-xl bg-white border border-cream-300 text-espresso-800 font-bold text-sm hover:bg-cream-100 flex items-center justify-center cursor-pointer shadow-xs min-h-[32px]">
+                        +
+                      </button>
                     </div>
                   </div>
-                  <!-- Quick Increment / Decrement Buttons -->
-                  <div class="flex items-center gap-1.5">
-                    <button type="button"
-                            @click="adjustPantryStock(item.id, -1)"
-                            title="Kurangi 1 unit"
-                            class="w-8 h-8 rounded-xl bg-white border border-cream-300 text-espresso-800 font-bold text-sm hover:bg-cream-100 flex items-center justify-center cursor-pointer shadow-xs min-h-[32px]">
-                      -
-                    </button>
-                    <button type="button"
-                            @click="adjustPantryStock(item.id, 1)"
-                            title="Tambah 1 unit"
-                            class="w-8 h-8 rounded-xl bg-white border border-cream-300 text-espresso-800 font-bold text-sm hover:bg-cream-100 flex items-center justify-center cursor-pointer shadow-xs min-h-[32px]">
-                      +
-                    </button>
+
+                  <!-- 3-State Indicator Selector (Full, Sedikit, Habis) -->
+                  <div class="pt-2 border-t border-cream-200/80 space-y-1.5">
+                    <div class="flex items-center justify-between text-[10.5px] font-bold">
+                      <span class="text-taupe-500">Indikator Stok Belanja:</span>
+                      <span v-if="item.status === 'full' || (!item.status && Number(item.qty) > 0)" class="text-emerald-700 font-bold">
+                        🟢 Full (Aman)
+                      </span>
+                      <span v-else-if="item.status === 'sedikit'" class="text-amber-700 font-bold">
+                        🟡 Tinggal Sedikit (Masuk Belanja)
+                      </span>
+                      <span v-else class="text-red-700 font-bold">
+                        🔴 Habis (Masuk Belanja)
+                      </span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 p-1 bg-white rounded-xl border border-cream-200 shadow-2xs">
+                      <button type="button"
+                              @click="setPantryItemStatus(item.id, 'full')"
+                              class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
+                              :class="item.status === 'full' || (!item.status && Number(item.qty) > 0)
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-taupe-600 hover:bg-cream-50'">
+                        <span>🟢 Full</span>
+                      </button>
+                      <button type="button"
+                              @click="setPantryItemStatus(item.id, 'sedikit')"
+                              class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
+                              :class="item.status === 'sedikit'
+                                ? 'bg-amber-500 text-white shadow-xs'
+                                : 'text-taupe-600 hover:bg-cream-50'">
+                        <span>🟡 Sedikit</span>
+                      </button>
+                      <button type="button"
+                              @click="setPantryItemStatus(item.id, 'habis')"
+                              class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
+                              :class="item.status === 'habis' || (item.status === undefined && Number(item.qty) <= 0)
+                                ? 'bg-red-600 text-white shadow-xs'
+                                : 'text-taupe-600 hover:bg-cream-50'">
+                        <span>🔴 Habis</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3184,6 +3228,144 @@
         <!-- Categorized Shopping List Sections (Grouped by Market Section) -->
         <div v-else class="space-y-5">
           
+          <!-- ======================================================== -->
+          <!-- CEK STOK BUMBU, PERSAUSAN & TEPUNG SEBELUM BELANJA       -->
+          <!-- ======================================================== -->
+          <div class="bg-white p-5 sm:p-6 rounded-3xl border border-cream-200 shadow-card space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="flex items-start gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center flex-shrink-0 text-xl border border-amber-200 shadow-2xs">
+                  🥫
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="font-serif font-bold text-base sm:text-lg text-espresso-900">
+                      Cek Stok Bumbu, Persausan &amp; Tepung
+                    </h3>
+                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-100 text-taupe-700 border border-cream-200">
+                      Sebelum Belanja
+                    </span>
+                  </div>
+                  <p class="text-xs text-taupe-500 mt-0.5 leading-relaxed">
+                    Periksa persediaan botol &amp; toples dapur. Yang berstatus <strong>Habis</strong> atau <strong>Tinggal Sedikit</strong> otomatis masuk ke daftar belanja di bawah.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Summary Badges & Collapse Toggle -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <span v-if="pantryHabisCount > 0" class="inline-flex items-center gap-1 text-xs font-extrabold px-2.5 py-1 rounded-xl bg-red-100 text-red-800 border border-red-200">
+                  🔴 {{ pantryHabisCount }} Habis
+                </span>
+                <span v-if="pantrySedikitCount > 0" class="inline-flex items-center gap-1 text-xs font-extrabold px-2.5 py-1 rounded-xl bg-amber-100 text-amber-900 border border-amber-200">
+                  🟡 {{ pantrySedikitCount }} Menipis
+                </span>
+                <span class="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+                  🟢 {{ pantryFullCount }} Aman
+                </span>
+                <button type="button"
+                        @click="showStapleChecker = !showStapleChecker"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition cursor-pointer flex items-center gap-1">
+                  <span>{{ showStapleChecker ? 'Tutup Checklist' : 'Buka &amp; Periksa' }}</span>
+                  <i :data-lucide="showStapleChecker ? 'chevron-up' : 'chevron-down'" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Expandable Check List -->
+            <div v-show="showStapleChecker" class="space-y-3.5 pt-2 border-t border-cream-100">
+              <!-- Filter Tabs: Semua, Sauce, Tepung, Bumbu & Rempah -->
+              <div class="flex items-center justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-1.5 text-xs flex-wrap">
+                  <button type="button"
+                          @click="stapleFilter = 'all'"
+                          class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
+                          :class="stapleFilter === 'all' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                    Semua ({{ pantryStapleList.length }})
+                  </button>
+                  <button type="button"
+                          @click="stapleFilter = 'Sauce'"
+                          class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
+                          :class="stapleFilter === 'Sauce' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                    🍶 Persausan ({{ pantryStapleList.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Sauce').length }})
+                  </button>
+                  <button type="button"
+                          @click="stapleFilter = 'Tepung'"
+                          class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
+                          :class="stapleFilter === 'Tepung' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                    🌾 Tepung ({{ pantryStapleList.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Tepung').length }})
+                  </button>
+                  <button type="button"
+                          @click="stapleFilter = 'Bumbu'"
+                          class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
+                          :class="stapleFilter === 'Bumbu' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                    🧄 Bumbu &amp; Rempah ({{ pantryStapleList.filter(i => ['Bumbu', 'Rempah'].includes(normalizeIngredientGroup(i.group, i.name))).length }})
+                  </button>
+                </div>
+                
+                <button type="button"
+                        @click="openAddPantryModal()"
+                        class="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-2xs transition flex items-center gap-1 cursor-pointer min-h-[34px]">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>+ Tambah Stok Dapur</span>
+                </button>
+              </div>
+
+              <!-- Grid of Staples with 1-Tap Status Selector -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+                <div v-for="item in filteredPantryStapleList" :key="item.id"
+                     class="p-2.5 sm:p-3 rounded-2xl border transition flex items-center justify-between gap-2.5 shadow-2xs"
+                     :class="item.status === 'habis'
+                       ? 'bg-red-50/70 border-red-200'
+                       : item.status === 'sedikit'
+                         ? 'bg-amber-50/70 border-amber-200'
+                         : 'bg-cream-50/80 border-cream-200 hover:bg-white'">
+                  <!-- Name & Icon -->
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-sm flex-shrink-0">{{ getGroupIcon(item.group) }}</span>
+                      <span class="text-xs font-bold text-espresso-900 truncate">{{ item.name }}</span>
+                    </div>
+                    <div class="text-[10px] text-taupe-500 truncate mt-0.5">
+                      {{ item.group }} &bull; {{ item.unit || 'Kemasan' }}
+                    </div>
+                  </div>
+
+                  <!-- 3-Button Toggle -->
+                  <div class="flex items-center p-0.5 bg-white/90 rounded-xl border border-cream-200 flex-shrink-0 shadow-2xs">
+                    <button type="button"
+                            @click="setPantryItemStatus(item.id, 'full')"
+                            title="Stok Full / Penuh (Aman, Tidak Masuk Belanja)"
+                            class="px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer select-none"
+                            :class="item.status === 'full' || (!item.status && Number(item.qty) > 0)
+                              ? 'bg-emerald-600 text-white shadow-xs'
+                              : 'text-taupe-600 hover:bg-cream-100'">
+                      🟢 Full
+                    </button>
+                    <button type="button"
+                            @click="setPantryItemStatus(item.id, 'sedikit')"
+                            title="Tinggal Sedikit (Masuk Belanja)"
+                            class="px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer select-none"
+                            :class="item.status === 'sedikit'
+                              ? 'bg-amber-500 text-white shadow-xs'
+                              : 'text-taupe-600 hover:bg-cream-100'">
+                      🟡 Sedikit
+                    </button>
+                    <button type="button"
+                            @click="setPantryItemStatus(item.id, 'habis')"
+                            title="Habis (Wajib Belanja)"
+                            class="px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer select-none"
+                            :class="item.status === 'habis' || (item.status === undefined && Number(item.qty) <= 0)
+                              ? 'bg-red-600 text-white shadow-xs'
+                              : 'text-taupe-600 hover:bg-cream-100'">
+                      🔴 Habis
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Search & Category Filter Controls (Praktis & Ringkas) -->
           <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-cream-200 shadow-card">
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
@@ -6202,6 +6384,8 @@
         });
         const pantrySearchQuery = ref('');
         const pantryGroupFilter = ref('all');
+        const showStapleChecker = ref(true);
+        const stapleFilter = ref('all');
         const activeIngSuggestIdx = ref(-1);
         const activePantrySuggest = ref(false);
 
@@ -7099,6 +7283,42 @@
         };
 
         // Master Library of Common Ingredients with Standard Units & Groups
+                // Default Starter Pantry Staples (Persausan, Tepung, dan Perbumbuan)
+        const DEFAULT_PANTRY_STAPLES = [
+          // Persausan
+          { name: 'Kecap Manis', group: 'Sauce', unit: 'Botol', status: 'full' },
+          { name: 'Kecap Asin', group: 'Sauce', unit: 'Botol', status: 'full' },
+          { name: 'Saus Tiram', group: 'Sauce', unit: 'Botol', status: 'full' },
+          { name: 'Saus Sambal', group: 'Sauce', unit: 'Botol', status: 'full' },
+          { name: 'Saus Tomat', group: 'Sauce', unit: 'Botol', status: 'full' },
+          { name: 'Minyak Goreng', group: 'Sauce', unit: 'Liter', status: 'full' },
+          { name: 'Minyak Wijen', group: 'Sauce', unit: 'Botol', status: 'full' },
+          
+          // Tepung-Tepungan
+          { name: 'Tepung Terigu', group: 'Tepung', unit: 'Bungkus', status: 'full' },
+          { name: 'Tepung Maizena', group: 'Tepung', unit: 'Bungkus', status: 'full' },
+          { name: 'Tepung Tapioka', group: 'Tepung', unit: 'Bungkus', status: 'full' },
+          { name: 'Tepung Beras', group: 'Tepung', unit: 'Bungkus', status: 'full' },
+          { name: 'Tepung Bumbu Serbaguna', group: 'Tepung', unit: 'Bungkus', status: 'full' },
+
+          // Perbumbuan & Rempah
+          { name: 'Garam', group: 'Bumbu', unit: 'Toples/Bungkus', status: 'full' },
+          { name: 'Gula Pasir', group: 'Bumbu', unit: 'Toples/Kg', status: 'full' },
+          { name: 'Kaldu Jamur / Totole', group: 'Bumbu', unit: 'Bungkus', status: 'full' },
+          { name: 'Kaldu Ayam / Sapi Bubuk', group: 'Bumbu', unit: 'Bungkus', status: 'full' },
+          { name: 'Merica / Lada Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
+          { name: 'Ketumbar Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
+          { name: 'Kunyit Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
+          { name: 'Bawang Merah', group: 'Bumbu', unit: 'Ons/Kg', status: 'full' },
+          { name: 'Bawang Putih', group: 'Bumbu', unit: 'Bonggol/Ons', status: 'full' }
+        ];
+
+        const isStapleIngredient = (group, name = '') => {
+          const normGrp = normalizeIngredientGroup(group, name);
+          if (['Sauce', 'Tepung', 'Bumbu', 'Rempah'].includes(normGrp)) return true;
+          return /minyak|kecap|saus|saos|tepung|garam|gula|merica|lada|kaldu|micin|penyedap|terigu|maizena|tapioka/i.test(name || '');
+        };
+
         const DEFAULT_MASTER_INGREDIENTS = [
           // Bumbu
           { name: 'Bawang Putih', defaultUnit: 'siung', group: 'Bumbu', keywords: ['baw', 'baput', 'putih', 'garlic'], icon: '🧄' },
@@ -7616,6 +7836,7 @@
 
             const storedPantry = localStorage.getItem('seleraku_pantry_stocks');
             pantryStocks.value = storedPantry ? migratePantryStocksGroups(JSON.parse(storedPantry)) : {};
+            ensurePantryStaples();
             localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
 
             const storedMaster = localStorage.getItem('seleraku_master_ingredients');
@@ -10226,6 +10447,93 @@
           return Object.values(pantryStocks.value || {}).filter(item => item.group === grpName).length;
         };
 
+        const ensurePantryStaples = () => {
+          if (!pantryStocks.value) pantryStocks.value = {};
+          let changed = false;
+          DEFAULT_PANTRY_STAPLES.forEach(def => {
+            const low = def.name.toLowerCase().trim();
+            const exists = Object.values(pantryStocks.value).find(p => (p.name || '').toLowerCase().trim() === low);
+            if (!exists) {
+              const safeId = 'ps_staple_' + Math.random().toString(36).substr(2, 9);
+              pantryStocks.value[safeId] = {
+                id: safeId,
+                name: def.name,
+                qty: '1',
+                unit: def.unit,
+                group: def.group,
+                status: def.status || 'full',
+                note: 'Stok Dapur Inti',
+                updatedAt: new Date().toISOString()
+              };
+              changed = true;
+            } else if (!exists.status) {
+              exists.status = Number(exists.qty) <= 0 ? 'habis' : 'full';
+              changed = true;
+            }
+          });
+          // Ensure all existing items have status
+          Object.values(pantryStocks.value).forEach(p => {
+            if (!p.status) {
+              p.status = Number(p.qty) <= 0 ? 'habis' : 'full';
+              changed = true;
+            }
+          });
+          if (changed) {
+            savePantryStocks();
+          }
+        };
+
+        const setPantryItemStatus = (id, newStatus) => {
+          if (!pantryStocks.value || !pantryStocks.value[id]) return;
+          const item = pantryStocks.value[id];
+          item.status = newStatus;
+          item.updatedAt = new Date().toISOString();
+          savePantryStocks();
+          if (newStatus === 'full') {
+            showToast(`🟢 "${item.name}" ditandai Full (Aman, keluar dari daftar belanja)!`, 'success');
+          } else if (newStatus === 'sedikit') {
+            showToast(`🟡 "${item.name}" ditandai Tinggal Sedikit (Masuk daftar belanja)!`, 'warning');
+          } else if (newStatus === 'habis') {
+            showToast(`🔴 "${item.name}" ditandai Habis (Wajib dibeli)!`, 'error');
+          }
+        };
+
+        const pantryStapleList = computed(() => {
+          const items = Object.values(pantryStocks.value || {}).filter(item => isStapleIngredient(item.group, item.name));
+          return items.sort((a, b) => {
+            const grpCompare = (a.group || '').localeCompare(b.group || '');
+            if (grpCompare !== 0) return grpCompare;
+            return (a.name || '').localeCompare(b.name || '');
+          });
+        });
+
+        const filteredPantryStapleList = computed(() => {
+          const list = pantryStapleList.value;
+          if (stapleFilter.value === 'all') return list;
+          if (stapleFilter.value === 'Sauce') {
+            return list.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Sauce');
+          }
+          if (stapleFilter.value === 'Tepung') {
+            return list.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Tepung');
+          }
+          if (stapleFilter.value === 'Bumbu') {
+            return list.filter(i => ['Bumbu', 'Rempah'].includes(normalizeIngredientGroup(i.group, i.name)));
+          }
+          return list;
+        });
+
+        const pantryHabisCount = computed(() => {
+          return pantryStapleList.value.filter(i => i.status === 'habis' || (i.status === undefined && Number(i.qty) <= 0)).length;
+        });
+
+        const pantrySedikitCount = computed(() => {
+          return pantryStapleList.value.filter(i => i.status === 'sedikit').length;
+        });
+
+        const pantryFullCount = computed(() => {
+          return pantryStapleList.value.filter(i => i.status === 'full' || (!i.status && Number(i.qty) > 0)).length;
+        });
+
         const pantryItemCount = computed(() => {
           return Object.keys(pantryStocks.value || {}).length;
         });
@@ -11671,6 +11979,17 @@
               if (!ing.name) return;
               const normName = ing.name.trim();
               const normUnit = (ing.unit || '').trim().toLowerCase();
+              const normGrp = normalizeIngredientGroup(ing.group, ing.name);
+
+              // Cek apakah bahan ini termasuk persausan, tepung, atau perbumbuan (staple)
+              if (isStapleIngredient(normGrp, normName)) {
+                const pStock = getPantryStockForIngredient(normName);
+                // Jika stok di dapur bertanda Full: lewati (jangan masuk belanjaan!)
+                if (pStock && (pStock.status === 'full' || (!pStock.status && Number(pStock.qty) > 0))) {
+                  return;
+                }
+              }
+
               const key = `${normName.toLowerCase()}_${normUnit}`;
 
               if (!ingredientMap[key]) {
@@ -11828,6 +12147,54 @@
               extras.forEach(ex => addExtraToShoppingMap(ex, `Rencana Pekan (Tambahan ${entry.label})`, entry.label, 'Rencana Pekan'));
             });
           }
+
+          // Include all pantry staples (bumbu, persausan, tepung) that are marked 'sedikit' or 'habis'
+          Object.values(pantryStocks.value || {}).forEach(pItem => {
+            if (!pItem || !pItem.name) return;
+            const pStatus = pItem.status || (Number(pItem.qty) <= 0 ? 'habis' : 'full');
+            if (pStatus === 'sedikit' || pStatus === 'habis') {
+              const normName = pItem.name.trim();
+              const normUnit = (pItem.unit || 'Kemasan').trim().toLowerCase();
+              const key = `staple_${normName.toLowerCase()}`;
+              const isHabis = pStatus === 'habis';
+              const statusBadge = isHabis ? '1 Beli Baru (Stok Habis)' : '1 Refill (Stok Menipis)';
+              const contextLabel = isHabis ? 'Harus Beli (Stok Habis)' : 'Perlu Beli (Stok Menipis)';
+
+              // Check if already in ingredientMap by key or normalized name
+              const existingKey = Object.keys(ingredientMap).find(k => k === key || ingredientMap[k].name.toLowerCase() === normName.toLowerCase());
+
+              if (!existingKey) {
+                ingredientMap[key] = {
+                  id: key,
+                  name: normName,
+                  unit: pItem.unit || 'Kemasan',
+                  quantities: [statusBadge],
+                  group: normalizeIngredientGroup(pItem.group, normName),
+                  usedInDishes: [isHabis ? 'Stok Dapur Habis' : 'Stok Dapur Menipis'],
+                  dishBreakdown: [{
+                    dishId: null,
+                    dishName: `Stok Dapur: ${normName}`,
+                    category: 'stok',
+                    sessionText: 'Kebutuhan Dapur',
+                    sessionLabels: ['Stok Dapur'],
+                    numQty: 1,
+                    qtyText: statusBadge,
+                    contextNote: contextLabel
+                  }],
+                  qtyText: statusBadge,
+                  pantryStockText: isHabis ? '🔴 Habis' : '🟡 Tinggal Sedikit',
+                  isPantryStaple: true,
+                  pantryStatus: pStatus,
+                  pantryId: pItem.id
+                };
+              } else {
+                ingredientMap[existingKey].isPantryStaple = true;
+                ingredientMap[existingKey].pantryStatus = pStatus;
+                ingredientMap[existingKey].pantryId = pItem.id;
+                ingredientMap[existingKey].pantryStockText = isHabis ? '🔴 Habis' : '🟡 Tinggal Sedikit';
+              }
+            }
+          });
 
           // Format summarized text
           const result = Object.values(ingredientMap).map(item => {
@@ -12005,6 +12372,7 @@
             const curNum = parseIngredientQtyNumber(existing.qty) || 0;
             const newQty = Math.round((curNum + qtyVal) * 100) / 100;
             existing.qty = String(newQty);
+            existing.status = 'full';
             existing.updatedAt = new Date().toISOString();
             savePantryStocks();
             showToast(`✅ Stok "${trimmedName}" bertambah +${qtyVal} ${unitVal} (Total: ${newQty} ${existing.unit})!`);
@@ -12832,6 +13200,16 @@
           getIngredientSuggestions,
           applyIngredientSuggestion,
           applyPantryFormSuggestion,
+          showStapleChecker,
+          stapleFilter,
+          pantryStapleList,
+          filteredPantryStapleList,
+          pantryHabisCount,
+          pantrySedikitCount,
+          pantryFullCount,
+          setPantryItemStatus,
+          ensurePantryStaples,
+          isStapleIngredient,
           getPantryGroupCount,
           pantryItemCount,
           pantryBumbuCount,
