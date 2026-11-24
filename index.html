@@ -784,12 +784,19 @@
               </h2>
             </div>
 
-            <!-- Quick Actions: Pilih Paket (Centrally in Tab Jadwal) -->
-            <div class="flex items-center gap-2 self-start md:self-center">
+            <!-- Quick Actions: Timbang Protein & Pilih Paket -->
+            <div class="flex items-center gap-2 self-start md:self-center flex-wrap">
+              <button type="button"
+                      @click="openProteinPrepModal('cycle')"
+                      title="Sesuaikan gramasi riil protein segar hasil belanja pasar/supermarket (Sabtu Food Prep)"
+                      class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white shadow-card transition flex items-center gap-1.5 cursor-pointer min-h-[42px]">
+                <span>⚖️</span>
+                <span>Timbang Protein</span>
+              </button>
               <button @click="setTab('paket')"
                       class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center gap-1.5 cursor-pointer min-h-[42px]">
                 <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>+ Pilih Paket Menu Lain</span>
+                <span>+ Pilih Paket Menu</span>
               </button>
             </div>
           </div>
@@ -817,38 +824,6 @@
                 ⏳ <strong class="text-amber-900">{{ unassignedWeeklyEntries.length }}</strong> Belum Ditentukan
               </span>
             </div>
-          </div>
-        </div>
-
-        <!-- ======================================================== -->
-        <!-- FITUR 1: TIMBANG ULANG PROTEIN (FOOD PREP SABTU)          -->
-        <!-- ======================================================== -->
-        <div class="bg-gradient-to-r from-amber-50/70 via-white to-amber-50/40 p-5 sm:p-6 rounded-3xl border border-amber-200 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div class="flex items-start sm:items-center gap-3.5">
-            <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-300 flex items-center justify-center text-2xl flex-shrink-0 shadow-2xs">
-              ⚖️
-            </div>
-            <div>
-              <div class="inline-flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-wider text-amber-900">
-                <span>Fitur 1</span>
-                <span>•</span>
-                <span>Sabtu Food Prep</span>
-              </div>
-              <h3 class="text-base sm:text-lg font-serif font-bold text-espresso-900">
-                Timbang Ulang Protein Segar
-              </h3>
-              <p class="text-xs text-taupe-500 max-w-xl mt-0.5">
-                Sesuaikan gramasi riil protein segar hasil belanja pasar/supermarket agar kalori &amp; protein tercatat 100% akurat.
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center gap-2 self-start sm:self-center flex-shrink-0">
-            <button type="button" @click="openProteinPrepModal('cycle')"
-                    class="min-h-[44px] px-5 py-2.5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white shadow-card shadow-xs transition flex items-center gap-2 cursor-pointer">
-              <span>⚖️</span>
-              <span>Buka Timbang Protein Pekan Ini</span>
-            </button>
           </div>
         </div>
 
