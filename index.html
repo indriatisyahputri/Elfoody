@@ -509,53 +509,6 @@
             </div>
           </div>
 
-          <!-- PRATINJAU 2 HARI MENDATANG (BESOK & LUSA) -->
-          <div class="bg-white p-4 sm:p-5 rounded-2xl border border-cream-200 shadow-card space-y-3">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-taupe-500 flex items-center justify-between">
-              <span>👀 Pratinjau 2 Hari Mendatang</span>
-              <button @click="setTab('isi')" class="text-caramel-600 hover:underline normal-case font-semibold cursor-pointer">
-                Buka Jadwal 7 Hari &rarr;
-              </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div v-for="offset in [1, 2]" :key="offset"
-                   class="p-3.5 rounded-xl bg-cream-50/60 border border-cream-200/80 flex items-center justify-between gap-3">
-                <div class="min-w-0 space-y-1">
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-white border border-cream-200 text-espresso-800">
-                      {{ offset === 1 ? 'Besok' : 'Lusa' }}
-                    </span>
-                    <span class="text-xs font-bold text-espresso-900 truncate">
-                      {{ formatTanggalIndo(getDateOffset(offset), true) }}
-                    </span>
-                  </div>
-                  <div class="text-[11px] text-taupe-600 truncate space-y-0.5">
-                    <div class="truncate">
-                      <span class="font-medium text-espresso-700">☀️ Siang:</span>
-                      <span class="text-espresso-900 ml-1 font-semibold">
-                        {{ getSlotPackageName(getMealForSlot(getDateOffset(offset), 'bekal')) || getDishSummary(getMealForSlot(getDateOffset(offset), 'bekal')) || 'Belum diisi' }}
-                      </span>
-                    </div>
-                    <div class="truncate">
-                      <span class="font-medium text-espresso-700">🌙 Malam:</span>
-                      <span class="text-espresso-900 ml-1 font-semibold">
-                        {{ getSlotPackageName(getMealForSlot(getDateOffset(offset), 'malam')) || getDishSummary(getMealForSlot(getDateOffset(offset), 'malam')) || 'Belum diisi' }}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex flex-col gap-1 flex-shrink-0">
-                  <button @click="openPickPackageForSlot(getDateOffset(offset), 'bekal')"
-                          class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white hover:bg-cream-100 text-caramel-700 border border-cream-300 transition cursor-pointer">
-                    Atur
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
         </div>
 
         <!-- ======================================================== -->
