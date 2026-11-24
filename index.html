@@ -8567,7 +8567,24 @@
 
         const activeWeeklyPoolEntries = computed(() => {
           const ck = activeWeeklyRange.value?.start;
-          return (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === ck && e.status !== 'cancelled');
+          const list = (weeklyMenuPool.value || []).filter(e => e && e.cycleKey === ck && e.status !== 'cancelled');
+          return list.slice().sort((a, b) => {
+            // 1. Urutkan berdasarkan tanggal penugasan (assignedDate) secara kronologis
+            if (a.assignedDate && b.assignedDate) {
+              const dateCmp = a.assignedDate.localeCompare(b.assignedDate);
+              if (dateCmp !== 0) return dateCmp;
+              // Jika di hari yang sama: Makan Siang (bekal) lebih dulu daripada Makan Malam (malam)
+              const slotWeight = (slot) => (slot === 'bekal' ? 1 : (slot === 'malam' ? 2 : 3));
+              const slotDiff = slotWeight(a.assignedSlot) - slotWeight(b.assignedSlot);
+              if (slotDiff !== 0) return slotDiff;
+              return (a.label || '').localeCompare(b.label || '', 'id');
+            }
+            // 2. Paket yang sudah memiliki tanggal jadwal tampil lebih dulu
+            if (a.assignedDate && !b.assignedDate) return -1;
+            if (!a.assignedDate && b.assignedDate) return 1;
+            // 3. Jika sama-sama belum terjadwal, urutkan berdasarkan abjad nama paket
+            return (a.label || '').localeCompare(b.label || '', 'id');
+          });
         });
 
         const unassignedWeeklyEntries = computed(() => {
