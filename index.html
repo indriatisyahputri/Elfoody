@@ -3011,9 +3011,57 @@
                   </div>
                 </div>
 
-                <!-- Highlighted Stock Display & 3-State Level Indicator -->
-                <div class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 space-y-3">
-                  <div class="flex items-center justify-between gap-3">
+                <!-- Highlighted Stock Display: 3 Indikator (Saus/Bumbu/Tepung) vs Takaran Angka (Bahan Lain) -->
+                <div class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200">
+                  <!-- Mode 1: Saus, Bumbu, Tepung (Hanya 3 Indikator Status, Tanpa sdm/sdt) -->
+                  <div v-if="isStapleIngredient(item.group, item.name)" class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[10.5px] font-bold uppercase tracking-wider text-taupe-500">Kondisi Stok:</span>
+                      <span v-if="item.status === 'full' || (!item.status && Number(item.qty) > 0)"
+                            class="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        🟢 Aman (Full)
+                      </span>
+                      <span v-else-if="item.status === 'sedikit'"
+                            class="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                        🟡 Tinggal Sedikit
+                      </span>
+                      <span v-else
+                            class="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
+                        🔴 Habis
+                      </span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1 p-1 bg-white rounded-xl border border-cream-200 shadow-2xs">
+                      <button type="button"
+                              @click="setPantryItemStatus(item.id, 'full')"
+                              class="flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
+                              :class="item.status === 'full' || (!item.status && Number(item.qty) > 0)
+                                ? 'bg-emerald-600 text-white shadow-xs'
+                                : 'text-taupe-600 hover:bg-cream-50'">
+                        <span>🟢 Full</span>
+                      </button>
+                      <button type="button"
+                              @click="setPantryItemStatus(item.id, 'sedikit')"
+                              class="flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
+                              :class="item.status === 'sedikit'
+                                ? 'bg-amber-500 text-white shadow-xs'
+                                : 'text-taupe-600 hover:bg-cream-50'">
+                        <span>🟡 Sedikit</span>
+                      </button>
+                      <button type="button"
+                              @click="setPantryItemStatus(item.id, 'habis')"
+                              class="flex items-center justify-center gap-1 py-2 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
+                              :class="item.status === 'habis' || (item.status === undefined && Number(item.qty) <= 0)
+                                ? 'bg-red-600 text-white shadow-xs'
+                                : 'text-taupe-600 hover:bg-cream-50'">
+                        <span>🔴 Habis</span>
+                      </button>
+                    </div>
+                    <p class="text-[10px] text-taupe-400 text-center">Diperbarui sebelum belanja (tanpa sdm/sdt)</p>
+                  </div>
+
+                  <!-- Mode 2: Bahan Lain (Daging, Sayur, Rempah, dll: Takaran Angka & Satuan) -->
+                  <div v-else class="flex items-center justify-between gap-3">
                     <div>
                       <div class="text-[10px] font-bold uppercase tracking-wider text-taupe-500">Tersedia di Dapur:</div>
                       <div class="flex items-baseline gap-1.5 mt-0.5">
@@ -3037,54 +3085,13 @@
                       </button>
                     </div>
                   </div>
-
-                  <!-- 3-State Indicator Selector: HANYA untuk kategori Saus, Bumbu, dan Tepung -->
-                  <div v-if="isStapleIngredient(item.group, item.name)" class="pt-2 border-t border-cream-200/80 space-y-1.5">
-                    <div class="flex items-center justify-between text-[10.5px] font-bold">
-                      <span class="text-taupe-500">Indikator Stok Belanja (Saus / Bumbu / Tepung):</span>
-                      <span v-if="item.status === 'full' || (!item.status && Number(item.qty) > 0)" class="text-emerald-700 font-bold">
-                        🟢 Full (Aman)
-                      </span>
-                      <span v-else-if="item.status === 'sedikit'" class="text-amber-700 font-bold">
-                        🟡 Tinggal Sedikit (Masuk Belanja)
-                      </span>
-                      <span v-else class="text-red-700 font-bold">
-                        🔴 Habis (Masuk Belanja)
-                      </span>
-                    </div>
-                    <div class="grid grid-cols-3 gap-1 p-1 bg-white rounded-xl border border-cream-200 shadow-2xs">
-                      <button type="button"
-                              @click="setPantryItemStatus(item.id, 'full')"
-                              class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
-                              :class="item.status === 'full' || (!item.status && Number(item.qty) > 0)
-                                ? 'bg-emerald-600 text-white shadow-xs'
-                                : 'text-taupe-600 hover:bg-cream-50'">
-                        <span>🟢 Full</span>
-                      </button>
-                      <button type="button"
-                              @click="setPantryItemStatus(item.id, 'sedikit')"
-                              class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
-                              :class="item.status === 'sedikit'
-                                ? 'bg-amber-500 text-white shadow-xs'
-                                : 'text-taupe-600 hover:bg-cream-50'">
-                        <span>🟡 Sedikit</span>
-                      </button>
-                      <button type="button"
-                              @click="setPantryItemStatus(item.id, 'habis')"
-                              class="flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[11px] font-bold transition cursor-pointer select-none"
-                              :class="item.status === 'habis' || (item.status === undefined && Number(item.qty) <= 0)
-                                ? 'bg-red-600 text-white shadow-xs'
-                                : 'text-taupe-600 hover:bg-cream-50'">
-                        <span>🔴 Habis</span>
-                      </button>
-                    </div>
-                  </div>
                 </div>
               </div>
 
               <!-- Card Actions -->
               <div class="flex items-center gap-2 pt-2 border-t border-cream-100">
-                <button type="button"
+                <button v-if="!isStapleIngredient(item.group, item.name)"
+                        type="button"
                         @click="openUsePantryModal(item)"
                         class="flex-grow min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
                   <span>🍳</span>
@@ -3092,7 +3099,8 @@
                 </button>
                 <button type="button"
                         @click="editPantryModal(item)"
-                        class="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        class="min-h-[40px] px-3 py-2 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition flex items-center justify-center gap-1.5 cursor-pointer"
+                        :class="isStapleIngredient(item.group, item.name) ? 'flex-grow' : ''">
                   <i data-lucide="edit-2" class="w-3.5 h-3.5 text-taupe-600"></i>
                   <span>Ubah</span>
                 </button>
@@ -3101,7 +3109,7 @@
                         title="Tandai habis / Hapus stok"
                         class="min-h-[40px] px-3.5 py-2 rounded-xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition cursor-pointer flex items-center gap-1">
                   <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                  <span>Habis</span>
+                  <span>Hapus</span>
                 </button>
               </div>
             </div>
@@ -4669,38 +4677,73 @@
             </div>
           </div>
 
-          <!-- Jumlah & Satuan -->
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block font-bold text-espresso-800 mb-1.5">Jumlah *</label>
-              <input type="text"
-                     v-model="modalPantryStock.form.qty"
-                     placeholder="Contoh: 250, 10, 1"
-                     class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
+          <!-- TAMPILAN 1: Untuk Saus, Bumbu, Tepung (3 Indikator Status, Tanpa sdm/sdt) -->
+          <div v-if="isStapleIngredient(modalPantryStock.form.group, modalPantryStock.form.name)" class="space-y-2">
+            <label class="block font-bold text-espresso-800">Kondisi Persediaan Stok (3 Indikator) *</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button"
+                      @click="modalPantryStock.form.status = 'full'"
+                      class="py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      :class="modalPantryStock.form.status === 'full' || (!modalPantryStock.form.status && Number(modalPantryStock.form.qty) > 0)
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs'
+                        : 'bg-cream-50 text-taupe-700 border-cream-200 hover:bg-cream-100'">
+                <span>🟢 Full (Aman)</span>
+              </button>
+              <button type="button"
+                      @click="modalPantryStock.form.status = 'sedikit'"
+                      class="py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      :class="modalPantryStock.form.status === 'sedikit'
+                        ? 'bg-amber-500 text-white border-amber-500 shadow-2xs'
+                        : 'bg-cream-50 text-taupe-700 border-cream-200 hover:bg-cream-100'">
+                <span>🟡 Sedikit</span>
+              </button>
+              <button type="button"
+                      @click="modalPantryStock.form.status = 'habis'"
+                      class="py-2.5 px-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                      :class="modalPantryStock.form.status === 'habis' || (modalPantryStock.form.status === undefined && Number(modalPantryStock.form.qty) <= 0)
+                        ? 'bg-red-600 text-white border-red-600 shadow-2xs'
+                        : 'bg-cream-50 text-taupe-700 border-cream-200 hover:bg-cream-100'">
+                <span>🔴 Habis</span>
+              </button>
             </div>
-            <div>
-              <label class="block font-bold text-espresso-800 mb-1.5">Satuan *</label>
-              <input type="text"
-                     v-model="modalPantryStock.form.unit"
-                     list="standard-units"
-                     placeholder="Pilih / ketik satuan"
-                     class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
-            </div>
+            <p class="text-[11px] text-taupe-500">Kategori Persausan, Tepung, dan Bumbu dipantau berdasarkan kondisi toples/botol sebelum belanja (tanpa sdm/sdt).</p>
           </div>
 
-          <!-- Quick Unit Badges -->
-          <div>
-            <label class="block text-[11px] font-semibold text-taupe-500 mb-1">Satuan Populer:</label>
-            <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-cream-50/70 rounded-xl border border-cream-100">
-              <button v-for="u in STANDARD_UNITS" :key="u"
-                      type="button"
-                      @click="modalPantryStock.form.unit = u"
-                      class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer"
-                      :class="modalPantryStock.form.unit === u
-                        ? 'bg-emerald-700 text-white border-emerald-700'
-                        : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
-                {{ u }}
-              </button>
+          <!-- TAMPILAN 2: Untuk Bahan Lain (Takaran Angka & Satuan) -->
+          <div v-else class="space-y-4">
+            <!-- Jumlah & Satuan -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block font-bold text-espresso-800 mb-1.5">Jumlah *</label>
+                <input type="text"
+                       v-model="modalPantryStock.form.qty"
+                       placeholder="Contoh: 250, 10, 1"
+                       class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
+              </div>
+              <div>
+                <label class="block font-bold text-espresso-800 mb-1.5">Satuan *</label>
+                <input type="text"
+                       v-model="modalPantryStock.form.unit"
+                       list="standard-units"
+                       placeholder="Pilih / ketik satuan"
+                       class="w-full px-3.5 py-2.5 rounded-xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 min-h-[42px]">
+              </div>
+            </div>
+
+            <!-- Quick Unit Badges -->
+            <div>
+              <label class="block text-[11px] font-semibold text-taupe-500 mb-1">Satuan Populer:</label>
+              <div class="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-1 bg-cream-50/70 rounded-xl border border-cream-100">
+                <button v-for="u in STANDARD_UNITS" :key="u"
+                        type="button"
+                        @click="modalPantryStock.form.unit = u"
+                        class="px-2.5 py-1 rounded-lg text-[11px] font-bold border transition cursor-pointer"
+                        :class="modalPantryStock.form.unit === u
+                          ? 'bg-emerald-700 text-white border-emerald-700'
+                          : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                  {{ u }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -4846,6 +4889,12 @@
             </span>
           </div>
 
+          <!-- Note: Bumbu, Persausan & Tepung dipantau via 3 indikator sebelum belanja, bukan dipotong saat masak -->
+          <div class="px-3 py-2 rounded-xl bg-amber-50/80 border border-amber-200/70 text-[11px] text-amber-900 flex items-center gap-2">
+            <span class="text-base flex-shrink-0">💡</span>
+            <span>Bahan <strong>Persausan, Tepung, dan Bumbu</strong> tidak dipotong di sini karena stoknya dipantau lewat 3 indikator (Full / Sedikit / Habis) sebelum belanja.</span>
+          </div>
+
           <!-- Empty State if no ingredients in package -->
           <div v-if="!modalCookMenuDeduction.ingredients || modalCookMenuDeduction.ingredients.length === 0"
                class="p-6 rounded-2xl bg-cream-50 border border-dashed border-cream-200 text-center space-y-1">
@@ -4898,29 +4947,7 @@
                   </span>
                 </div>
 
-                <!-- 3-State Toggle for Staples (Persausan, Tepung, Bumbu) -->
-                <div v-if="isStapleIngredient(ing.group, ing.name) && ing.pantryMatch"
-                     class="flex items-center gap-1 flex-shrink-0">
-                  <span class="text-[10px] font-bold text-taupe-500 mr-0.5">Status Dapur:</span>
-                  <button type="button"
-                          @click="ing.newStatus = 'full'"
-                          class="px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer"
-                          :class="ing.newStatus === 'full' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-cream-50 text-taupe-600 border-cream-200'">
-                    🟢 Full
-                  </button>
-                  <button type="button"
-                          @click="ing.newStatus = 'sedikit'"
-                          class="px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer"
-                          :class="ing.newStatus === 'sedikit' ? 'bg-amber-500 text-white border-amber-500 shadow-2xs' : 'bg-cream-50 text-taupe-600 border-cream-200'">
-                    🟡 Sedikit
-                  </button>
-                  <button type="button"
-                          @click="ing.newStatus = 'habis'"
-                          class="px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer"
-                          :class="ing.newStatus === 'habis' ? 'bg-red-600 text-white border-red-600 shadow-2xs' : 'bg-cream-50 text-taupe-600 border-cream-200'">
-                    🔴 Habis
-                  </button>
-                </div>
+
               </div>
 
             </div>
@@ -10816,6 +10843,7 @@
 
         const openAddPantryModal = (prefillName = '') => {
           const matchMaster = prefillName ? allIngredientCatalog.value.find(m => m.name.toLowerCase() === prefillName.toLowerCase()) : null;
+          const grp = matchMaster?.group || 'Bumbu';
           modalPantryStock.value = {
             show: true,
             isEdit: false,
@@ -10824,7 +10852,8 @@
               name: prefillName,
               qty: '1',
               unit: matchMaster?.defaultUnit || 'gram',
-              group: matchMaster?.group || 'Bumbu',
+              group: grp,
+              status: 'full',
               note: ''
             }
           };
@@ -10842,6 +10871,7 @@
               qty: item.qty || '1',
               unit: item.unit || 'gram',
               group: item.group || 'Bumbu',
+              status: item.status || (Number(item.qty) <= 0 ? 'habis' : 'full'),
               note: item.note || ''
             }
           };
@@ -10850,25 +10880,36 @@
         };
 
         const savePantryModal = () => {
-          const { id, name, qty, unit, group, note } = modalPantryStock.value.form;
+          const { id, name, qty, unit, group, status, note } = modalPantryStock.value.form;
           const trimmedName = (name || '').trim();
           if (!trimmedName) {
             showToast('Nama bahan wajib diisi!', 'error');
             return;
           }
-          const trimmedUnit = (unit || 'gram').trim();
           const trimmedGroup = normalizeIngredientGroup(group, trimmedName);
           const safeId = id || ('ps_' + Date.now());
+          const isStaple = isStapleIngredient(trimmedGroup, trimmedName);
 
-          pantryStocks.value[safeId] = {
+          const savedItem = {
             id: safeId,
             name: trimmedName,
-            qty: String(qty || '1').trim(),
-            unit: trimmedUnit,
             group: trimmedGroup,
             note: (note || '').trim(),
             updatedAt: new Date().toISOString()
           };
+
+          if (isStaple) {
+            savedItem.status = status || 'full';
+            savedItem.qty = '1';
+            savedItem.unit = (unit || 'Kemasan').trim();
+          } else {
+            const trimmedUnit = (unit || 'gram').trim();
+            savedItem.qty = String(qty || '1').trim();
+            savedItem.unit = trimmedUnit;
+          }
+
+          pantryStocks.value[safeId] = savedItem;
+
           if (deletedPantryIds.value.includes(safeId)) {
             deletedPantryIds.value = deletedPantryIds.value.filter(pid => pid !== safeId);
             localStorage.setItem('seleraku_deleted_pantry_stocks', JSON.stringify(deletedPantryIds.value));
@@ -10876,7 +10917,12 @@
           savePantryStocks();
           modalPantryStock.value.show = false;
           activePantrySuggest.value = false;
-          showToast(`Stok "${trimmedName}" (${qty || 1} ${trimmedUnit}) berhasil disimpan!`);
+          if (isStaple) {
+            const statusLabel = savedItem.status === 'full' ? '🟢 Full' : (savedItem.status === 'sedikit' ? '🟡 Menipis' : '🔴 Habis');
+            showToast(`Stok "${trimmedName}" (${statusLabel}) berhasil disimpan!`);
+          } else {
+            showToast(`Stok "${trimmedName}" (${savedItem.qty} ${savedItem.unit}) berhasil disimpan!`);
+          }
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
@@ -11004,6 +11050,13 @@
             f.ingredients.forEach(ing => {
               if (!ing || !ing.name) return;
               const normName = ing.name.trim();
+              const normGrp = normalizeIngredientGroup(ing.group, normName);
+
+              // Persausan, Tepung, dan Bumbu tidak dipotong stoknya saat masak/prep (dipantau via 3 indikator sebelum belanja)
+              if (isStapleIngredient(normGrp, normName)) {
+                return;
+              }
+
               const normUnit = (ing.unit || '').trim().toLowerCase();
               const key = `${normName.toLowerCase()}_${normUnit}`;
 
@@ -12578,12 +12631,10 @@
               const normGrp = normalizeIngredientGroup(ing.group, ing.name);
 
               // Cek apakah bahan ini termasuk persausan, tepung, atau perbumbuan (staple)
+              // Kategori ini dipantau secara mandiri lewat 3 indikator stok di dapur sebelum belanja,
+              // jadi tidak dimasukkan sebagai takaran resep (sdm/sdt) ke daftar belanja.
               if (isStapleIngredient(normGrp, normName)) {
-                const pStock = getPantryStockForIngredient(normName);
-                // Jika stok di dapur bertanda Full: lewati (jangan masuk belanjaan!)
-                if (pStock && (pStock.status === 'full' || (!pStock.status && Number(pStock.qty) > 0))) {
-                  return;
-                }
+                return;
               }
 
               const key = `${normName.toLowerCase()}_${normUnit}`;
