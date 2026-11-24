@@ -2501,7 +2501,8 @@
 
         <!-- Header Banner -->
         <div class="bg-white p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-card">
-          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b border-cream-100">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-5"
+               :class="stockSubTab === 'dishes' ? 'pb-6 border-b border-cream-100' : ''">
             <div>
               <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-taupe-500 mb-1">
                 <i data-lucide="package" class="w-4 h-4 text-taupe-400"></i>
@@ -2635,53 +2636,7 @@
             </div>
           </div>
 
-          <!-- Summary Cards: Pantry Subtab -->
-          <div v-else-if="stockSubTab === 'pantry'" class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
-            <div class="p-4 rounded-2xl bg-emerald-50/80 border border-emerald-200 flex items-center gap-3.5">
-              <div class="w-10 h-10 rounded-xl bg-white text-emerald-700 flex items-center justify-center shadow-xs border border-emerald-200 flex-shrink-0">
-                <i data-lucide="package" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <div class="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Total Stok Bahan</div>
-                <div class="text-sm font-bold text-espresso-900">
-                  {{ pantryItemCount }} Macam Bahan Tersimpan
-                </div>
-                <div class="text-[11px] text-taupe-500 mt-0.5">
-                  Otomatis terhubung ke Rincian Belanja
-                </div>
-              </div>
-            </div>
 
-            <div class="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3.5">
-              <div class="w-10 h-10 rounded-xl bg-white text-caramel-600 flex items-center justify-center shadow-xs border border-cream-200 flex-shrink-0">
-                <i data-lucide="sparkles" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <div class="text-[11px] font-bold uppercase tracking-wider text-taupe-500">Bumbu &amp; Rempah</div>
-                <div class="text-sm font-bold text-espresso-900">
-                  {{ pantryBumbuCount }} Macam Bahan
-                </div>
-                <div class="text-[11px] text-taupe-500 mt-0.5">
-                  Bawang, kecap, jahe, ketumbar, dll
-                </div>
-              </div>
-            </div>
-
-            <div class="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3.5">
-              <div class="w-10 h-10 rounded-xl bg-white text-espresso-700 flex items-center justify-center shadow-xs border border-cream-200 flex-shrink-0">
-                <i data-lucide="leaf" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <div class="text-[11px] font-bold uppercase tracking-wider text-taupe-500">Bahan Segar &amp; Lainnya</div>
-                <div class="text-sm font-bold text-espresso-900">
-                  {{ pantryFreshCount }} Macam Bahan
-                </div>
-                <div class="text-[11px] text-taupe-500 mt-0.5">
-                  Sayur mayur, daging &amp; unggas
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- ======================================================== -->
