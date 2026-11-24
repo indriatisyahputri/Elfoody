@@ -4718,6 +4718,171 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- MODAL: MASAK / PREP MENU & PENGURANGAN STOK DAPUR         -->
+    <!-- ======================================================== -->
+    <div v-if="modalCookMenuDeduction.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
+      <div class="bg-white max-w-xl w-full rounded-t-[32px] sm:rounded-3xl border-t sm:border border-cream-200 shadow-hover p-5 sm:p-7 space-y-5 max-h-[90vh] overflow-y-auto ios-scroll ios-safe-bottom">
+        <div class="sm:hidden w-12 h-1.5 rounded-full bg-taupe-300 mx-auto -mt-2 mb-2"></div>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3.5 border-b border-cream-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center text-xl shadow-2xs border border-amber-200">
+              🍳
+            </div>
+            <div>
+              <h3 class="font-serif font-bold text-base sm:text-lg text-espresso-900">
+                Pengurangan Stok Masak / Prep
+              </h3>
+              <p class="text-xs text-taupe-500 mt-0.5">
+                Pilih menu yang dimasak/prep. Takaran bahan default sesuai resep &amp; bisa diedit riil.
+              </p>
+            </div>
+          </div>
+          <button @click="modalCookMenuDeduction.show = false" class="text-taupe-400 hover:text-espresso-800 p-1 cursor-pointer">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- Select Menu Yang Dimasak / Prep -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold uppercase tracking-wider text-taupe-600">
+            Pilih Menu Masak / Prep:
+          </label>
+          <div class="relative">
+            <select v-model="modalCookMenuDeduction.selectedFoodId"
+                    @change="loadCookMenuIngredients($event.target.value)"
+                    class="w-full pl-3.5 pr-9 py-2.5 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer shadow-2xs min-h-[44px]">
+              <option value="" disabled>— Pilih Masakan —</option>
+              
+              <!-- Optgroup 1: Menu Terpilih Pekan Ini -->
+              <optgroup v-if="currentWeekCookableDishes.length > 0" label="📅 Menu Terpilih Pekan Ini (Sabtu - Jumat):">
+                <option v-for="item in currentWeekCookableDishes" :key="item.food.id" :value="item.food.id">
+                  {{ item.food.name }}{{ item.assignedDate ? ' (Jadwal: ' + formatShortDate(item.assignedDate) + ' ' + (item.assignedSlot || '') + ')' : (item.entryLabel ? ' (' + item.entryLabel + ')' : '') }}
+                </option>
+              </optgroup>
+
+              <!-- Optgroup 2: Semua Resep Masakan -->
+              <optgroup label="📖 Semua Resep Masakan (Katalog):">
+                <option v-for="f in foodItems" :key="f.id" :value="f.id">
+                  {{ f.name }} ({{ getCategoryMeta(f.category).label }})
+                </option>
+              </optgroup>
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-taupe-400">
+              <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ingredients List Section -->
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold uppercase tracking-wider text-taupe-600">
+              Kebutuhan Bahan (Default Resep &amp; Bisa Diedit):
+            </label>
+            <span class="text-[11px] text-taupe-500">
+              {{ modalCookMenuDeduction.ingredients.filter(i => i.isDeducted).length }} bahan terpilih
+            </span>
+          </div>
+
+          <!-- Empty State if no ingredients in recipe -->
+          <div v-if="modalCookMenuDeduction.ingredients.length === 0"
+               class="p-6 rounded-2xl bg-cream-50 border border-dashed border-cream-200 text-center space-y-1">
+            <div class="text-xl">🥣</div>
+            <div class="text-xs font-bold text-espresso-800">Belum ada takaran bahan di resep masakan ini.</div>
+            <p class="text-[11px] text-taupe-500">Buka Tab Resep untuk menambahkan rincian takaran bahan makanan ini.</p>
+          </div>
+
+          <!-- Ingredient Cards -->
+          <div v-else class="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+            <div v-for="(ing, idx) in modalCookMenuDeduction.ingredients" :key="idx"
+                 class="p-3 sm:p-3.5 rounded-2xl border transition space-y-2.5 shadow-2xs"
+                 :class="ing.isDeducted ? 'bg-white border-cream-200' : 'bg-cream-50/50 border-cream-100 opacity-60'">
+              
+              <!-- Row 1: Checkbox + Name + Pantry Stock Badge -->
+              <div class="flex items-center justify-between gap-2">
+                <label class="flex items-center gap-2 cursor-pointer min-w-0">
+                  <input type="checkbox" v-model="ing.isDeducted"
+                         class="w-4 h-4 rounded text-amber-600 focus:ring-amber-400 cursor-pointer">
+                  <span class="text-sm flex-shrink-0">{{ getGroupIcon(ing.group) }}</span>
+                  <span class="font-bold text-xs text-espresso-900 truncate">{{ ing.name }}</span>
+                </label>
+
+                <!-- Current Stock Badge -->
+                <div class="flex items-center gap-1.5 flex-shrink-0">
+                  <span v-if="ing.pantryMatch"
+                        class="text-[10px] font-semibold px-2 py-0.5 rounded-lg border flex items-center gap-1"
+                        :class="Number(ing.pantryMatch.qty) > 0 ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'">
+                    <span>🥫 Stok: {{ ing.pantryMatch.qty }} {{ ing.pantryMatch.unit }}</span>
+                  </span>
+                  <span v-else class="text-[10px] text-taupe-400 italic px-1.5 py-0.5 rounded bg-cream-50">
+                    Belum ada di stok
+                  </span>
+                </div>
+              </div>
+
+              <!-- Row 2: Editable Used Quantity + Reference + Status Bar -->
+              <div v-if="ing.isDeducted" class="pt-2 border-t border-cream-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+                <!-- Quantity Input -->
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-bold text-taupe-600 whitespace-nowrap">Takaran Dipakai:</span>
+                  <input type="text"
+                         v-model="ing.usedQty"
+                         placeholder="Qty"
+                         class="w-20 px-2.5 py-1.5 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 text-center focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs">
+                  <span class="text-xs font-bold text-taupe-800">{{ ing.unit }}</span>
+                  <span class="text-[10.5px] text-taupe-400">(Resep: {{ ing.recipeQty }} {{ ing.unit }})</span>
+                </div>
+
+                <!-- 3-State Toggle for Staples (Persausan, Tepung, Bumbu) -->
+                <div v-if="isStapleIngredient(ing.group, ing.name) && ing.pantryMatch"
+                     class="flex items-center gap-1 flex-shrink-0">
+                  <span class="text-[10px] font-bold text-taupe-500 mr-0.5">Status Dapur:</span>
+                  <button type="button"
+                          @click="ing.newStatus = 'full'"
+                          class="px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer"
+                          :class="ing.newStatus === 'full' ? 'bg-emerald-600 text-white border-emerald-600 shadow-2xs' : 'bg-cream-50 text-taupe-600 border-cream-200'">
+                    🟢 Full
+                  </button>
+                  <button type="button"
+                          @click="ing.newStatus = 'sedikit'"
+                          class="px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer"
+                          :class="ing.newStatus === 'sedikit' ? 'bg-amber-500 text-white border-amber-500 shadow-2xs' : 'bg-cream-50 text-taupe-600 border-cream-200'">
+                    🟡 Sedikit
+                  </button>
+                  <button type="button"
+                          @click="ing.newStatus = 'habis'"
+                          class="px-2 py-1 rounded-lg text-[10px] font-bold border transition cursor-pointer"
+                          :class="ing.newStatus === 'habis' ? 'bg-red-600 text-white border-red-600 shadow-2xs' : 'bg-cream-50 text-taupe-600 border-cream-200'">
+                    🔴 Habis
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-cream-100">
+          <button type="button"
+                  @click="modalCookMenuDeduction.show = false"
+                  class="px-4 py-2.5 rounded-xl text-xs font-bold text-taupe-700 bg-cream-100 hover:bg-cream-200 transition cursor-pointer min-h-[42px]">
+            Batal
+          </button>
+          <button type="button"
+                  @click="confirmCookMenuDeduction()"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 shadow-card transition cursor-pointer flex items-center gap-1.5 min-h-[42px]">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Simpan &amp; Kurangi Stok Dapur</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- MODAL 5B: PAKAI / KURANGI STOK BAHAN DAPUR (PANTRY)       -->
     <!-- ======================================================== -->
     <div v-if="modalUsePantry.show" class="fixed inset-0 z-50 flex sm:items-center items-end justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-xs">
@@ -6376,6 +6541,13 @@
             note: ''
           }
         });
+        const modalCookMenuDeduction = ref({
+          show: false,
+          selectedFoodId: '',
+          selectedSlotLabel: '',
+          ingredients: []
+        });
+
         const modalUsePantry = ref({
           show: false,
           item: null,
@@ -10675,6 +10847,149 @@
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
+        const currentWeekCookableDishes = computed(() => {
+          const seenFoodIds = new Set();
+          const list = [];
+
+          // 1. Ambil dari activeWeeklyPoolEntries (Paket & Menu Terpilih Pekan Ini)
+          (activeWeeklyPoolEntries.value || []).forEach(entry => {
+            const foods = getWeeklyEntryUniqueFoods(entry);
+            foods.forEach(f => {
+              if (f && !seenFoodIds.has(f.id)) {
+                seenFoodIds.add(f.id);
+                list.push({
+                  food: f,
+                  entryLabel: entry.label || f.name,
+                  assignedDate: entry.assignedDate || '',
+                  assignedSlot: entry.assignedSlot || ''
+                });
+              }
+            });
+          });
+
+          // 2. Ambil dari mealPlans yang dijadwalkan pada siklus belanja / pekan aktif
+          const shopRange = activeShoppingRange.value || activeWeeklyRange.value;
+          if (shopRange && shopRange.start && shopRange.end) {
+            const [sY, sM, sD] = shopRange.start.split('-').map(Number);
+            const [eY, eM, eD] = shopRange.end.split('-').map(Number);
+            const startD = new Date(sY, sM - 1, sD);
+            const endD = new Date(eY, eM - 1, eD);
+
+            for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
+              const ds = formatDateObj(d);
+              const dayMeals = getDayMeals(ds);
+              mealSlots.forEach(slot => {
+                const meal = dayMeals[slot.id];
+                if (!meal || meal.type === 'tidak_masak') return;
+                const dishes = resolveSlotDishes(meal, ds, slot.id);
+                dishes.forEach(f => {
+                  if (f && !seenFoodIds.has(f.id)) {
+                    seenFoodIds.add(f.id);
+                    list.push({
+                      food: f,
+                      entryLabel: meal.type === 'paket' ? getPackageName(meal.packageId) : f.name,
+                      assignedDate: ds,
+                      assignedSlot: slot.shortLabel || slot.id
+                    });
+                  }
+                });
+              });
+            }
+          }
+
+          return list;
+        });
+
+        const loadCookMenuIngredients = (foodId) => {
+          const f = getFoodItem(foodId);
+          if (!f || !f.ingredients) {
+            modalCookMenuDeduction.value.ingredients = [];
+            return;
+          }
+          modalCookMenuDeduction.value.ingredients = (f.ingredients || []).map(ing => {
+            const pMatch = getPantryStockForIngredient(ing.name);
+            const normGrp = normalizeIngredientGroup(ing.group, ing.name);
+            let initStatus = 'full';
+            if (pMatch && pMatch.status) {
+              initStatus = pMatch.status;
+            } else if (pMatch && Number(pMatch.qty) <= 0) {
+              initStatus = 'habis';
+            }
+            return {
+              name: ing.name,
+              recipeQty: (ing.qty !== undefined && ing.qty !== null && String(ing.qty).trim() !== '') ? String(ing.qty) : '1',
+              usedQty: (ing.qty !== undefined && ing.qty !== null && String(ing.qty).trim() !== '') ? String(ing.qty) : '1',
+              unit: ing.unit || '',
+              group: normGrp,
+              pantryMatch: pMatch,
+              isDeducted: true,
+              newStatus: initStatus
+            };
+          });
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const openCookMenuDeductionModal = (preselectedFoodId = '', slotLabel = '') => {
+          modalCookMenuDeduction.value.show = true;
+          modalCookMenuDeduction.value.selectedSlotLabel = slotLabel || '';
+          
+          let targetFoodId = preselectedFoodId;
+          if (!targetFoodId) {
+            if (currentWeekCookableDishes.value.length > 0) {
+              targetFoodId = currentWeekCookableDishes.value[0].food.id;
+            } else if (foodItems.value.length > 0) {
+              targetFoodId = foodItems.value[0].id;
+            }
+          }
+          modalCookMenuDeduction.value.selectedFoodId = targetFoodId;
+          if (targetFoodId) {
+            loadCookMenuIngredients(targetFoodId);
+          } else {
+            modalCookMenuDeduction.value.ingredients = [];
+          }
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmCookMenuDeduction = () => {
+          const f = getFoodItem(modalCookMenuDeduction.value.selectedFoodId);
+          const fName = f ? f.name : 'Masakan';
+          const ings = modalCookMenuDeduction.value.ingredients.filter(i => i.isDeducted);
+
+          if (ings.length === 0) {
+            showToast('Pilih minimal 1 bahan yang dipakai memasak / prep!', 'error');
+            return;
+          }
+
+          let deductedCount = 0;
+          ings.forEach(item => {
+            const pMatch = getPantryStockForIngredient(item.name);
+            if (pMatch && pMatch.id && pantryStocks.value[pMatch.id]) {
+              const liveItem = pantryStocks.value[pMatch.id];
+              const usedNum = parseIngredientQtyNumber(item.usedQty);
+
+              if (usedNum !== null && usedNum > 0) {
+                const curNum = parseIngredientQtyNumber(liveItem.qty) || 0;
+                const newNum = Math.max(0, Math.round((curNum - usedNum) * 100) / 100);
+                liveItem.qty = String(newNum);
+                if (newNum <= 0) {
+                  liveItem.status = 'habis';
+                } else if (item.newStatus) {
+                  liveItem.status = item.newStatus;
+                }
+              } else if (item.newStatus) {
+                liveItem.status = item.newStatus;
+              }
+
+              liveItem.updatedAt = new Date().toISOString();
+              deductedCount++;
+            }
+          });
+
+          savePantryStocks();
+          modalCookMenuDeduction.value.show = false;
+          showToast(`🍳 Berhasil! Stok dapur untuk "${fName}" telah dikurangi (${deductedCount} bahan terpotong).`, 'success');
+        };
+
         const openUsePantryModal = (item) => {
           modalUsePantry.value = {
             show: true,
@@ -13220,6 +13535,11 @@
           savePantryModal,
           adjustPantryStock,
           modalUsePantry,
+          modalCookMenuDeduction,
+          currentWeekCookableDishes,
+          openCookMenuDeductionModal,
+          loadCookMenuIngredients,
+          confirmCookMenuDeduction,
           openUsePantryModal,
           confirmUsePantryStock,
           parseIngredientQtyNumber,
