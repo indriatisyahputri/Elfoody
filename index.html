@@ -2576,6 +2576,13 @@
                   <i data-lucide="plus" class="w-4 h-4"></i>
                   <span>+ Sisa Masakan</span>
                 </button>
+                <button v-if="Object.keys(manualStocks).length > 0"
+                        type="button"
+                        @click="clearAllManualStocks()"
+                        class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 shadow-xs transition cursor-pointer min-h-[40px]">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  <span>Kosongkan Stok</span>
+                </button>
               </div>
 
               <!-- Context Button for Pantry -->
@@ -2592,6 +2599,13 @@
                         class="flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-card transition cursor-pointer min-h-[40px]">
                   <i data-lucide="plus" class="w-4 h-4"></i>
                   <span>+ Catat Stok Bahan Baru</span>
+                </button>
+                <button v-if="Object.keys(pantryStocks).length > 0"
+                        type="button"
+                        @click="clearAllPantryStocks()"
+                        class="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-2xl text-xs font-bold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 shadow-xs transition cursor-pointer min-h-[40px]">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  <span>Kosongkan Stok</span>
                 </button>
               </div>
             </div>
@@ -3342,7 +3356,11 @@
               </div>
 
               <!-- Grid of Staples with 1-Tap Status Selector -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              <div v-if="filteredPantryStapleList.length === 0" class="p-6 text-center text-xs text-taupe-500 bg-cream-50 rounded-2xl border border-cream-200 space-y-1">
+                <p class="font-bold text-espresso-800">Belum ada stok bahan bumbu, saus, atau tepung tercatat di dapur.</p>
+                <p>Klik tombol <strong>+ Tambah Stok Dapur</strong> untuk mulai mencatat stok bumbu, saus, dan tepung Anda.</p>
+              </div>
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
                 <div v-for="item in filteredPantryStapleList" :key="item.id"
                      class="p-2.5 sm:p-3 rounded-2xl border transition flex items-center justify-between gap-2.5 shadow-2xs"
                      :class="item.status === 'habis'
@@ -7486,33 +7504,8 @@
         };
 
         // Master Library of Common Ingredients with Standard Units & Groups
-                // Default Starter Pantry Staples (Persausan, Tepung, dan Perbumbuan)
-        const DEFAULT_PANTRY_STAPLES = [
-          // Persausan
-          { name: 'Kecap Manis', group: 'Sauce', unit: 'Botol', status: 'full' },
-          { name: 'Kecap Asin', group: 'Sauce', unit: 'Botol', status: 'full' },
-          { name: 'Saus Tiram', group: 'Sauce', unit: 'Botol', status: 'full' },
-          { name: 'Saus Sambal', group: 'Sauce', unit: 'Botol', status: 'full' },
-          { name: 'Saus Tomat', group: 'Sauce', unit: 'Botol', status: 'full' },
-          { name: 'Minyak Goreng', group: 'Sauce', unit: 'Liter', status: 'full' },
-          { name: 'Minyak Wijen', group: 'Sauce', unit: 'Botol', status: 'full' },
-          
-          // Tepung-Tepungan
-          { name: 'Tepung Terigu', group: 'Tepung', unit: 'Bungkus', status: 'full' },
-          { name: 'Tepung Maizena', group: 'Tepung', unit: 'Bungkus', status: 'full' },
-          { name: 'Tepung Tapioka', group: 'Tepung', unit: 'Bungkus', status: 'full' },
-          { name: 'Tepung Beras', group: 'Tepung', unit: 'Bungkus', status: 'full' },
-          { name: 'Tepung Bumbu Serbaguna', group: 'Tepung', unit: 'Bungkus', status: 'full' },
-
-          // Perbumbuan & Rempah
-          { name: 'Garam', group: 'Bumbu', unit: 'Toples/Bungkus', status: 'full' },
-          { name: 'Gula Pasir', group: 'Bumbu', unit: 'Toples/Kg', status: 'full' },
-          { name: 'Kaldu Jamur / Totole', group: 'Bumbu', unit: 'Bungkus', status: 'full' },
-          { name: 'Kaldu Ayam / Sapi Bubuk', group: 'Bumbu', unit: 'Bungkus', status: 'full' },
-          { name: 'Merica / Lada Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
-          { name: 'Ketumbar Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
-          { name: 'Kunyit Bubuk', group: 'Bumbu', unit: 'Botol/Sachet', status: 'full' }
-        ];
+                // Default Starter Pantry Staples (Dikosongkan sesuai permintaan user, agar diisi dari awal dari rumah)
+        const DEFAULT_PANTRY_STAPLES = [];
 
         // 3 Indikator Kondisi Stok (Full, Sedikit, Habis) HANYA untuk kategori Saus, Bumbu, dan Tepung (Bukan Rempah / Bawang / Cabai)
         const isStapleIngredient = (group, name = '') => {
@@ -8057,13 +8050,27 @@
             const storedChecks = localStorage.getItem('seleraku_shopping_checked');
             checkedItems.value = storedChecks ? JSON.parse(storedChecks) : {};
 
-            const storedStocks = localStorage.getItem('seleraku_manual_stocks');
-            manualStocks.value = storedStocks ? JSON.parse(storedStocks) : {};
+            // Migration flag: Kosongkan semua stok (manual sisa masakan & stok bahan dapur) agar user dapat mulai mengisi dari awal
+            const STOCK_RESET_FLAG = 'elfoody_stock_reset_v20261124_clean';
+            if (!localStorage.getItem(STOCK_RESET_FLAG)) {
+              manualStocks.value = {};
+              pantryStocks.value = {};
+              deletedManualStockIds.value = [];
+              deletedPantryIds.value = [];
+              localStorage.setItem('seleraku_manual_stocks', JSON.stringify({}));
+              localStorage.setItem('seleraku_pantry_stocks', JSON.stringify({}));
+              localStorage.setItem(STOCK_RESET_FLAG, 'true');
+              saveManualStocks();
+              savePantryStocks();
+            } else {
+              const storedStocks = localStorage.getItem('seleraku_manual_stocks');
+              manualStocks.value = storedStocks ? JSON.parse(storedStocks) : {};
 
-            const storedPantry = localStorage.getItem('seleraku_pantry_stocks');
-            pantryStocks.value = storedPantry ? migratePantryStocksGroups(JSON.parse(storedPantry)) : {};
-            ensurePantryStaples();
-            localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
+              const storedPantry = localStorage.getItem('seleraku_pantry_stocks');
+              pantryStocks.value = storedPantry ? migratePantryStocksGroups(JSON.parse(storedPantry)) : {};
+              ensurePantryStaples();
+              localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
+            }
 
             const storedMaster = localStorage.getItem('seleraku_master_ingredients');
             if (storedMaster) {
@@ -10676,27 +10683,6 @@
         const ensurePantryStaples = () => {
           if (!pantryStocks.value) pantryStocks.value = {};
           let changed = false;
-          DEFAULT_PANTRY_STAPLES.forEach(def => {
-            const low = def.name.toLowerCase().trim();
-            const exists = Object.values(pantryStocks.value).find(p => (p.name || '').toLowerCase().trim() === low);
-            if (!exists) {
-              const safeId = 'ps_staple_' + Math.random().toString(36).substr(2, 9);
-              pantryStocks.value[safeId] = {
-                id: safeId,
-                name: def.name,
-                qty: '1',
-                unit: def.unit,
-                group: def.group,
-                status: def.status || 'full',
-                note: 'Stok Dapur Inti',
-                updatedAt: new Date().toISOString()
-              };
-              changed = true;
-            } else if (!exists.status) {
-              exists.status = Number(exists.qty) <= 0 ? 'habis' : 'full';
-              changed = true;
-            }
-          });
           // Sinkronisasi kategori dan pastikan HANYA bahan Saus, Bumbu, dan Tepung yang memiliki status 3-indikator
           Object.values(pantryStocks.value).forEach(p => {
             const low = (p.name || '').toLowerCase().trim();
@@ -10883,6 +10869,54 @@
               modalConfirm.value.show = false;
               if (modalPantryStock.value.show) modalPantryStock.value.show = false;
               showToast(`Stok "${name}" berhasil dihapus.`);
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const clearAllPantryStocks = () => {
+          modalConfirm.value = {
+            show: true,
+            title: 'Kosongkan Semua Stok Dapur?',
+            message: 'Semua catatan stok bahan pantry akan dikosongkan. Anda dapat mulai mengisi ulang dari awal sesuai kebutuhan riil di rumah.',
+            confirmButtonText: 'Ya, Kosongkan Semua',
+            cancelButtonText: 'Batal',
+            onConfirm: () => {
+              Object.keys(pantryStocks.value || {}).forEach(id => {
+                if (!deletedPantryIds.value.includes(id)) {
+                  deletedPantryIds.value.push(id);
+                }
+              });
+              localStorage.setItem('seleraku_deleted_pantry_stocks', JSON.stringify(deletedPantryIds.value));
+              pantryStocks.value = {};
+              savePantryStocks();
+              modalConfirm.value.show = false;
+              showToast('Semua stok bahan dapur berhasil dikosongkan.', 'success');
+              nextTick(() => { if (window.lucide) lucide.createIcons(); });
+            }
+          };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const clearAllManualStocks = () => {
+          modalConfirm.value = {
+            show: true,
+            title: 'Kosongkan Stok Makanan Kulkas?',
+            message: 'Semua catatan sisa masakan di kulkas akan dikosongkan.',
+            confirmButtonText: 'Ya, Kosongkan',
+            cancelButtonText: 'Batal',
+            onConfirm: () => {
+              Object.keys(manualStocks.value || {}).forEach(id => {
+                if (!deletedManualStockIds.value.includes(id)) {
+                  deletedManualStockIds.value.push(id);
+                }
+              });
+              localStorage.setItem('seleraku_deleted_manual_stocks', JSON.stringify(deletedManualStockIds.value));
+              manualStocks.value = {};
+              saveManualStocks();
+              modalConfirm.value.show = false;
+              showToast('Semua stok makanan berhasil dikosongkan.', 'success');
               nextTick(() => { if (window.lucide) lucide.createIcons(); });
             }
           };
@@ -13617,6 +13651,8 @@
           parseIngredientQtyNumber,
           confirmDeletePantryStock,
           deletePantryStock,
+          clearAllPantryStocks,
+          clearAllManualStocks,
           getPantryStockForIngredient,
           aggregatedShoppingList,
           getIngredientsInGroup,
