@@ -780,13 +780,8 @@
               </h2>
             </div>
 
-            <!-- Quick Actions: Tukar Jadwal & Pilih Paket (Centrally in Tab Jadwal) -->
+            <!-- Quick Actions: Pilih Paket (Centrally in Tab Jadwal) -->
             <div class="flex items-center gap-2 self-start md:self-center">
-              <button type="button" @click="openSwapModal"
-                      class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-white hover:bg-cream-100 text-espresso-800 border border-cream-300 shadow-2xs transition flex items-center gap-1.5 cursor-pointer min-h-[42px]">
-                <i data-lucide="arrow-left-right" class="w-4 h-4 text-caramel-600"></i>
-                <span>Tukar Jadwal Antar Hari</span>
-              </button>
               <button @click="setTab('paket')"
                       class="px-4 py-2.5 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition flex items-center gap-1.5 cursor-pointer min-h-[42px]">
                 <i data-lucide="plus" class="w-4 h-4"></i>
