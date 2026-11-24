@@ -3114,23 +3114,9 @@
           </div>
 
           <!-- Active Range Info Banner & Progress Bar -->
-          <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            <!-- Box 1: Range Target -->
-            <div class="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-cream-200 text-espresso-800 flex items-center justify-center flex-shrink-0">
-                <i data-lucide="calendar-check" class="w-5 h-5"></i>
-              </div>
-              <div>
-                <div class="text-[11px] uppercase font-bold text-taupe-400">Rentang Menu Masak:</div>
-                <div class="text-xs font-bold text-espresso-900">
-                  {{ formatTanggalIndo(activeShoppingRange.start) }} s/d {{ formatTanggalIndo(activeShoppingRange.end) }}
-                </div>
-                <div class="text-[10px] text-taupe-500">Total 7 Hari Masak (Sabtu - Jumat)</div>
-              </div>
-            </div>
+          <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <!-- Box 2: Total Items to Buy -->
+            <!-- Box 1: Total Items to Buy -->
             <div class="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center flex-shrink-0">
                 <i data-lucide="package-check" class="w-5 h-5"></i>
@@ -9462,35 +9448,51 @@
         const isDateEditable = () => true;
 
         // Check if two dates belong to the exact same calendar week (Monday to Sunday)
-        const isSameWeek = (dateStr1, dateStr2) => {
-          if (!dateStr1 || !dateStr2) return false;
-          const getMonday = (d) => {
-            const date = new Date(d);
-            const day = date.getDay();
-            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-            const monday = new Date(date.setDate(diff));
-            monday.setHours(0, 0, 0, 0);
-            return monday.getTime();
-          };
-          const [y1, m1, d1] = dateStr1.split('-').map(Number);
-          const [y2, m2, d2] = dateStr2.split('-').map(Number);
-          return getMonday(new Date(y1, m1 - 1, d1)) === getMonday(new Date(y2, m2 - 1, d2));
-        };
-
-        // --- 5. SWIPEABLE WEEK DECK CALCULATION (Minggu Ini) ---
-        const currentWeekDays = computed(() => {
-          const days = [];
+        // Hitung rentang siklus masak 7 hari (Sabtu s/d Jumat)
+        const getFridayCycleRange = (cycleOffset = 0) => {
           const [cY, cM, cD] = currentDate.value.split('-').map(Number);
           const base = new Date(cY, cM - 1, cD);
-          
-          // Find Monday of the week with weekOffset
-          const dayOfWeek = base.getDay();
-          const diffToMonday = base.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1) + (weekOffset.value * 7);
-          const monday = new Date(base.setDate(diffToMonday));
+          const dayOfWeek = base.getDay(); // 0: Sun, 1: Mon, ... 5: Fri, 6: Sat
 
-          const dayNames = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+          // Hitung jarak ke Jumat pembuka siklus belanja:
+          const daysSinceFriday = (dayOfWeek - 5 + 7) % 7;
+          const targetFriday = new Date(base.getTime() + (-daysSinceFriday + (cycleOffset * 7)) * 86400000);
+          
+          // Rentang menu masak 7 hari: Sabtu (besoknya targetFriday) s/d Jumat berikutnya
+          const startSaturday = new Date(targetFriday.getTime() + 1 * 86400000);
+          const endFriday = new Date(startSaturday.getTime() + 6 * 86400000);
+
+          return {
+            fridayDate: formatDateObj(targetFriday),
+            start: formatDateObj(startSaturday),
+            end: formatDateObj(endFriday)
+          };
+        };
+
+        const isSameWeek = (dateStr1, dateStr2) => {
+          if (!dateStr1 || !dateStr2) return false;
+          const getCycleStartSaturday = (d) => {
+            const [y, m, dayNum] = d.split('-').map(Number);
+            const base = new Date(y, m - 1, dayNum);
+            const dayOfWeek = base.getDay();
+            const daysSinceFriday = (dayOfWeek - 5 + 7) % 7;
+            const targetFriday = new Date(base.getTime() - daysSinceFriday * 86400000);
+            const startSaturday = new Date(targetFriday.getTime() + 1 * 86400000);
+            return formatDateObj(startSaturday);
+          };
+          return getCycleStartSaturday(dateStr1) === getCycleStartSaturday(dateStr2);
+        };
+
+        // --- 5. SWIPEABLE WEEK DECK CALCULATION (Minggu Ini: Siklus Sabtu s/d Jumat) ---
+        const currentWeekDays = computed(() => {
+          const days = [];
+          const cycle = getFridayCycleRange(weekOffset.value);
+          const [sY, sM, sD] = cycle.start.split('-').map(Number);
+          const startSaturday = new Date(sY, sM - 1, sD);
+
+          const dayNames = ['Sabtu', 'Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
           for (let i = 0; i < 7; i++) {
-            const dayDate = new Date(monday.getTime() + i * 86400000);
+            const dayDate = new Date(startSaturday.getTime() + i * 86400000);
             const ds = formatDateObj(dayDate);
             days.push({
               dateStr: ds,
@@ -11108,31 +11110,7 @@
         };
 
         // --- 10. RINCIAN BELANJA (FRIDAY SHOPPING CYCLE AUTOMATION) ---
-        // "rencananya saya akan belanja tiap hari jumat, jadi rincian ini menampilkan daftar belanja untuk menu sabtu besok sampai jumat depan."
-        const getFridayCycleRange = (cycleOffset = 0) => {
-          const [cY, cM, cD] = currentDate.value.split('-').map(Number);
-          const base = new Date(cY, cM - 1, cD);
-          const dayOfWeek = base.getDay(); // 0: Sun, 1: Mon, ... 5: Fri, 6: Sat
-
-          // Hitung jarak hari ke hari Jumat pembuka siklus masak Sabtu s/d Jumat ini:
-          // Jumat (5): 0 hari lalu (hari ini)
-          // Sabtu (6): 1 hari lalu (kemarin)
-          // Minggu (0): 2 hari lalu
-          // Senin (1): 3 hari lalu ... Kamis (4): 6 hari lalu
-          const daysSinceFriday = (dayOfWeek - 5 + 7) % 7;
-          const targetFriday = new Date(base.getTime() + (-daysSinceFriday + (cycleOffset * 7)) * 86400000);
-          
-          // Rentang menu masak 7 hari: Sabtu (besoknya targetFriday) s/d Jumat depan
-          const startSaturday = new Date(targetFriday.getTime() + 1 * 86400000);
-          const endFriday = new Date(startSaturday.getTime() + 6 * 86400000);
-
-          return {
-            fridayDate: formatDateObj(targetFriday),
-            start: formatDateObj(startSaturday),
-            end: formatDateObj(endFriday)
-          };
-        };
-
+        // Siklus masak 7 hari (Sabtu s/d Jumat) dihitung menggunakan getFridayCycleRange() di atas
         const ongoingFridayRange = computed(() => getFridayCycleRange(-1));
         const fridayRange = computed(() => getFridayCycleRange(0));
         const nextFridayRange = computed(() => getFridayCycleRange(1));
