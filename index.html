@@ -4769,33 +4769,68 @@
           </button>
         </div>
 
-        <!-- Select Menu Yang Dimasak / Prep -->
-        <div class="space-y-1.5">
-          <label class="block text-xs font-bold uppercase tracking-wider text-taupe-600">
-            Pilih Menu Masak / Prep:
-          </label>
+        <!-- Select Paket / Menu Yang Dimasak / Prep -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="block text-xs font-bold uppercase tracking-wider text-taupe-600">
+              Pilih Paket Masak / Prep:
+            </label>
+            <span class="text-[11px] font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200">
+              📅 Paket Terjadwal
+            </span>
+          </div>
+
           <div class="relative">
-            <select v-model="modalCookMenuDeduction.selectedFoodId"
-                    @change="loadCookMenuIngredients($event.target.value)"
+            <select v-model="modalCookMenuDeduction.selectedTargetId"
+                    @change="loadCookTargetIngredients($event.target.value)"
                     class="w-full pl-3.5 pr-9 py-2.5 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer shadow-2xs min-h-[44px]">
-              <option value="" disabled>— Pilih Masakan —</option>
-              
-              <!-- Optgroup 1: Menu Terpilih Pekan Ini -->
-              <optgroup v-if="(currentWeekCookableDishes || []).length > 0" label="📅 Menu Terpilih Pekan Ini (Sabtu - Jumat):">
-                <option v-for="item in currentWeekCookableDishes" :key="item.food ? item.food.id : item.entryLabel" :value="item.food ? item.food.id : ''">
-                  {{ (item.food && item.food.name) || item.entryLabel }}{{ item.assignedDate ? ' (Jadwal: ' + formatShortDate(item.assignedDate) + ' ' + (item.assignedSlot || '') + ')' : (item.entryLabel ? ' (' + item.entryLabel + ')' : '') }}
+              <option value="" disabled>— Pilih Paket yang Dimasak / Prep —</option>
+
+              <!-- Optgroup 1: Paket yang Sedang Dijadwalkan (Pekan Ini) -->
+              <optgroup v-if="scheduledCookablePackages.length > 0" label="📅 Paket Yang Sedang Dijadwalkan (Pekan Ini):">
+                <option v-for="target in scheduledCookablePackages" :key="target.id" :value="target.id">
+                  {{ target.label }}
                 </option>
               </optgroup>
 
-              <!-- Optgroup 2: Semua Resep Masakan -->
-              <optgroup label="📖 Semua Resep Masakan (Katalog):">
-                <option v-for="f in (foodItems || [])" :key="f.id" :value="f.id">
-                  {{ f.name }} ({{ (getCategoryMeta(f.category) || {}).label || 'Masakan' }})
+              <!-- Optgroup 2: Paket Pilihan Pekan Ini (Belum Di-plot Jadwal) -->
+              <optgroup v-if="poolCookablePackages.length > 0" label="📦 Paket Pilihan Pekan Ini (Belum Di-plot):">
+                <option v-for="target in poolCookablePackages" :key="target.id" :value="target.id">
+                  {{ target.label }}
+                </option>
+              </optgroup>
+
+              <!-- Optgroup 3: Semua Paket Menu (Katalog) -->
+              <optgroup v-if="catalogCookablePackages.length > 0" label="📖 Katalog Semua Paket Menu:">
+                <option v-for="target in catalogCookablePackages" :key="target.id" :value="target.id">
+                  {{ target.label }}
+                </option>
+              </optgroup>
+
+              <!-- Optgroup 4: Masakan Satuan (Resep Tunggal) -->
+              <optgroup label="🍲 Masakan Satuan (Resep Tunggal):">
+                <option v-for="target in singleCookableDishes" :key="target.id" :value="target.id">
+                  {{ target.label }}
                 </option>
               </optgroup>
             </select>
             <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-taupe-400">
               <i data-lucide="chevron-down" class="w-4 h-4"></i>
+            </div>
+          </div>
+
+          <!-- Highlight Detail Paket yang Dipilih -->
+          <div v-if="modalCookMenuDeduction.targetFoods && modalCookMenuDeduction.targetFoods.length > 0"
+               class="p-3 bg-amber-50/70 border border-amber-200/90 rounded-2xl space-y-1 shadow-2xs">
+            <div class="flex items-center justify-between text-xs font-bold text-amber-950">
+              <span class="truncate">📦 {{ modalCookMenuDeduction.targetTitle }}</span>
+              <span v-if="modalCookMenuDeduction.targetSubtitle" class="text-[10.5px] font-semibold px-2 py-0.5 rounded-lg bg-amber-100/90 text-amber-900 border border-amber-200 flex-shrink-0">
+                {{ modalCookMenuDeduction.targetSubtitle }}
+              </span>
+            </div>
+            <div class="text-[11px] text-taupe-600 flex items-start gap-1">
+              <span class="font-bold text-espresso-800 flex-shrink-0">Menu Paket:</span>
+              <span class="text-espresso-900 font-medium">{{ modalCookMenuDeduction.targetFoods.map(f => f.name).join(' • ') }}</span>
             </div>
           </div>
         </div>
@@ -4804,19 +4839,19 @@
         <div class="space-y-2.5">
           <div class="flex items-center justify-between">
             <label class="block text-xs font-bold uppercase tracking-wider text-taupe-600">
-              Kebutuhan Bahan (Default Resep &amp; Bisa Diedit):
+              Kebutuhan Bahan Paket (Default Resep &amp; Bisa Diedit):
             </label>
-            <span class="text-[11px] text-taupe-500">
-              {{ modalCookMenuDeduction.ingredients.filter(i => i.isDeducted).length }} bahan terpilih
+            <span class="text-[11px] text-taupe-500 font-semibold">
+              {{ (modalCookMenuDeduction.ingredients || []).filter(i => i.isDeducted).length }} bahan terpilih
             </span>
           </div>
 
-          <!-- Empty State if no ingredients in recipe -->
-          <div v-if="modalCookMenuDeduction.ingredients.length === 0"
+          <!-- Empty State if no ingredients in package -->
+          <div v-if="!modalCookMenuDeduction.ingredients || modalCookMenuDeduction.ingredients.length === 0"
                class="p-6 rounded-2xl bg-cream-50 border border-dashed border-cream-200 text-center space-y-1">
             <div class="text-xl">🥣</div>
-            <div class="text-xs font-bold text-espresso-800">Belum ada takaran bahan di resep masakan ini.</div>
-            <p class="text-[11px] text-taupe-500">Buka Tab Resep untuk menambahkan rincian takaran bahan makanan ini.</p>
+            <div class="text-xs font-bold text-espresso-800">Belum ada takaran bahan pada menu paket ini.</div>
+            <p class="text-[11px] text-taupe-500">Buka Tab Resep untuk menambahkan rincian takaran bahan masakan.</p>
           </div>
 
           <!-- Ingredient Cards -->
@@ -4850,7 +4885,7 @@
               <!-- Row 2: Editable Used Quantity + Reference + Status Bar -->
               <div v-if="ing.isDeducted" class="pt-2 border-t border-cream-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
                 <!-- Quantity Input -->
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-[11px] font-bold text-taupe-600 whitespace-nowrap">Takaran Dipakai:</span>
                   <input type="text"
                          v-model="ing.usedQty"
@@ -4858,6 +4893,9 @@
                          class="w-20 px-2.5 py-1.5 rounded-xl text-xs font-bold text-espresso-900 bg-cream-50 border border-cream-300 text-center focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-2xs">
                   <span class="text-xs font-bold text-taupe-800">{{ ing.unit }}</span>
                   <span class="text-[10.5px] text-taupe-400">(Resep: {{ ing.recipeQty }} {{ ing.unit }})</span>
+                  <span v-if="ing.usedInDishes && ing.usedInDishes.length > 1" class="text-[10px] text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                    Gabungan: {{ ing.usedInDishes.join(', ') }}
+                  </span>
                 </div>
 
                 <!-- 3-State Toggle for Staples (Persausan, Tepung, Bumbu) -->
@@ -6568,8 +6606,12 @@
         });
         const modalCookMenuDeduction = ref({
           show: false,
+          selectedTargetId: '',
           selectedFoodId: '',
           selectedSlotLabel: '',
+          targetTitle: '',
+          targetSubtitle: '',
+          targetFoods: [],
           ingredients: []
         });
 
@@ -10927,124 +10969,248 @@
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
-        const currentWeekCookableDishes = computed(() => {
-          const seenFoodIds = new Set();
-          const list = [];
+        // Helper ekstraksi bahan dari daftar makanan/lauk dalam 1 paket
+        const getFoodsFromItemsMap = (itemsMap) => {
+          if (!itemsMap || typeof itemsMap !== 'object') return [];
+          const foodIds = [];
+          Object.values(itemsMap).forEach(val => {
+            if (Array.isArray(val)) {
+              val.forEach(id => { if (id) foodIds.push(id); });
+            } else if (val) {
+              foodIds.push(val);
+            }
+          });
+          return [...new Set(foodIds)].map(id => getFoodItem(id)).filter(Boolean);
+        };
 
-          try {
-            // 1. Ambil dari activeWeeklyPoolEntries (Paket & Menu Terpilih Pekan Ini)
-            const poolEntries = (activeWeeklyPoolEntries && activeWeeklyPoolEntries.value) ? activeWeeklyPoolEntries.value : [];
-            poolEntries.forEach(entry => {
-              if (!entry) return;
-              const foods = typeof getWeeklyEntryUniqueFoods === 'function' ? getWeeklyEntryUniqueFoods(entry) : [];
-              (foods || []).forEach(f => {
-                if (f && f.id && !seenFoodIds.has(f.id)) {
-                  seenFoodIds.add(f.id);
-                  list.push({
-                    food: f,
-                    entryLabel: entry.label || f.name || 'Menu',
-                    assignedDate: entry.assignedDate || '',
-                    assignedSlot: entry.assignedSlot || ''
-                  });
+        const aggregateFoodsIngredients = (foods) => {
+          if (!Array.isArray(foods) || foods.length === 0) return [];
+          const ingMap = {};
+
+          foods.forEach(f => {
+            if (!f || !Array.isArray(f.ingredients)) return;
+            f.ingredients.forEach(ing => {
+              if (!ing || !ing.name) return;
+              const normName = ing.name.trim();
+              const normUnit = (ing.unit || '').trim().toLowerCase();
+              const key = `${normName.toLowerCase()}_${normUnit}`;
+
+              const parsedNum = parseIngredientQtyNumber(ing.qty);
+
+              if (!ingMap[key]) {
+                const pMatch = getPantryStockForIngredient(normName);
+                const normGrp = normalizeIngredientGroup(ing.group, normName);
+                let initStatus = 'full';
+                if (pMatch && pMatch.status) {
+                  initStatus = pMatch.status;
+                } else if (pMatch && Number(pMatch.qty) <= 0) {
+                  initStatus = 'habis';
                 }
-              });
-            });
 
-            // 2. Ambil dari mealPlans yang dijadwalkan pada siklus belanja / pekan aktif
-            const shopRange = (activeShoppingRange && activeShoppingRange.value) || (activeWeeklyRange && activeWeeklyRange.value) || (fridayRange && fridayRange.value);
-            if (shopRange && shopRange.start && shopRange.end) {
-              const [sY, sM, sD] = String(shopRange.start).split('-').map(Number);
-              const [eY, eM, eD] = String(shopRange.end).split('-').map(Number);
-              const startD = new Date(sY, sM - 1, sD);
-              const endD = new Date(eY, eM - 1, eD);
-
-              for (let d = new Date(startD); d <= endD; d.setDate(d.getDate() + 1)) {
-                const ds = formatDateObj(d);
-                const dayMeals = typeof getDayMeals === 'function' ? getDayMeals(ds) : null;
-                if (dayMeals) {
-                  mealSlots.forEach(slot => {
-                    const meal = dayMeals[slot.id];
-                    if (!meal || meal.type === 'tidak_masak' || !meal.items) return;
-                    const sessionFoodIds = [];
-                    if (typeof meal.items === 'object') {
-                      Object.values(meal.items).forEach(val => {
-                        if (Array.isArray(val)) {
-                          val.forEach(id => { if (id) sessionFoodIds.push(id); });
-                        } else if (val) {
-                          sessionFoodIds.push(val);
-                        }
-                      });
-                    }
-                    const dishes = [...new Set(sessionFoodIds)].map(id => getFoodItem(id)).filter(Boolean);
-                    dishes.forEach(f => {
-                      if (f && f.id && !seenFoodIds.has(f.id)) {
-                        seenFoodIds.add(f.id);
-                        list.push({
-                          food: f,
-                          entryLabel: meal.type === 'paket' ? getPackageName(meal.packageId) : f.name,
-                          assignedDate: ds,
-                          assignedSlot: slot.shortLabel || slot.id
-                        });
-                      }
-                    });
-                  });
+                ingMap[key] = {
+                  name: normName,
+                  unit: ing.unit || '',
+                  group: normGrp,
+                  pantryMatch: pMatch,
+                  totalNum: parsedNum !== null ? parsedNum : 0,
+                  hasNumeric: parsedNum !== null,
+                  rawQtys: (ing.qty !== undefined && ing.qty !== null && String(ing.qty).trim() !== '') ? [String(ing.qty)] : [],
+                  usedInDishes: [f.name],
+                  isDeducted: true,
+                  newStatus: initStatus
+                };
+              } else {
+                if (parsedNum !== null) {
+                  ingMap[key].totalNum += parsedNum;
+                  ingMap[key].hasNumeric = true;
+                }
+                if (ing.qty !== undefined && ing.qty !== null && String(ing.qty).trim() !== '') {
+                  ingMap[key].rawQtys.push(String(ing.qty));
+                }
+                if (!ingMap[key].usedInDishes.includes(f.name)) {
+                  ingMap[key].usedInDishes.push(f.name);
                 }
               }
-            }
-          } catch (e) {
-            console.error('Error in currentWeekCookableDishes computed:', e);
-          }
+            });
+          });
 
+          return Object.values(ingMap).map(item => {
+            const recipeQtyStr = item.hasNumeric
+              ? String(Math.round(item.totalNum * 100) / 100)
+              : (item.rawQtys.join(' + ') || '1');
+            return {
+              name: item.name,
+              unit: item.unit,
+              group: item.group,
+              pantryMatch: item.pantryMatch,
+              recipeQty: recipeQtyStr,
+              usedQty: recipeQtyStr,
+              usedInDishes: item.usedInDishes,
+              isDeducted: true,
+              newStatus: item.newStatus
+            };
+          }).sort((a, b) => {
+            const grpComp = (a.group || '').localeCompare(b.group || '');
+            if (grpComp !== 0) return grpComp;
+            return a.name.localeCompare(b.name, 'id');
+          });
+        };
+
+        // 1. Paket Yang Sedang Dijadwalkan di Pekan Ini (Sabtu - Jumat)
+        const scheduledCookablePackages = computed(() => {
+          const list = [];
+          try {
+            (activeWeeklyScheduleDays.value || []).forEach(day => {
+              ['bekal', 'malam'].forEach(slotId => {
+                const meal = slotId === 'bekal' ? day.bekalMeal : day.malamMeal;
+                if (!meal || meal.type === 'tidak_masak' || !meal.items) return;
+                const foods = getFoodsFromItemsMap(meal.items);
+                if (foods.length === 0) return;
+
+                const pkgName = getSlotPackageName(meal) || getDishSummary(meal);
+                const slotName = slotId === 'bekal' ? 'Bekal' : 'Malam';
+                const id = `sched_${day.dateStr}_${slotId}`;
+
+                list.push({
+                  id,
+                  type: 'scheduled',
+                  label: `📅 ${day.dayName}, ${day.shortDate} (${slotName}): ${pkgName}`,
+                  title: pkgName,
+                  subtitle: `Jadwal: ${day.dayName}, ${day.shortDate} (${slotName})`,
+                  isToday: !!day.isToday,
+                  foods
+                });
+              });
+            });
+          } catch (e) {
+            console.error('Error in scheduledCookablePackages:', e);
+          }
           return list;
         });
 
-        const loadCookMenuIngredients = (foodId) => {
-          const f = getFoodItem(foodId);
-          if (!f || !f.ingredients) {
+        // 2. Paket Pilihan Pekan Ini (Belum Di-plot Jadwal)
+        const poolCookablePackages = computed(() => {
+          const list = [];
+          try {
+            (activeWeeklyPoolEntries.value || []).forEach((entry, idx) => {
+              if (!entry || entry.assignedDate) return;
+              const foods = typeof getWeeklyEntryUniqueFoods === 'function' ? getWeeklyEntryUniqueFoods(entry) : getFoodsFromItemsMap(entry.items);
+              if (foods.length === 0) return;
+
+              const pkgName = entry.label || (entry.packageId ? getPackageName(entry.packageId) : `Paket Pilihan #${idx + 1}`);
+              const id = `pool_${entry.id || idx}`;
+
+              list.push({
+                id,
+                type: 'pool',
+                label: `📦 ${pkgName} (Rencana Pekan Ini)`,
+                title: pkgName,
+                subtitle: 'Rencana Pekan Ini (Belum Dijadwalkan)',
+                isToday: false,
+                foods
+              });
+            });
+          } catch (e) {
+            console.error('Error in poolCookablePackages:', e);
+          }
+          return list;
+        });
+
+        // 3. Semua Paket Menu (Katalog)
+        const catalogCookablePackages = computed(() => {
+          const list = [];
+          try {
+            (packages.value || []).forEach(pkg => {
+              if (!pkg || !pkg.items) return;
+              const foods = getFoodsFromItemsMap(pkg.items);
+              if (foods.length === 0) return;
+
+              list.push({
+                id: `catalog_${pkg.id}`,
+                type: 'catalog',
+                label: `📖 ${pkg.name}`,
+                title: pkg.name,
+                subtitle: 'Katalog Paket Menu',
+                isToday: false,
+                foods
+              });
+            });
+          } catch (e) {
+            console.error('Error in catalogCookablePackages:', e);
+          }
+          return list;
+        });
+
+        // 4. Masakan Satuan (Resep Tunggal)
+        const singleCookableDishes = computed(() => {
+          return (foodItems.value || []).map(f => ({
+            id: `food_${f.id}`,
+            type: 'single',
+            label: `🍲 ${f.name}`,
+            title: f.name,
+            subtitle: `Resep Satuan (${(getCategoryMeta(f.category) || {}).label || 'Masakan'})`,
+            isToday: false,
+            foods: [f]
+          }));
+        });
+
+        const allCookableTargets = computed(() => {
+          return [
+            ...scheduledCookablePackages.value,
+            ...poolCookablePackages.value,
+            ...catalogCookablePackages.value,
+            ...singleCookableDishes.value
+          ];
+        });
+
+        const loadCookTargetIngredients = (targetId) => {
+          if (!targetId) {
+            modalCookMenuDeduction.value.targetFoods = [];
             modalCookMenuDeduction.value.ingredients = [];
             return;
           }
-          modalCookMenuDeduction.value.ingredients = (f.ingredients || []).map(ing => {
-            const pMatch = getPantryStockForIngredient(ing.name);
-            const normGrp = normalizeIngredientGroup(ing.group, ing.name);
-            let initStatus = 'full';
-            if (pMatch && pMatch.status) {
-              initStatus = pMatch.status;
-            } else if (pMatch && Number(pMatch.qty) <= 0) {
-              initStatus = 'habis';
-            }
-            return {
-              name: ing.name,
-              recipeQty: (ing.qty !== undefined && ing.qty !== null && String(ing.qty).trim() !== '') ? String(ing.qty) : '1',
-              usedQty: (ing.qty !== undefined && ing.qty !== null && String(ing.qty).trim() !== '') ? String(ing.qty) : '1',
-              unit: ing.unit || '',
-              group: normGrp,
-              pantryMatch: pMatch,
-              isDeducted: true,
-              newStatus: initStatus
-            };
-          });
+          const target = allCookableTargets.value.find(t => t.id === targetId);
+          if (!target) {
+            modalCookMenuDeduction.value.targetFoods = [];
+            modalCookMenuDeduction.value.ingredients = [];
+            return;
+          }
+
+          modalCookMenuDeduction.value.selectedTargetId = target.id;
+          modalCookMenuDeduction.value.targetTitle = target.title;
+          modalCookMenuDeduction.value.targetSubtitle = target.subtitle;
+          modalCookMenuDeduction.value.targetFoods = target.foods;
+          modalCookMenuDeduction.value.ingredients = aggregateFoodsIngredients(target.foods);
+
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
-        const openCookMenuDeductionModal = (preselectedFoodId = '', slotLabel = '') => {
+        const openCookMenuDeductionModal = (preselectedTargetId = '', slotLabel = '') => {
           try {
             modalCookMenuDeduction.value.show = true;
             modalCookMenuDeduction.value.selectedSlotLabel = slotLabel || '';
-            
-            let targetFoodId = preselectedFoodId;
-            if (!targetFoodId) {
-              const cookable = currentWeekCookableDishes.value || [];
-              if (cookable.length > 0 && cookable[0].food && cookable[0].food.id) {
-                targetFoodId = cookable[0].food.id;
-              } else if (foodItems.value && foodItems.value.length > 0) {
-                targetFoodId = foodItems.value[0].id;
+
+            let targetId = preselectedTargetId;
+            if (!targetId) {
+              const todayTarget = scheduledCookablePackages.value.find(t => t.isToday);
+              if (todayTarget) {
+                targetId = todayTarget.id;
+              } else if (scheduledCookablePackages.value.length > 0) {
+                targetId = scheduledCookablePackages.value[0].id;
+              } else if (poolCookablePackages.value.length > 0) {
+                targetId = poolCookablePackages.value[0].id;
+              } else if (catalogCookablePackages.value.length > 0) {
+                targetId = catalogCookablePackages.value[0].id;
+              } else if (singleCookableDishes.value.length > 0) {
+                targetId = singleCookableDishes.value[0].id;
               }
             }
-            modalCookMenuDeduction.value.selectedFoodId = targetFoodId || '';
-            if (targetFoodId) {
-              loadCookMenuIngredients(targetFoodId);
+
+            modalCookMenuDeduction.value.selectedTargetId = targetId || '';
+            if (targetId) {
+              loadCookTargetIngredients(targetId);
             } else {
+              modalCookMenuDeduction.value.targetFoods = [];
               modalCookMenuDeduction.value.ingredients = [];
             }
           } catch (err) {
@@ -11055,9 +11221,8 @@
         };
 
         const confirmCookMenuDeduction = () => {
-          const f = getFoodItem(modalCookMenuDeduction.value.selectedFoodId);
-          const fName = f ? f.name : 'Masakan';
-          const ings = modalCookMenuDeduction.value.ingredients.filter(i => i.isDeducted);
+          const title = modalCookMenuDeduction.value.targetTitle || 'Paket Masak / Prep';
+          const ings = (modalCookMenuDeduction.value.ingredients || []).filter(i => i.isDeducted);
 
           if (ings.length === 0) {
             showToast('Pilih minimal 1 bahan yang dipakai memasak / prep!', 'error');
@@ -11091,7 +11256,7 @@
 
           savePantryStocks();
           modalCookMenuDeduction.value.show = false;
-          showToast(`🍳 Berhasil! Stok dapur untuk "${fName}" telah dikurangi (${deductedCount} bahan terpotong).`, 'success');
+          showToast(`🍳 Berhasil! Stok dapur untuk "${title}" telah dikurangi (${deductedCount} bahan terpotong).`, 'success');
         };
 
         const openUsePantryModal = (item) => {
@@ -13643,9 +13808,13 @@
           adjustPantryStock,
           modalUsePantry,
           modalCookMenuDeduction,
-          currentWeekCookableDishes,
+          scheduledCookablePackages,
+          poolCookablePackages,
+          catalogCookablePackages,
+          singleCookableDishes,
+          allCookableTargets,
           openCookMenuDeductionModal,
-          loadCookMenuIngredients,
+          loadCookTargetIngredients,
           confirmCookMenuDeduction,
           openUsePantryModal,
           confirmUsePantryStock,
