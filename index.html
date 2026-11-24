@@ -3308,19 +3308,19 @@
                           @click="stapleFilter = 'Sauce'"
                           class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
                           :class="stapleFilter === 'Sauce' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
-                    🍶 Persausan ({{ pantryStapleList.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Sauce').length }})
+                    🍶 Persausan ({{ pantrySauceStapleCount }})
                   </button>
                   <button type="button"
                           @click="stapleFilter = 'Tepung'"
                           class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
                           :class="stapleFilter === 'Tepung' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
-                    🌾 Tepung ({{ pantryStapleList.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Tepung').length }})
+                    🌾 Tepung ({{ pantryTepungStapleCount }})
                   </button>
                   <button type="button"
                           @click="stapleFilter = 'Bumbu'"
                           class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
                           :class="stapleFilter === 'Bumbu' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
-                    🧂 Bumbu Dapur ({{ pantryStapleList.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Bumbu').length }})
+                    🧂 Bumbu Dapur ({{ pantryBumbuStapleCount }})
                   </button>
                 </div>
                 
@@ -10768,6 +10768,18 @@
           return list;
         });
 
+        const pantrySauceStapleCount = computed(() => {
+          return pantryStapleList.value.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Sauce').length;
+        });
+
+        const pantryTepungStapleCount = computed(() => {
+          return pantryStapleList.value.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Tepung').length;
+        });
+
+        const pantryBumbuStapleCount = computed(() => {
+          return pantryStapleList.value.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Bumbu').length;
+        });
+
         const pantryHabisCount = computed(() => {
           return pantryStapleList.value.filter(i => i.status === 'habis' || (i.status === undefined && Number(i.qty) <= 0)).length;
         });
@@ -13791,6 +13803,10 @@
           stapleFilter,
           pantryStapleList,
           filteredPantryStapleList,
+          pantrySauceStapleCount,
+          pantryTepungStapleCount,
+          pantryBumbuStapleCount,
+          normalizeIngredientGroup,
           pantryHabisCount,
           pantrySedikitCount,
           pantryFullCount,
