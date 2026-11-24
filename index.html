@@ -3165,6 +3165,74 @@
         <!-- Categorized Shopping List Sections (Grouped by Market Section) -->
         <div v-else class="space-y-5">
           
+          <!-- Search & Category Filter Controls -->
+          <div class="bg-white p-4 sm:p-5 rounded-3xl border border-cream-200 shadow-card space-y-3.5">
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              
+              <!-- Search Input -->
+              <div class="relative flex-grow max-w-md">
+                <i data-lucide="search" class="w-4 h-4 text-taupe-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                <input type="text"
+                       v-model="shoppingSearchQuery"
+                       placeholder="Cari bahan belanja (nama bahan atau masakan)..."
+                       class="w-full pl-10 pr-9 py-2.5 rounded-2xl text-xs bg-cream-50 border border-cream-200 font-semibold text-espresso-900 focus:outline-none focus:ring-2 focus:ring-caramel-500 min-h-[42px]">
+                <button v-if="shoppingSearchQuery"
+                        type="button"
+                        @click="shoppingSearchQuery = ''"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-taupe-400 hover:text-espresso-800 cursor-pointer">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+              </div>
+
+              <!-- Menampilkan Info Count -->
+              <div class="flex items-center justify-between sm:justify-end gap-2 text-xs">
+                <span class="text-taupe-500 font-medium">
+                  Menampilkan: <strong>{{ filteredShoppingListCount }}</strong> dari {{ aggregatedShoppingList.length }} bahan
+                </span>
+              </div>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 ios-scroll text-xs">
+              <button type="button"
+                      @click="shoppingGroupFilter = 'all'"
+                      class="px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer border min-h-[36px]"
+                      :class="shoppingGroupFilter === 'all'
+                        ? 'bg-espresso-900 text-white border-espresso-900 shadow-xs'
+                        : 'bg-cream-100 text-espresso-800 border-cream-200 hover:bg-cream-200'">
+                Semua Kategori ({{ aggregatedShoppingList.length }})
+              </button>
+              <button v-for="grp in shoppingAvailableGroups" :key="grp.name"
+                      type="button"
+                      @click="shoppingGroupFilter = grp.name"
+                      class="px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition cursor-pointer border flex items-center gap-1.5 min-h-[36px]"
+                      :class="shoppingGroupFilter === grp.name
+                        ? 'bg-caramel-700 text-white border-caramel-700 shadow-xs'
+                        : 'bg-white text-espresso-800 border-cream-200 hover:bg-cream-100'">
+                <span>{{ grp.icon }}</span>
+                <span>{{ grp.name }}</span>
+                <span class="text-[10px] opacity-75">({{ grp.count }})</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty Search / Filter Result State -->
+          <div v-if="filteredShoppingListCount === 0"
+               class="bg-white p-10 sm:p-14 rounded-3xl border border-cream-200 text-center space-y-3 shadow-card">
+            <div class="text-3xl">🔍</div>
+            <h3 class="font-bold text-base text-espresso-900">
+              Tidak Ada Bahan yang Cocok
+            </h3>
+            <p class="text-xs text-taupe-500 max-w-sm mx-auto">
+              Tidak ditemukan bahan belanja dengan kata kunci <span v-if="shoppingSearchQuery">"<strong>{{ shoppingSearchQuery }}</strong>"</span><span v-if="shoppingGroupFilter !== 'all'"> pada kategori <strong>{{ shoppingGroupFilter }}</strong></span>.
+            </p>
+            <button type="button"
+                    @click="shoppingSearchQuery = ''; shoppingGroupFilter = 'all'; shoppingFilter = 'all'"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-xs inline-flex items-center gap-1.5 cursor-pointer">
+              <span>Reset Filter &amp; Pencarian</span>
+            </button>
+          </div>
+
           <div v-for="group in groceryGroups" :key="group.name"
                v-show="getIngredientsInGroup(group.name).length > 0"
                class="bg-white rounded-3xl border border-cream-200 shadow-card p-6">
@@ -6076,6 +6144,8 @@
         // Shopping cycle state
         const selectedShoppingCycle = ref('current'); // current | next
         const shoppingFilter = ref('all'); // all | unbought
+        const shoppingSearchQuery = ref('');
+        const shoppingGroupFilter = ref('all');
         const checkedItems = ref({}); // { [ingredientKey]: true/false }
         const expandedShoppingItems = ref({}); // { [ingredientKey]: boolean }
 
@@ -11831,13 +11901,67 @@
             return [...result, ...fruitShoppingItems, ...manualItems];
         });
 
+        const shoppingAvailableGroups = computed(() => {
+          const counts = {};
+          (aggregatedShoppingList.value || []).forEach(item => {
+            if (item.group) {
+              counts[item.group] = (counts[item.group] || 0) + 1;
+            }
+          });
+          return groceryGroups
+            .filter(g => counts[g.name] > 0)
+            .map(g => ({
+              ...g,
+              count: counts[g.name]
+            }));
+        });
+
         const getIngredientsInGroup = (groupName) => {
+          if (shoppingGroupFilter.value !== 'all' && shoppingGroupFilter.value !== groupName) {
+            return [];
+          }
+
+          const query = (shoppingSearchQuery.value || '').trim().toLowerCase();
+
           return aggregatedShoppingList.value.filter(item => {
             const matchesGroup = item.group === groupName;
-            const matchesFilter = shoppingFilter.value === 'all' || !isItemChecked(item.id);
-            return matchesGroup && matchesFilter;
+            if (!matchesGroup) return false;
+
+            const matchesStatus = shoppingFilter.value === 'all' || !isItemChecked(item.id);
+            if (!matchesStatus) return false;
+
+            if (!query) return true;
+
+            // Match ingredient name
+            if (item.name && item.name.toLowerCase().includes(query)) return true;
+
+            // Match dish names where it's used
+            if (Array.isArray(item.usedInDishes)) {
+              if (item.usedInDishes.some(d => String(d).toLowerCase().includes(query))) return true;
+            }
+
+            // Match breakdown dishes
+            if (Array.isArray(item.dishBreakdown)) {
+              if (item.dishBreakdown.some(b => (b.dishName && b.dishName.toLowerCase().includes(query)) || (b.sessionText && b.sessionText.toLowerCase().includes(query)))) {
+                return true;
+              }
+            }
+
+            return false;
           });
         };
+
+        const filteredShoppingListCount = computed(() => {
+          let count = 0;
+          groceryGroups.forEach(g => {
+            count += getIngredientsInGroup(g.name).length;
+          });
+          return count;
+        });
+
+        watch([shoppingSearchQuery, shoppingGroupFilter], () => {
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        });
 
         const autoAddShoppingItemToPantry = (item) => {
           if (!item || !item.name) return;
@@ -12539,6 +12663,10 @@
           formItems,
           selectedShoppingCycle,
           shoppingFilter,
+          shoppingSearchQuery,
+          shoppingGroupFilter,
+          shoppingAvailableGroups,
+          filteredShoppingListCount,
           checkedItems,
           expandedShoppingItems,
           isShoppingItemOpen,
