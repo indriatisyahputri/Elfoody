@@ -539,15 +539,10 @@
               </button>
             </div>
 
-            <div class="flex items-center gap-2 self-start sm:self-center">
-              <button v-if="weekOffset !== 0" @click="weekOffset = 0"
+            <div v-if="weekOffset !== 0" class="flex items-center gap-2 self-start sm:self-center">
+              <button @click="weekOffset = 0"
                       class="text-xs font-bold px-3 py-1.5 rounded-xl bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300 transition cursor-pointer">
-                Minggu Ini
-              </button>
-              <button type="button" @click="openProteinPrepModal('week')"
-                      class="text-xs font-bold px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 transition flex items-center gap-1.5 cursor-pointer">
-                <span>⚖️</span>
-                <span>Timbang Protein Pekan Ini</span>
+                Pekan Ini
               </button>
             </div>
           </div>
