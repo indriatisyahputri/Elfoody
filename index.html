@@ -256,23 +256,11 @@
 
           <!-- Header Right Quick Actions (Touch friendly min 44px) -->
           <div class="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
-            <!-- Cloud Sync Indicator / Interactive Refresh Button -->
-            <button @click="pullSyncFromServer(false)" 
-                    title="Ketuk untuk sinkronkan / tarik data terbaru dari cloud"
-                    class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-semibold transition active:scale-95 shadow-xs cursor-pointer"
-                    :class="syncStatus === 'synced' ? 'bg-sage-100 hover:bg-sage-200 text-sage-800 border border-sage-300' : (syncStatus === 'syncing' ? 'bg-amber-50 text-amber-800 border border-amber-200' : 'bg-cream-100 hover:bg-cream-200 text-espresso-700 border border-cream-300')">
-              <span class="w-1.5 h-1.5 rounded-full" :class="syncStatus === 'synced' ? 'bg-sage-600' : (syncStatus === 'syncing' ? 'bg-amber-500 animate-ping' : 'bg-espresso-400')"></span>
-              <span class="hidden xl:inline">{{ syncStatus === 'synced' ? 'Sinkron Cloud' : (syncStatus === 'syncing' ? 'Menyinkronkan...' : 'Tarik Cloud') }}</span>
-              <span class="xl:hidden text-xs">☁️</span>
-            </button>
-
             <!-- Current Date Badge (Desktop) -->
             <div class="hidden xl:flex flex-col items-end text-right">
               <div class="text-[10px] uppercase tracking-wider text-espresso-500 font-semibold">Hari Ini</div>
               <div class="text-xs font-bold text-espresso-900">{{ formatTanggalIndo(currentDate, true) }}</div>
             </div>
-
-
           </div>
 
         </div>
