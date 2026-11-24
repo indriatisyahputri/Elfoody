@@ -3169,46 +3169,36 @@
             </div>
           </div>
 
-          <!-- Active Range Info Banner & Progress Bar -->
-          <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <!-- Box 1: Total Items to Buy -->
-            <div class="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center flex-shrink-0">
-                <i data-lucide="package-check" class="w-5 h-5"></i>
+          <!-- Progress Belanja (Tanpa Bingkai / Clean Frameless Bar) -->
+          <div class="mt-6 space-y-2">
+            <div class="flex items-center justify-between text-xs font-bold text-espresso-800">
+              <div class="flex items-center gap-2">
+                <span>Progress Belanja:</span>
+                <span class="text-taupe-600 font-semibold">
+                  {{ checkedCount }} dari {{ aggregatedShoppingList.length }} bahan dibeli
+                </span>
               </div>
-              <div>
-                <div class="text-[11px] uppercase font-bold text-taupe-400">Total Bahan Belanja:</div>
-                <div class="text-xs font-bold text-espresso-900">
-                  {{ aggregatedShoppingList.length }} Macam Bahan Dapur
-                </div>
-                <div class="text-[10px] text-taupe-500">
-                  {{ checkedCount }} dari {{ aggregatedShoppingList.length }} sudah dibeli ({{ shoppingProgressPercent }}%)
-                </div>
-              </div>
+              <span class="text-caramel-700 font-extrabold text-sm">{{ shoppingProgressPercent }}%</span>
             </div>
 
-            <!-- Box 3: Progress & Quick Reset -->
-            <div class="p-4 rounded-2xl bg-cream-50 border border-cream-200 flex flex-col justify-between">
-              <div class="flex items-center justify-between text-xs font-bold text-espresso-800 mb-1">
-                <span>Progress Belanja di Pasar</span>
-                <span>{{ shoppingProgressPercent }}%</span>
-              </div>
-              <!-- Progress bar track -->
-              <div class="w-full h-2 rounded-full bg-cream-200 overflow-hidden">
-                <div class="h-full bg-taupe-600 rounded-full transition-all duration-300"
-                     :style="{ width: shoppingProgressPercent + '%' }"></div>
-              </div>
-              <div class="flex items-center justify-between mt-2 pt-1 text-[11px]">
-                <button @click="resetShoppingChecks" class="text-taupe-500 hover:text-espresso-900 underline">
-                  Reset Centang
-                </button>
-                <button @click="checkAllShopping" class="text-taupe-500 hover:text-espresso-900 underline">
+            <!-- Progress bar track -->
+            <div class="w-full h-2.5 rounded-full bg-cream-200/90 overflow-hidden">
+              <div class="h-full bg-caramel-500 rounded-full transition-all duration-300"
+                   :style="{ width: shoppingProgressPercent + '%' }"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-taupe-500 pt-0.5">
+              <span>{{ aggregatedShoppingList.length - checkedCount }} bahan belum dibeli</span>
+              <div class="flex items-center gap-3">
+                <button @click="checkAllShopping" class="hover:text-espresso-900 underline cursor-pointer">
                   Centang Semua
                 </button>
+                <span>•</span>
+                <button @click="resetShoppingChecks" class="hover:text-espresso-900 underline cursor-pointer">
+                  Reset Centang
+                </button>
               </div>
             </div>
-
           </div>
 
           <!-- Action Toolbar: Copy to WA, Print, Filter -->
