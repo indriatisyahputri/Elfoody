@@ -1728,40 +1728,17 @@
         
         <!-- Header Banner & Unified SubTab Switcher (Menu | Buah | Cemilan) -->
         <div class="bg-white p-6 sm:p-8 rounded-3xl border border-cream-200 shadow-card space-y-5">
-          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-cream-100">
-            <div>
-              <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-caramel-600 mb-1">
-                <span>🍱</span>
-                <span>Langkah 1: Perencanaan Menu Seminggu</span>
-              </div>
-              <h2 class="text-2xl font-serif font-bold text-espresso-900">
-                <span v-if="paketSubTab === 'menu'">Rencana Menu Masak Seminggu</span>
-                <span v-else-if="paketSubTab === 'buah'">Rencana Buah-buahan Seminggu</span>
-                <span v-else>Rencana Cemilan Seminggu</span>
-              </h2>
+          <!-- Card Header & Title -->
+          <div class="pb-5 border-b border-cream-100">
+            <div class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-caramel-600 mb-1">
+              <span>🍱</span>
+              <span>Langkah 1: Perencanaan Menu Seminggu</span>
             </div>
-
-            <!-- Action Buttons based on Active Subtab -->
-            <div class="flex items-center gap-2 self-start md:self-center">
-              <button v-if="paketSubTab === 'menu'"
-                      @click="openAddPackageModal" 
-                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card shadow-sm transition cursor-pointer min-h-[42px]">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>+ Buat Paket Baru</span>
-              </button>
-              <button v-else-if="paketSubTab === 'buah'"
-                      @click="openAddMasterIngredientModal('', 'Buah Buahan')"
-                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-card shadow-sm transition cursor-pointer min-h-[42px]">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>+ Buah Baru ke Master Bahan</span>
-              </button>
-              <button v-else
-                      @click="openAddFoodModalWithCategory('dessert')"
-                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-card shadow-sm transition cursor-pointer min-h-[42px]">
-                <i data-lucide="plus" class="w-4 h-4"></i>
-                <span>+ Buat Resep Cemilan</span>
-              </button>
-            </div>
+            <h2 class="text-2xl font-serif font-bold text-espresso-900">
+              <span v-if="paketSubTab === 'menu'">Rencana Menu Masak Seminggu</span>
+              <span v-else-if="paketSubTab === 'buah'">Rencana Buah-buahan Seminggu</span>
+              <span v-else>Rencana Cemilan Seminggu</span>
+            </h2>
           </div>
 
           <!-- Subtab Pills: Menu Makanan | Buah-buahan | Cemilan -->
@@ -1813,24 +1790,32 @@
             </div>
           </div>
 
-          <!-- Weekly Cycle Context Banner Strip -->
-          <div class="p-3.5 rounded-2xl bg-gradient-to-r from-cream-50 via-white to-amber-50/40 border border-cream-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div class="flex items-center gap-2 text-taupe-600">
-              <span class="text-base">📅</span>
-              <span v-if="paketSubTab === 'menu'">
-                Menu terpilih untuk pekan ini: <strong class="text-espresso-900 font-extrabold text-sm">{{ activeWeeklyPoolEntries.length }}</strong> paket
-              </span>
-              <span v-else-if="paketSubTab === 'buah'">
-                Buah terpilih untuk pekan ini: <strong class="text-rose-700 font-extrabold text-sm">{{ activeCycleFruits.length }}</strong> jenis (otomatis masuk belanja Jumat)
-              </span>
-              <span v-else>
-                Cemilan terpilih untuk pekan ini: <strong class="text-amber-800 font-extrabold text-sm">{{ activeWeeklySnacks.length }}</strong> macam (otomatis masuk belanja Jumat)
-              </span>
+          <!-- Action Buttons Row: Buat Paket Baru & Lanjut ke Jadwal -->
+          <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
+            <div class="flex items-center gap-2">
+              <button v-if="paketSubTab === 'menu'"
+                      @click="openAddPackageModal" 
+                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-caramel-500 hover:bg-caramel-600 text-white shadow-card transition cursor-pointer min-h-[42px]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Buat Paket Baru</span>
+              </button>
+              <button v-else-if="paketSubTab === 'buah'"
+                      @click="openAddMasterIngredientModal('', 'Buah Buahan')"
+                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white shadow-card transition cursor-pointer min-h-[42px]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Buah Baru ke Master Bahan</span>
+              </button>
+              <button v-else
+                      @click="openAddFoodModalWithCategory('dessert')"
+                      class="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-card transition cursor-pointer min-h-[42px]">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>+ Buat Resep Cemilan</span>
+              </button>
             </div>
 
-            <div v-if="paketSubTab === 'menu'" class="flex items-center gap-2 self-start sm:self-center">
+            <div v-if="paketSubTab === 'menu'">
               <button @click="setTab('isi')"
-                      class="min-h-[38px] px-4 py-2 rounded-xl text-xs font-bold bg-espresso-900 hover:bg-espresso-800 text-white shadow-card transition flex items-center gap-2 cursor-pointer">
+                      class="min-h-[42px] px-5 py-2.5 rounded-2xl text-xs font-bold bg-espresso-900 hover:bg-espresso-800 text-white shadow-card transition flex items-center gap-2 cursor-pointer">
                 <span>Lanjut ke Jadwal</span>
                 <span v-if="activeWeeklyPoolEntries.length > 0" class="px-2 py-0.5 rounded-full text-[10px] bg-caramel-500 text-white font-extrabold">
                   {{ activeWeeklyPoolEntries.length }} Paket
