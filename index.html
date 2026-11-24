@@ -3184,9 +3184,15 @@
               </button>
 
               <button @click="copyShoppingListToWA" 
-                      class="px-4 py-2.5 rounded-xl text-xs font-bold bg-sage-600 hover:bg-sage-700 text-white shadow-xs transition flex items-center gap-1.5">
+                      class="px-4 py-2.5 rounded-xl text-xs font-bold bg-sage-600 hover:bg-sage-700 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                 <i data-lucide="share-2" class="w-4 h-4"></i>
                 <span>Salin ke WhatsApp</span>
+              </button>
+
+              <button @click="toggleAllShoppingBreakdown" 
+                      class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-300 transition flex items-center gap-1.5 cursor-pointer"
+                      :title="isAllShoppingBreakdownExpanded ? 'Ciutkan rincian masakan di semua bahan' : 'Buka semua rincian masakan di seluruh bahan'">
+                <span>{{ isAllShoppingBreakdownExpanded ? '📂 Tutup Rincian Masakan' : '📋 Buka Rincian Masakan' }}</span>
               </button>
 
             </div>
@@ -3313,8 +3319,59 @@
                     </span>
                   </div>
 
-                  <!-- Days & Dishes that use this ingredient or note -->
-                  <div v-if="ing.usedInDishes && ing.usedInDishes.length > 0" class="mt-1 text-[10px] text-taupe-500 line-clamp-2 leading-relaxed">
+                  <!-- Rincian Masakan & Takaran Lengkap -->
+                  <div v-if="ing.dishBreakdown && ing.dishBreakdown.length > 0" class="mt-2.5 pt-2 border-t border-cream-200/60 space-y-1.5">
+                    <div class="flex items-center justify-between text-[10px] font-bold text-taupe-500">
+                      <span class="flex items-center gap-1 text-taupe-600">
+                        <span>🍲</span>
+                        <span>{{ ing.isManual ? 'Keperluan Belanja:' : 'Untuk Masakan:' }}</span>
+                      </span>
+                      <span v-if="ing.dishBreakdown.length > 1" class="text-[9.5px] font-bold text-caramel-700 bg-caramel-50/80 px-2 py-0.2 rounded-full border border-caramel-200/60">
+                        {{ ing.dishBreakdown.length }} masakan
+                      </span>
+                    </div>
+
+                    <div class="space-y-1">
+                      <div v-for="(b, bIdx) in (expandedShoppingItems[ing.id] || isAllShoppingBreakdownExpanded ? ing.dishBreakdown : ing.dishBreakdown.slice(0, 2))" :key="bIdx"
+                           class="text-[11px] p-1.5 sm:p-2 rounded-xl bg-cream-50/80 border border-cream-200/70 flex items-center justify-between gap-2 transition hover:bg-cream-100/60">
+                        <div class="min-w-0 flex items-center gap-1.5 flex-grow">
+                          <span class="w-1.5 h-1.5 rounded-full bg-caramel-400 flex-shrink-0"></span>
+                          <!-- Nama masakan dapat diklik untuk membuka modal resep lengkap -->
+                          <button v-if="b.dishId" type="button" @click.stop="openDishDetailModal(getFoodItem(b.dishId))"
+                                  title="Klik untuk membuka resep & bahan masakan ini"
+                                  class="font-bold text-espresso-900 truncate hover:text-caramel-700 hover:underline text-left cursor-pointer">
+                            {{ b.dishName }}
+                          </button>
+                          <span v-else class="font-bold text-espresso-900 truncate">{{ b.dishName }}</span>
+                          
+                          <!-- Keterangan jadwal sesi -->
+                          <span v-if="b.sessionText" class="text-[9.5px] text-taupe-500 font-medium whitespace-nowrap">({{ b.sessionText }})</span>
+
+                          <!-- Catatan batch/kulkas -->
+                          <span v-if="b.contextNote" class="hidden sm:inline-block text-[9px] px-1.5 py-0.2 rounded bg-white text-taupe-600 font-medium border border-cream-200">
+                            {{ b.contextNote }}
+                          </span>
+                        </div>
+
+                        <!-- Takaran bahan untuk masakan ini -->
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                          <span class="text-[10px] sm:text-[10.5px] font-extrabold text-espresso-900 bg-white px-2 py-0.5 rounded-md border border-cream-200 shadow-2xs whitespace-nowrap">
+                            {{ b.qtyText }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Tombol expand jika masakan lebih dari 2 -->
+                    <div v-if="ing.dishBreakdown.length > 2 && !isAllShoppingBreakdownExpanded" class="pt-0.5 flex justify-end">
+                      <button type="button" @click.stop="toggleShoppingItemExpanded(ing.id)"
+                              class="text-[10px] font-bold text-caramel-700 hover:text-caramel-800 bg-cream-100/70 hover:bg-cream-200 px-2 py-0.5 rounded-lg transition border border-cream-200 flex items-center gap-1 cursor-pointer">
+                        <span>{{ expandedShoppingItems[ing.id] ? '▲ Sembunyikan' : `+${ing.dishBreakdown.length - 2} menu lainnya ▼` }}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <!-- Fallback jika tidak ada breakdown khusus -->
+                  <div v-else-if="ing.usedInDishes && ing.usedInDishes.length > 0" class="mt-1 text-[10px] text-taupe-500 line-clamp-2 leading-relaxed">
                     <span class="text-taupe-400">{{ ing.isManual ? 'Keperluan:' : 'Untuk menu:' }}</span> {{ ing.usedInDishes.join(', ') }}
                   </div>
                 </div>
@@ -6050,6 +6107,20 @@
         const selectedShoppingCycle = ref('current'); // current | next
         const shoppingFilter = ref('all'); // all | unbought
         const checkedItems = ref({}); // { [ingredientKey]: true/false }
+        const expandedShoppingItems = ref({}); // { [ingredientKey]: boolean }
+        const isAllShoppingBreakdownExpanded = ref(false);
+
+        const toggleShoppingItemExpanded = (itemId) => {
+          expandedShoppingItems.value[itemId] = !expandedShoppingItems.value[itemId];
+        };
+
+        const toggleAllShoppingBreakdown = () => {
+          isAllShoppingBreakdownExpanded.value = !isAllShoppingBreakdownExpanded.value;
+          const target = isAllShoppingBreakdownExpanded.value;
+          (aggregatedShoppingList.value || []).forEach(item => {
+            expandedShoppingItems.value[item.id] = target;
+          });
+        };
 
         // Stock & Fridge Leftover state
         const selectedStockCycle = ref('current'); // current | next
@@ -11509,7 +11580,8 @@
                   unit: ing.unit || '',
                   quantities: [],
                   group: normalizeIngredientGroup(ing.group, ing.name),
-                  usedInDishes: []
+                  usedInDishes: [],
+                  dishBreakdown: []
                 };
               }
 
@@ -11527,14 +11599,55 @@
               }
 
               const numQty = parseIngredientQtyNumber(ing.qty);
+              let thisDishNum = null;
+              let thisDishQtyText = '';
               if (numQty !== null) {
-                ingredientMap[key].quantities.push(numQty * cookBatches);
+                thisDishNum = Math.round((numQty * cookBatches) * 100) / 100;
+                ingredientMap[key].quantities.push(thisDishNum);
+                thisDishQtyText = `${thisDishNum} ${ing.unit || ''}`.trim();
               } else if (ing.qty && String(ing.qty).trim() !== '') {
                 const rawText = String(ing.qty).trim();
                 const scaledText = cookBatches > 1 && !/secukupnya/i.test(rawText)
                   ? `${rawText} (x${cookBatches})`
                   : rawText;
                 ingredientMap[key].quantities.push(scaledText);
+                thisDishQtyText = `${scaledText} ${ing.unit || ''}`.trim();
+              } else {
+                thisDishQtyText = ing.unit || 'Secukupnya';
+              }
+
+              // Context note for batch or fridge
+              let dishContextNote = '';
+              if (batchCfg.mode === 'weekly_once') {
+                dishContextNote = `Stok 1x masak (${scheduledCount} jadwal)`;
+              } else if (batchCfg.mode === 'batch') {
+                const fridgeTxt = usedFromFridge > 0 ? `, potong ${usedFromFridge} kulkas` : '';
+                dishContextNote = `${cookBatches}x batch masak${fridgeTxt}`;
+              } else if (cookBatches > 1) {
+                dishContextNote = `${cookBatches}x masak`;
+              } else if (usedFromFridge > 0) {
+                dishContextNote = `${cookBatches}x masak (${usedFromFridge} kulkas)`;
+              }
+
+              const existingDish = ingredientMap[key].dishBreakdown.find(b => b.dishId && b.dishId === food.id);
+              if (existingDish) {
+                if (thisDishNum !== null && existingDish.numQty !== null && existingDish.numQty !== undefined) {
+                  existingDish.numQty = Math.round((existingDish.numQty + thisDishNum) * 100) / 100;
+                  existingDish.qtyText = `${existingDish.numQty} ${ing.unit || ''}`.trim();
+                } else {
+                  existingDish.qtyText += ` + ${thisDishQtyText}`;
+                }
+              } else {
+                ingredientMap[key].dishBreakdown.push({
+                  dishId: food.id,
+                  dishName: food.name,
+                  category: food.category,
+                  sessionText: sessionLabels.join(', '),
+                  sessionLabels: sessionLabels,
+                  numQty: thisDishNum,
+                  qtyText: thisDishQtyText,
+                  contextNote: dishContextNote
+                });
               }
             });
           });
@@ -11542,7 +11655,7 @@
           // Include Package Extras (Alat & Sauce) from scheduled mealPlans & unassigned weeklyMenuPool (skipping rollover!)
           const shopRange = activeShoppingRange.value;
           if (shopRange && shopRange.start && shopRange.end) {
-            const addExtraToShoppingMap = (ex, sourceLabel) => {
+            const addExtraToShoppingMap = (ex, sourceLabel, pkgName = '', sessionStr = '') => {
               if (!ex || !ex.name) return;
               const normName = ex.name.trim();
               const normUnit = (ex.unit || '').trim().toLowerCase();
@@ -11554,18 +11667,35 @@
                   unit: ex.unit || '',
                   quantities: [],
                   group: normalizeIngredientGroup(ex.group, ex.name),
-                  usedInDishes: []
+                  usedInDishes: [],
+                  dishBreakdown: []
                 };
               }
               if (sourceLabel && !ingredientMap[key].usedInDishes.includes(sourceLabel)) {
                 ingredientMap[key].usedInDishes.push(sourceLabel);
               }
               const numQty = parseIngredientQtyNumber(ex.qty);
+              let exQtyText = '';
               if (numQty !== null) {
                 ingredientMap[key].quantities.push(numQty);
+                exQtyText = `${numQty} ${ex.unit || ''}`.trim();
               } else if (ex.qty && String(ex.qty).trim() !== '') {
                 ingredientMap[key].quantities.push(String(ex.qty).trim());
+                exQtyText = `${String(ex.qty).trim()} ${ex.unit || ''}`.trim();
+              } else {
+                exQtyText = ex.unit || 'Secukupnya';
               }
+
+              ingredientMap[key].dishBreakdown.push({
+                dishId: null,
+                dishName: pkgName ? `Paket: ${pkgName}` : 'Tambahan Paket',
+                category: 'tambahan',
+                sessionText: sessionStr || sourceLabel,
+                sessionLabels: sessionStr ? [sessionStr] : [],
+                numQty: numQty,
+                qtyText: exQtyText,
+                contextNote: 'Pelengkap Paket'
+              });
             };
 
             const [sY, sM, sD] = shopRange.start.split('-').map(Number);
@@ -11586,7 +11716,7 @@
                 if (meal.isRollover) return;
                 const extras = resolveSlotExtras(meal);
                 const pkgLabel = meal.type === 'paket' ? getPackageName(meal.packageId) : 'Menu';
-                extras.forEach(ex => addExtraToShoppingMap(ex, `${dName} ${slot.shortLabel} (Tambahan ${pkgLabel})`));
+                extras.forEach(ex => addExtraToShoppingMap(ex, `${dName} ${slot.shortLabel} (Tambahan ${pkgLabel})`, pkgLabel, `${dName} ${slot.shortLabel}`));
               });
             }
 
@@ -11595,7 +11725,7 @@
               if (entry.status === 'cancelled' || entry.isRollover) return;
               if (countedExtraPoolIds.has(entry.id)) return;
               const extras = resolveSlotExtras(entry);
-              extras.forEach(ex => addExtraToShoppingMap(ex, `Rencana Pekan (Tambahan ${entry.label})`));
+              extras.forEach(ex => addExtraToShoppingMap(ex, `Rencana Pekan (Tambahan ${entry.label})`, entry.label, 'Rencana Pekan'));
             });
           }
 
@@ -11635,6 +11765,16 @@
               group: normalizeIngredientGroup(m.group, m.name),
               qtyText: qtyStr,
               usedInDishes: m.note ? [m.note] : ['Stok Manual'],
+              dishBreakdown: [{
+                dishId: null,
+                dishName: 'Stok Dapur Manual',
+                category: 'stok',
+                sessionText: 'Kebutuhan Dapur',
+                sessionLabels: ['Stok Dapur'],
+                numQty: parseIngredientQtyNumber(m.qty),
+                qtyText: qtyStr,
+                contextNote: m.note || 'Belanja Stok'
+              }],
               pantryStockText,
               isManual: true,
               manualId: m.id,
@@ -11657,6 +11797,16 @@
                 group: 'Buah Buahan',
                 qtyText: qtyStr,
                 usedInDishes: ['Buah Pekan Ini'],
+                dishBreakdown: [{
+                  dishId: null,
+                  dishName: normName,
+                  category: 'serat_buah',
+                  sessionText: 'Konsumsi Sepekan (Sabtu - Jumat)',
+                  sessionLabels: ['Sepekan'],
+                  numQty: parseIngredientQtyNumber(fr.qty) || 1,
+                  qtyText: qtyStr,
+                  contextNote: 'Menu Buah Harian'
+                }],
                 pantryStockText,
                 isManual: false,
                 isCycleFruit: true,
@@ -11783,7 +11933,12 @@
               text += `*${grp.icon} ${grp.name.toUpperCase()}*\n`;
               items.forEach(i => {
                 const check = isItemChecked(i.id) ? '✅' : '⬜';
-                text += `${check} ${i.name} - *${i.qtyText}* (untuk: ${i.usedInDishes.join(', ')})\n`;
+                if (i.dishBreakdown && i.dishBreakdown.length > 0) {
+                  const details = i.dishBreakdown.map(b => `${b.dishName}${b.sessionText ? ' (' + b.sessionText + ')' : ''}: ${b.qtyText}`).join(', ');
+                  text += `${check} ${i.name} - *${i.qtyText}* (u/ ${details})\n`;
+                } else {
+                  text += `${check} ${i.name} - *${i.qtyText}* (untuk: ${i.usedInDishes.join(', ')})\n`;
+                }
               });
               text += `\n`;
             }
@@ -12371,6 +12526,10 @@
           selectedShoppingCycle,
           shoppingFilter,
           checkedItems,
+          expandedShoppingItems,
+          isAllShoppingBreakdownExpanded,
+          toggleShoppingItemExpanded,
+          toggleAllShoppingBreakdown,
           selectedStockCycle,
           manualStocks,
           modalStock,
