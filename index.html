@@ -3017,10 +3017,10 @@
                     </div>
                   </div>
 
-                  <!-- 3-State Indicator Selector (Full, Sedikit, Habis) -->
-                  <div class="pt-2 border-t border-cream-200/80 space-y-1.5">
+                  <!-- 3-State Indicator Selector: HANYA untuk kategori Saus, Bumbu, dan Tepung -->
+                  <div v-if="isStapleIngredient(item.group, item.name)" class="pt-2 border-t border-cream-200/80 space-y-1.5">
                     <div class="flex items-center justify-between text-[10.5px] font-bold">
-                      <span class="text-taupe-500">Indikator Stok Belanja:</span>
+                      <span class="text-taupe-500">Indikator Stok Belanja (Saus / Bumbu / Tepung):</span>
                       <span v-if="item.status === 'full' || (!item.status && Number(item.qty) > 0)" class="text-emerald-700 font-bold">
                         🟢 Full (Aman)
                       </span>
@@ -7485,10 +7485,10 @@
           { name: 'Bawang Putih', group: 'Bumbu', unit: 'Bonggol/Ons', status: 'full' }
         ];
 
+        // 3 Indikator Kondisi Stok (Full, Sedikit, Habis) HANYA untuk kategori Saus, Bumbu, dan Tepung
         const isStapleIngredient = (group, name = '') => {
           const normGrp = normalizeIngredientGroup(group, name);
-          if (['Sauce', 'Tepung', 'Bumbu', 'Rempah'].includes(normGrp)) return true;
-          return /minyak|kecap|saus|saos|tepung|garam|gula|merica|lada|kaldu|micin|penyedap|terigu|maizena|tapioka/i.test(name || '');
+          return ['Sauce', 'Tepung', 'Bumbu', 'Rempah'].includes(normGrp);
         };
 
         const DEFAULT_MASTER_INGREDIENTS = [
@@ -10643,10 +10643,16 @@
               changed = true;
             }
           });
-          // Ensure all existing items have status
+          // Pastikan HANYA bahan Saus, Bumbu, dan Tepung yang memiliki status 3-indikator
           Object.values(pantryStocks.value).forEach(p => {
-            if (!p.status) {
-              p.status = Number(p.qty) <= 0 ? 'habis' : 'full';
+            if (isStapleIngredient(p.group, p.name)) {
+              if (!p.status) {
+                p.status = Number(p.qty) <= 0 ? 'habis' : 'full';
+                changed = true;
+              }
+            } else if (p.status) {
+              // Hapus status pada non-staple agar tetap menggunakan takaran biasa
+              delete p.status;
               changed = true;
             }
           });
@@ -12463,9 +12469,12 @@
             });
           }
 
-          // Include all pantry staples (bumbu, persausan, tepung) that are marked 'sedikit' or 'habis'
+          // Include HANYA pantry staples (bumbu, saus, tepung) yang berstatus 'sedikit' atau 'habis'
           Object.values(pantryStocks.value || {}).forEach(pItem => {
             if (!pItem || !pItem.name) return;
+            // Kategori selain Saus, Bumbu, dan Tepung tidak menggunakan indikator ini (sesuai resep seperti sebelumnya)
+            if (!isStapleIngredient(pItem.group, pItem.name)) return;
+
             const pStatus = pItem.status || (Number(pItem.qty) <= 0 ? 'habis' : 'full');
             if (pStatus === 'sedikit' || pStatus === 'habis') {
               const normName = pItem.name.trim();
@@ -12687,7 +12696,7 @@
             const curNum = parseIngredientQtyNumber(existing.qty) || 0;
             const newQty = Math.round((curNum + qtyVal) * 100) / 100;
             existing.qty = String(newQty);
-            existing.status = 'full';
+            if (isStapleIngredient(existing.group, existing.name)) { existing.status = 'full'; }
             existing.updatedAt = new Date().toISOString();
             savePantryStocks();
             showToast(`✅ Stok "${trimmedName}" bertambah +${qtyVal} ${unitVal} (Total: ${newQty} ${existing.unit})!`);
