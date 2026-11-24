@@ -3336,7 +3336,7 @@
                           @click="stapleFilter = 'Bumbu'"
                           class="px-3 py-1.5 rounded-xl font-bold transition border cursor-pointer min-h-[34px]"
                           :class="stapleFilter === 'Bumbu' ? 'bg-espresso-900 text-white border-espresso-900' : 'bg-cream-50 text-espresso-800 border-cream-200 hover:bg-cream-100'">
-                    🧄 Bumbu &amp; Rempah ({{ pantryStapleList.filter(i => ['Bumbu', 'Rempah'].includes(normalizeIngredientGroup(i.group, i.name))).length }})
+                    🧂 Bumbu Dapur ({{ pantryStapleList.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Bumbu').length }})
                   </button>
                 </div>
                 
@@ -6650,7 +6650,7 @@
           { name: 'Daging & Unggas', icon: '🥩' },
           { name: 'Sayur Mayur', icon: '🥬' },
           { name: 'Buah Buahan', icon: '🍎' },
-          { name: 'Bumbu', icon: '🧄' },
+          { name: 'Bumbu', icon: '🧂' },
           { name: 'Rempah', icon: '🌿' },
           { name: 'Sauce', icon: '🍶' },
           { name: 'Tepung', icon: '🌾' },
@@ -6661,6 +6661,7 @@
         ];
 
         const REMPAH_KEYWORDS = [
+          'bawang', 'cabai', 'cabe', 'rawit',
           'salam', 'sereh', 'serai', 'daun jeruk', 'kayu manis', 'pekak', 'cengkeh',
           'pala', 'ketumbar', 'jintan', 'kemiri', 'kunyit', 'jahe', 'lengkuas', 'laos',
           'kencur', 'kapulaga', 'bunga lawang', 'lada', 'merica', 'wijen', 'asam jawa',
@@ -7517,26 +7518,28 @@
           { name: 'Kaldu Ayam / Sapi Bubuk', group: 'Bumbu', unit: 'Bungkus', status: 'full' },
           { name: 'Merica / Lada Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
           { name: 'Ketumbar Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
-          { name: 'Kunyit Bubuk', group: 'Rempah', unit: 'Botol/Sachet', status: 'full' },
-          { name: 'Bawang Merah', group: 'Bumbu', unit: 'Ons/Kg', status: 'full' },
-          { name: 'Bawang Putih', group: 'Bumbu', unit: 'Bonggol/Ons', status: 'full' }
+          { name: 'Kunyit Bubuk', group: 'Bumbu', unit: 'Botol/Sachet', status: 'full' }
         ];
 
-        // 3 Indikator Kondisi Stok (Full, Sedikit, Habis) HANYA untuk kategori Saus, Bumbu, dan Tepung
+        // 3 Indikator Kondisi Stok (Full, Sedikit, Habis) HANYA untuk kategori Saus, Bumbu, dan Tepung (Bukan Rempah / Bawang / Cabai)
         const isStapleIngredient = (group, name = '') => {
           const normGrp = normalizeIngredientGroup(group, name);
-          return ['Sauce', 'Tepung', 'Bumbu', 'Rempah'].includes(normGrp);
+          if (!['Sauce', 'Tepung', 'Bumbu'].includes(normGrp)) return false;
+          // Bawang dan Cabai tergolong Rempah segar, tidak memakai indikator 3-level
+          const low = (name || '').toLowerCase().trim();
+          if (/bawang|cabai|cabe|rawit/.test(low)) return false;
+          return true;
         };
 
         const DEFAULT_MASTER_INGREDIENTS = [
-          // Bumbu
-          { name: 'Bawang Putih', defaultUnit: 'siung', group: 'Bumbu', keywords: ['baw', 'baput', 'putih', 'garlic'], icon: '🧄' },
-          { name: 'Bawang Merah', defaultUnit: 'siung', group: 'Bumbu', keywords: ['baw', 'bamer', 'merah', 'shallot'], icon: '🧅' },
-          { name: 'Bawang Bombay', defaultUnit: 'buah', group: 'Bumbu', keywords: ['baw', 'bombay', 'onion'], icon: '🧅' },
-          { name: 'Cabai Rawit Merah', defaultUnit: 'buah', group: 'Bumbu', keywords: ['cab', 'cabe', 'rawit'], icon: '🌶️' },
-          { name: 'Cabai Rawit Hijau', defaultUnit: 'buah', group: 'Bumbu', keywords: ['cab', 'cabe', 'rawit'], icon: '🌶️' },
-          { name: 'Cabai Merah Keriting', defaultUnit: 'buah', group: 'Bumbu', keywords: ['cab', 'cabe', 'keriting'], icon: '🌶️' },
-          { name: 'Cabai Hijau Besar', defaultUnit: 'buah', group: 'Bumbu', keywords: ['cab', 'cabe', 'hijau'], icon: '🌶️' },
+          // Rempah (Termasuk Aneka Bawang & Cabai)
+          { name: 'Bawang Putih', defaultUnit: 'siung', group: 'Rempah', keywords: ['baw', 'baput', 'putih', 'garlic'], icon: '🧄' },
+          { name: 'Bawang Merah', defaultUnit: 'siung', group: 'Rempah', keywords: ['baw', 'bamer', 'merah', 'shallot'], icon: '🧅' },
+          { name: 'Bawang Bombay', defaultUnit: 'buah', group: 'Rempah', keywords: ['baw', 'bombay', 'onion'], icon: '🧅' },
+          { name: 'Cabai Rawit Merah', defaultUnit: 'buah', group: 'Rempah', keywords: ['cab', 'cabe', 'rawit'], icon: '🌶️' },
+          { name: 'Cabai Rawit Hijau', defaultUnit: 'buah', group: 'Rempah', keywords: ['cab', 'cabe', 'rawit'], icon: '🌶️' },
+          { name: 'Cabai Merah Keriting', defaultUnit: 'buah', group: 'Rempah', keywords: ['cab', 'cabe', 'keriting'], icon: '🌶️' },
+          { name: 'Cabai Hijau Besar', defaultUnit: 'buah', group: 'Rempah', keywords: ['cab', 'cabe', 'hijau'], icon: '🌶️' },
           { name: 'Garam', defaultUnit: 'sdt', group: 'Bumbu', keywords: ['garam', 'salt'], icon: '🧂' },
           { name: 'Gula Pasir', defaultUnit: 'sdm', group: 'Bumbu', keywords: ['gula', 'sugar'], icon: '🍬' },
           { name: 'Minyak Wijen', defaultUnit: 'sdm', group: 'Bumbu', keywords: ['minyak', 'wijen', 'sesame'], icon: '🍶' },
@@ -7637,6 +7640,13 @@
           const low = g.toLowerCase();
           const itemLow = (itemName || '').trim().toLowerCase();
 
+          // Khusus aneka Bawang dan Cabai (kecuali Daun Bawang): selalu Rempah, bukan Bumbu
+          if (/bawang|cabai|cabe|rawit/.test(itemLow) && !itemLow.includes('daun bawang')) {
+            if (!['daging & unggas', 'sayur mayur', 'buah buahan', 'instan', 'alat', 'cemilan'].includes(low)) {
+              return 'Rempah';
+            }
+          }
+
           // 1. Exact match with registered grocery groups: ALWAYS PRESERVE USER'S ASSIGNED GROUP!
           const exact = groceryGroups.find(grp => grp.name.toLowerCase() === low);
           if (exact) return exact.name;
@@ -7709,11 +7719,15 @@
           if (!Array.isArray(list)) return [];
           return list.map(item => {
             if (!item || typeof item !== 'object') return item;
-            const normalizedGroup = normalizeIngredientGroup(item.group, item.name);
+            const low = (item.name || '').toLowerCase().trim();
+            let grp = normalizeIngredientGroup(item.group, item.name);
+            if (/bawang|cabai|cabe|rawit/.test(low) && !low.includes('daun bawang')) {
+              grp = 'Rempah';
+            }
             return {
               ...item,
-              group: normalizedGroup,
-              icon: getGroupIcon(normalizedGroup)
+              group: grp,
+              icon: getGroupIcon(grp)
             };
           });
         }
@@ -7724,10 +7738,20 @@
           Object.keys(stocks).forEach(k => {
             const item = stocks[k];
             if (item && typeof item === 'object') {
-              res[k] = {
+              const low = (item.name || '').toLowerCase().trim();
+              let grp = normalizeIngredientGroup(item.group, item.name);
+              if (/bawang|cabai|cabe|rawit/.test(low) && !low.includes('daun bawang')) {
+                grp = 'Rempah';
+              }
+              const cleanItem = {
                 ...item,
-                group: normalizeIngredientGroup(item.group, item.name)
+                group: grp
               };
+              // Jika bukan Saus, Tepung, Bumbu (misal Rempah), buang status 3-indikator
+              if (!isStapleIngredient(grp, item.name)) {
+                delete cleanItem.status;
+              }
+              res[k] = cleanItem;
             }
           });
           return res;
@@ -10680,15 +10704,24 @@
               changed = true;
             }
           });
-          // Pastikan HANYA bahan Saus, Bumbu, dan Tepung yang memiliki status 3-indikator
+          // Sinkronisasi kategori dan pastikan HANYA bahan Saus, Bumbu, dan Tepung yang memiliki status 3-indikator
           Object.values(pantryStocks.value).forEach(p => {
-            if (isStapleIngredient(p.group, p.name)) {
+            const low = (p.name || '').toLowerCase().trim();
+            if (/bawang|cabai|cabe|rawit/.test(low) && !low.includes('daun bawang')) {
+              if (p.group !== 'Rempah') {
+                p.group = 'Rempah';
+                changed = true;
+              }
+              if (p.status) {
+                delete p.status;
+                changed = true;
+              }
+            } else if (isStapleIngredient(p.group, p.name)) {
               if (!p.status) {
                 p.status = Number(p.qty) <= 0 ? 'habis' : 'full';
                 changed = true;
               }
             } else if (p.status) {
-              // Hapus status pada non-staple agar tetap menggunakan takaran biasa
               delete p.status;
               changed = true;
             }
@@ -10732,7 +10765,7 @@
             return list.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Tepung');
           }
           if (stapleFilter.value === 'Bumbu') {
-            return list.filter(i => ['Bumbu', 'Rempah'].includes(normalizeIngredientGroup(i.group, i.name)));
+            return list.filter(i => normalizeIngredientGroup(i.group, i.name) === 'Bumbu');
           }
           return list;
         });
