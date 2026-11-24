@@ -3188,13 +3188,6 @@
                 <i data-lucide="share-2" class="w-4 h-4"></i>
                 <span>Salin ke WhatsApp</span>
               </button>
-
-              <button @click="toggleAllShoppingBreakdown" 
-                      class="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-300 transition flex items-center gap-1.5 cursor-pointer"
-                      :title="isAllShoppingBreakdownExpanded ? 'Ciutkan rincian masakan di semua bahan' : 'Buka semua rincian masakan di seluruh bahan'">
-                <span>{{ isAllShoppingBreakdownExpanded ? '📂 Tutup Rincian Masakan' : '📋 Buka Rincian Masakan' }}</span>
-              </button>
-
             </div>
 
             <div class="flex items-center gap-2 text-xs">
@@ -6114,22 +6107,13 @@
         const shoppingFilter = ref('all'); // all | unbought
         const checkedItems = ref({}); // { [ingredientKey]: true/false }
         const expandedShoppingItems = ref({}); // { [ingredientKey]: boolean }
-        const isAllShoppingBreakdownExpanded = ref(false);
 
         const isShoppingItemOpen = (itemId) => {
-          if (expandedShoppingItems.value[itemId] !== undefined) {
-            return !!expandedShoppingItems.value[itemId];
-          }
-          return isAllShoppingBreakdownExpanded.value;
+          return !!expandedShoppingItems.value[itemId];
         };
 
         const toggleShoppingItemExpanded = (itemId) => {
-          expandedShoppingItems.value[itemId] = !isShoppingItemOpen(itemId);
-        };
-
-        const toggleAllShoppingBreakdown = () => {
-          isAllShoppingBreakdownExpanded.value = !isAllShoppingBreakdownExpanded.value;
-          expandedShoppingItems.value = {};
+          expandedShoppingItems.value[itemId] = !expandedShoppingItems.value[itemId];
         };
 
         // Stock & Fridge Leftover state
@@ -12537,10 +12521,8 @@
           shoppingFilter,
           checkedItems,
           expandedShoppingItems,
-          isAllShoppingBreakdownExpanded,
           isShoppingItemOpen,
           toggleShoppingItemExpanded,
-          toggleAllShoppingBreakdown,
           selectedStockCycle,
           manualStocks,
           modalStock,
