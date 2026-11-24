@@ -365,7 +365,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div v-for="slot in mealSlots" :key="slot.id"
                  class="bg-white rounded-2xl border p-4 sm:p-5 transition shadow-card flex flex-col justify-between gap-4"
-                 :class="getMealForSlot(currentDate, slot.id) ? 'border-cream-200' : 'border-dashed border-cream-300 bg-cream-50/20'">
+                 :class="getMealForSlot(currentDate, slot.id) ? (getMealForSlot(currentDate, slot.id).type === 'tidak_masak' ? 'border-rose-200 bg-rose-50/20' : 'border-cream-200') : 'border-dashed border-cream-300 bg-cream-50/20'">
               
               <!-- Slot Header -->
               <div>
@@ -378,11 +378,12 @@
                       <div class="flex items-center gap-1.5 flex-wrap">
                         <h3 class="text-sm font-bold text-espresso-900">{{ slot.label }}</h3>
                         <span v-if="getMealForSlot(currentDate, slot.id)"
-                              class="text-[9.5px] font-bold px-1.5 py-0.2 rounded-md bg-cream-100 text-espresso-800 border border-cream-200 truncate max-w-[130px]">
-                          {{ getSlotPackageName(getMealForSlot(currentDate, slot.id)) || 'Menu Satuan' }}
+                              class="text-[9.5px] font-bold px-1.5 py-0.2 rounded-md border truncate max-w-[150px]"
+                              :class="getMealForSlot(currentDate, slot.id).type === 'tidak_masak' ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-cream-100 text-espresso-800 border-cream-200'">
+                          {{ getMealForSlot(currentDate, slot.id).type === 'tidak_masak' ? '🚫 Tidak Masak' : (getSlotPackageName(getMealForSlot(currentDate, slot.id)) || 'Menu Satuan') }}
                         </span>
                       </div>
-                      <div v-if="getMealForSlot(currentDate, slot.id) && calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori > 0"
+                      <div v-if="getMealForSlot(currentDate, slot.id) && getMealForSlot(currentDate, slot.id).type !== 'tidak_masak' && calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori > 0"
                            class="text-[10.5px] text-taupe-500 font-semibold mt-0.5">
                         🔥 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).kalori }} kkal • 💪 {{ calculateSlotNutrition(getMealForSlot(currentDate, slot.id), currentDate, slot.id).protein }}g protein
                       </div>
@@ -391,7 +392,7 @@
 
                   <!-- Slot Action Buttons -->
                   <div class="flex items-center gap-1.5 flex-shrink-0">
-                    <button v-if="getMealForSlot(currentDate, slot.id)"
+                    <button v-if="getMealForSlot(currentDate, slot.id) && getMealForSlot(currentDate, slot.id).type !== 'tidak_masak'"
                             type="button" @click="confirmCancelScheduledSlot(currentDate, slot.id)"
                             title="Batal masak hari ini & pindahkan ke stok minggu depan"
                             class="px-2 py-1 rounded-lg text-[10px] font-bold text-sky-700 hover:bg-sky-50 border border-sky-200 transition cursor-pointer">
@@ -400,19 +401,35 @@
                     <button v-if="getMealForSlot(currentDate, slot.id)"
                             type="button" @click="openPickPackageForSlot(currentDate, slot.id)"
                             class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-cream-100 hover:bg-cream-200 text-espresso-800 border border-cream-200 transition cursor-pointer">
-                      Ganti
+                      {{ getMealForSlot(currentDate, slot.id).type === 'tidak_masak' ? 'Ubah' : 'Ganti' }}
                     </button>
                     <button v-if="getMealForSlot(currentDate, slot.id)"
                             type="button" @click="unassignDaySlot(currentDate, slot.id)"
-                            title="Kosongkan sesi ini"
+                            :title="getMealForSlot(currentDate, slot.id).type === 'tidak_masak' ? 'Batalkan status tidak masak' : 'Kosongkan sesi ini'"
                             class="w-6 h-6 rounded-lg text-taupe-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition cursor-pointer">
                       ✕
                     </button>
                   </div>
                 </div>
 
+                <!-- Slot Content: Tidak Masak Card -->
+                <div v-if="getMealForSlot(currentDate, slot.id) && getMealForSlot(currentDate, slot.id).type === 'tidak_masak'" class="pt-3 pb-2 space-y-2">
+                  <div class="p-4 rounded-xl bg-rose-50/70 border border-rose-200/80 text-rose-900 flex items-start gap-3">
+                    <span class="text-2xl flex-shrink-0">🚫</span>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-rose-950">Jadwal Tidak Memasak</div>
+                      <div class="text-xs text-rose-800 mt-1">
+                        <span class="font-semibold text-rose-600">Alasan:</span> {{ getMealForSlot(currentDate, slot.id).reason || 'Tidak Masak' }}
+                      </div>
+                      <div class="text-[10.5px] text-rose-600/90 mt-1.5 italic">
+                        Sesi ini bebas dari persiapan dapur & belanja bahan.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <!-- Slot Content: Filled Dishes List (Flat, No Multi-Layered Boxes) -->
-                <div v-if="getMealForSlot(currentDate, slot.id)" class="pt-3 space-y-2">
+                <div v-else-if="getMealForSlot(currentDate, slot.id)" class="pt-3 space-y-2">
                   <template v-for="cat in dailyNutritionCategories" :key="cat.id">
                     
                     <!-- Fruits from Saturday shopping (if cat is serat_buah) -->
@@ -569,7 +586,7 @@
               <div class="p-4 flex-grow space-y-3">
                 <div v-for="slot in mealSlots" :key="slot.id"
                      class="p-2.5 rounded-xl border transition"
-                     :class="day.meals[slot.id] ? 'bg-cream-50/70 border-cream-200' : 'bg-cream-50/20 border-dashed border-cream-200'">
+                     :class="day.meals[slot.id] ? (day.meals[slot.id].type === 'tidak_masak' ? 'bg-rose-50/50 border-rose-200' : 'bg-cream-50/70 border-cream-200') : 'bg-cream-50/20 border-dashed border-cream-200'">
                   <div class="flex items-center justify-between gap-1 mb-1">
                     <span class="text-[10px] font-bold uppercase text-taupe-500 flex items-center gap-1">
                       <span>{{ slot.icon }}</span>
@@ -577,10 +594,14 @@
                     </span>
                     <button @click="openPickPackageForSlot(day.dateStr, slot.id)"
                             class="text-[10px] font-bold text-caramel-600 hover:text-caramel-800 cursor-pointer">
-                      {{ day.meals[slot.id] ? 'Ganti' : '+ Isi' }}
+                      {{ day.meals[slot.id] ? (day.meals[slot.id].type === 'tidak_masak' ? 'Ubah' : 'Ganti') : '+ Isi' }}
                     </button>
                   </div>
-                  <div v-if="day.meals[slot.id]" class="text-xs font-bold text-espresso-900 line-clamp-2">
+                  <div v-if="day.meals[slot.id] && day.meals[slot.id].type === 'tidak_masak'" class="text-xs font-semibold text-rose-800 flex items-center gap-1.5">
+                    <span>🚫</span>
+                    <span class="truncate">Tidak Masak ({{ day.meals[slot.id].reason || 'Libur' }})</span>
+                  </div>
+                  <div v-else-if="day.meals[slot.id]" class="text-xs font-bold text-espresso-900 line-clamp-2">
                     {{ getSlotPackageName(day.meals[slot.id]) || getDishSummary(day.meals[slot.id]) }}
                   </div>
                   <div v-else class="text-[11px] text-taupe-400 italic">
@@ -1014,8 +1035,34 @@
                       </span>
                     </div>
 
+                    <!-- If Bekal Assigned & Tidak Masak -->
+                    <div v-if="day.bekalMeal && day.bekalMeal.type === 'tidak_masak'"
+                         class="p-3 rounded-2xl bg-rose-50/60 border border-rose-200 space-y-1.5 transition">
+                      <div class="flex items-start justify-between gap-1.5">
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-rose-900">
+                          <span class="text-sm">🚫</span>
+                          <span>Tidak Masak</span>
+                        </div>
+                        <button type="button" @click="unassignDaySlot(day.dateStr, 'bekal')" title="Batalkan status tidak masak"
+                                class="w-5 h-5 rounded-md text-rose-400 hover:text-rose-700 hover:bg-rose-100 flex items-center justify-center cursor-pointer flex-shrink-0">
+                          ✕
+                        </button>
+                      </div>
+                      <div class="text-[11px] text-rose-800 font-medium bg-white/70 px-2 py-1 rounded-lg border border-rose-100 flex items-center gap-1.5">
+                        <span class="text-[10px] text-rose-500 uppercase font-bold tracking-wider">Alasan:</span>
+                        <span class="truncate">{{ day.bekalMeal.reason || 'Tidak Masak' }}</span>
+                      </div>
+                      <div class="pt-1 border-t border-rose-100 flex items-center justify-between">
+                        <span class="text-[10px] text-rose-500 italic">Libur masak</span>
+                        <button type="button" @click="openPickPackageForSlot(day.dateStr, 'bekal')"
+                                class="text-[10px] font-bold text-rose-700 hover:text-rose-900 cursor-pointer">
+                          Ubah / Ganti Menu &rarr;
+                        </button>
+                      </div>
+                    </div>
+
                     <!-- If Bekal Assigned -->
-                    <div v-if="day.bekalMeal"
+                    <div v-else-if="day.bekalMeal"
                          class="p-3 rounded-2xl bg-amber-50/50 border border-amber-200/80 space-y-2">
                       <div class="flex items-start justify-between gap-1.5">
                         <div class="text-xs font-bold text-espresso-900 leading-tight">
@@ -1065,8 +1112,34 @@
                       </span>
                     </div>
 
+                    <!-- If Malam Assigned & Tidak Masak -->
+                    <div v-if="day.malamMeal && day.malamMeal.type === 'tidak_masak'"
+                         class="p-3 rounded-2xl bg-rose-50/60 border border-rose-200 space-y-1.5 transition">
+                      <div class="flex items-start justify-between gap-1.5">
+                        <div class="flex items-center gap-1.5 text-xs font-bold text-rose-900">
+                          <span class="text-sm">🚫</span>
+                          <span>Tidak Masak</span>
+                        </div>
+                        <button type="button" @click="unassignDaySlot(day.dateStr, 'malam')" title="Batalkan status tidak masak"
+                                class="w-5 h-5 rounded-md text-rose-400 hover:text-rose-700 hover:bg-rose-100 flex items-center justify-center cursor-pointer flex-shrink-0">
+                          ✕
+                        </button>
+                      </div>
+                      <div class="text-[11px] text-rose-800 font-medium bg-white/70 px-2 py-1 rounded-lg border border-rose-100 flex items-center gap-1.5">
+                        <span class="text-[10px] text-rose-500 uppercase font-bold tracking-wider">Alasan:</span>
+                        <span class="truncate">{{ day.malamMeal.reason || 'Tidak Masak' }}</span>
+                      </div>
+                      <div class="pt-1 border-t border-rose-100 flex items-center justify-between">
+                        <span class="text-[10px] text-rose-500 italic">Libur masak</span>
+                        <button type="button" @click="openPickPackageForSlot(day.dateStr, 'malam')"
+                                class="text-[10px] font-bold text-rose-700 hover:text-rose-900 cursor-pointer">
+                          Ubah / Ganti Menu &rarr;
+                        </button>
+                      </div>
+                    </div>
+
                     <!-- If Malam Assigned -->
-                    <div v-if="day.malamMeal"
+                    <div v-else-if="day.malamMeal"
                          class="p-3 rounded-2xl bg-indigo-50/30 border border-indigo-200/80 space-y-2">
                       <div class="flex items-start justify-between gap-1.5">
                         <div class="text-xs font-bold text-espresso-900 leading-tight">
@@ -5561,7 +5634,7 @@
               <span>{{ formatTanggalIndo(modalPickSlotPackage.dateStr, true) }} • {{ modalPickSlotPackage.slotId === 'bekal' ? '☀️ Menu Makan Siang' : '🌙 Makan Malam' }}</span>
             </div>
             <h3 class="font-serif font-bold text-base sm:text-lg text-espresso-900">
-              Pilih Paket untuk Sesi Ini
+              Atur Menu Sesi Ini
             </h3>
           </div>
           <button @click="modalPickSlotPackage.show = false" class="text-taupe-400 hover:text-espresso-800 p-1.5 rounded-xl hover:bg-cream-100 transition cursor-pointer">
@@ -5569,9 +5642,60 @@
           </button>
         </div>
 
-        <!-- Subtitle notice -->
-        <div class="text-xs text-taupe-500 flex-shrink-0">
-          Pilih salah satu paket menu yang telah Anda tentukan untuk pekan ini:
+        <!-- OPSI TIDAK MASAK (DAY OFF / SKIP COOKING) -->
+        <div class="p-3.5 rounded-2xl border border-rose-200/90 bg-rose-50/50 space-y-2.5 flex-shrink-0">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-sm font-bold flex-shrink-0">🚫</span>
+              <div>
+                <div class="text-xs font-bold text-rose-950">Opsi Tidak Masak pada Sesi Ini</div>
+                <div class="text-[10.5px] text-rose-700">Tandai jika tidak memasak (makan di luar, acara, puasa, pesan online, dll.)</div>
+              </div>
+            </div>
+            <span v-if="isCurrentModalSlotNoCook" class="text-[9.5px] font-bold px-2 py-0.5 rounded-full bg-rose-200 text-rose-900 border border-rose-300">
+              Aktif
+            </span>
+          </div>
+
+          <!-- Quick Preset Chips -->
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" 
+                    v-for="preset in ['Makan di Luar', 'Pesan GoFood / Online', 'Acara / Kondangan', 'Puasa', 'Menginap di Luar', 'Makan Stok Kemarin']" 
+                    :key="preset"
+                    @click="modalPickSlotPackage.noCookReason = preset"
+                    class="text-[10px] font-semibold px-2 py-1 rounded-lg border transition cursor-pointer"
+                    :class="modalPickSlotPackage.noCookReason === preset ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-bold' : 'bg-white text-rose-800 border-rose-200 hover:bg-rose-100/70'">
+              {{ preset }}
+            </button>
+          </div>
+
+          <!-- Reason Input & Action -->
+          <div class="flex flex-col sm:flex-row gap-2 pt-0.5">
+            <input type="text"
+                   v-model="modalPickSlotPackage.noCookReason"
+                   placeholder="Tulis alasan tidak masak (bebas tulis sendiri)..."
+                   @keyup.enter="confirmSetNoCook()"
+                   class="w-full text-xs rounded-xl border border-rose-200 bg-white px-3 py-2 text-espresso-900 placeholder:text-taupe-400 focus:outline-none focus:ring-2 focus:ring-rose-400">
+            <button type="button"
+                    @click="confirmSetNoCook()"
+                    class="px-4 py-2 rounded-xl text-xs font-bold bg-rose-500 hover:bg-rose-600 active:scale-95 text-white transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs flex-shrink-0">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i>
+              <span>{{ isCurrentModalSlotNoCook ? 'Simpan Perubahan' : 'Set Tidak Masak' }}</span>
+            </button>
+          </div>
+          <div v-if="isCurrentModalSlotNoCook" class="flex items-center justify-between pt-1 border-t border-rose-200/60 text-[11px]">
+            <span class="text-rose-700 italic">Saat ini ditandai tidak masak.</span>
+            <button type="button" @click="unassignDaySlot(modalPickSlotPackage.dateStr, modalPickSlotPackage.slotId); modalPickSlotPackage.show = false;"
+                    class="text-[10.5px] font-bold text-rose-700 hover:text-rose-950 underline cursor-pointer">
+              Batalkan Status Tidak Masak
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-shrink-0 py-0.5">
+          <div class="flex-grow h-px bg-cream-200"></div>
+          <span class="text-[10px] font-bold uppercase tracking-wider text-taupe-400">Atau Pilih Paket Menu Pekan Ini</span>
+          <div class="flex-grow h-px bg-cream-200"></div>
         </div>
 
         <!-- Pool Entries List -->
@@ -7386,7 +7510,15 @@
         const modalPickSlotPackage = ref({
           show: false,
           dateStr: '',
-          slotId: 'bekal'
+          slotId: 'bekal',
+          noCookReason: ''
+        });
+
+        const isCurrentModalSlotNoCook = computed(() => {
+          const { dateStr, slotId } = modalPickSlotPackage.value;
+          if (!dateStr || !slotId) return false;
+          const meal = getMealForSlot(dateStr, slotId);
+          return !!(meal && meal.type === 'tidak_masak');
         });
         const modalPlanSnackDate = ref({
           show: false,
@@ -8178,11 +8310,53 @@
         };
 
         const openPickPackageForSlot = (dateStr, slotId) => {
+          const existingMeal = getMealForSlot(dateStr, slotId);
           modalPickSlotPackage.value = {
             show: true,
             dateStr,
-            slotId
+            slotId,
+            noCookReason: (existingMeal && existingMeal.type === 'tidak_masak') ? (existingMeal.reason || '') : ''
           };
+          nextTick(() => { if (window.lucide) lucide.createIcons(); });
+        };
+
+        const confirmSetNoCook = (customReason = null) => {
+          const { dateStr, slotId } = modalPickSlotPackage.value;
+          if (!dateStr || !slotId) return;
+
+          const reason = (customReason !== null ? customReason : modalPickSlotPackage.value.noCookReason || '').trim() || 'Tidak Masak';
+
+          // If a weeklyMenuPool entry was assigned to this slot, unassign it
+          const existingEntry = (weeklyMenuPool.value || []).find(e => e.assignedDate === dateStr && e.assignedSlot === slotId);
+          if (existingEntry) {
+            existingEntry.assignedDate = null;
+            existingEntry.assignedSlot = null;
+            saveWeeklyMenuPool();
+          }
+
+          const existingDay = getDayMeals(dateStr);
+          const nextDay = {
+            bekal: existingDay.bekal || null,
+            malam: existingDay.malam || null,
+            updatedAt: new Date().toISOString()
+          };
+          nextDay[slotId] = {
+            type: 'tidak_masak',
+            label: 'Tidak Masak',
+            reason: reason,
+            isNoCook: true,
+            items: {},
+            fruits: [],
+            updatedAt: new Date().toISOString()
+          };
+          mealPlans.value[dateStr] = nextDay;
+          if (deletedMealDates.value.includes(dateStr)) {
+            deletedMealDates.value = deletedMealDates.value.filter(d => d !== dateStr);
+            localStorage.setItem('seleraku_deleted_meals', JSON.stringify(deletedMealDates.value));
+          }
+          localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+          showToast(`Sesi ${slotId === 'bekal' ? 'Makan Siang' : 'Makan Malam'} ditandai Tidak Masak: ${reason}`);
+          modalPickSlotPackage.value.show = false;
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
         };
 
@@ -8209,12 +8383,13 @@
           } else {
             const dayPlan = mealPlans.value[dateStr];
             if (dayPlan && dayPlan[slotId]) {
+              const wasNoCook = dayPlan[slotId].type === 'tidak_masak';
               dayPlan[slotId] = null;
               if (!dayPlan.bekal && !dayPlan.malam) {
                 delete mealPlans.value[dateStr];
               }
               localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
-              showToast('Menu dilepas dari sesi ini.');
+              showToast(wasNoCook ? 'Status Tidak Masak dibatalkan.' : 'Menu dilepas dari sesi ini.');
             }
           }
           nextTick(() => { if (window.lucide) lucide.createIcons(); });
@@ -8222,6 +8397,7 @@
 
         const getSlotPackageName = (meal) => {
           if (!meal) return '';
+          if (meal.type === 'tidak_masak') return meal.reason ? `Tidak Masak (${meal.reason})` : 'Tidak Masak';
           if (meal.packageId) return getPackageName(meal.packageId);
           if (meal.poolId) {
             const entry = (weeklyMenuPool.value || []).find(e => e.id === meal.poolId);
@@ -8630,7 +8806,7 @@
 
         const confirmCancelScheduledSlot = (dateStr, slotId) => {
           const slotObj = getMealForSlot(dateStr, slotId);
-          if (!slotObj) return;
+          if (!slotObj || slotObj.type === 'tidak_masak') return;
           // If linked to a weeklyMenuPool entry, reuse confirmCancelWeeklyMenu directly!
           if (slotObj.poolId) {
             const linked = (weeklyMenuPool.value || []).find(e => e.id === slotObj.poolId);
@@ -9046,6 +9222,7 @@
 
         const isMealSlotFilled = (mealObj) => {
           if (!mealObj || typeof mealObj !== 'object') return false;
+          if (mealObj.type === 'tidak_masak') return true;
           if (mealObj.type === 'paket' && mealObj.packageId) return true;
           if (Array.isArray(mealObj.fruits) && mealObj.fruits.length > 0) return true;
           if (!mealObj.items || typeof mealObj.items !== 'object') return false;
@@ -9346,7 +9523,11 @@
         };
 
         const getDishSummary = (meal) => {
-          if (!meal || !meal.items) return 'Belum Diatur';
+          if (!meal) return 'Belum Diatur';
+          if (meal.type === 'tidak_masak') {
+            return meal.reason ? `Tidak Masak (${meal.reason})` : 'Tidak Masak';
+          }
+          if (!meal.items) return 'Belum Diatur';
           if (meal.type === 'paket' && meal.packageId) {
             return getPackageName(meal.packageId);
           }
@@ -11661,7 +11842,7 @@
               const dName = dayNamesShort[d.getDay()];
               mealSlots.forEach(slot => {
                 const meal = dayMeals[slot.id];
-                if (!meal) return;
+                if (!meal || meal.type === 'tidak_masak') return;
                 if (meal.poolId) countedExtraPoolIds.add(meal.poolId);
                 if (meal.isRollover) return;
                 const extras = resolveSlotExtras(meal);
@@ -12796,6 +12977,8 @@
           getPackageWeeklyCount,
           removePackageFromWeeklyPool,
           modalPickSlotPackage,
+          isCurrentModalSlotNoCook,
+          confirmSetNoCook,
           openPickPackageForSlot,
           pickPackageForSlot,
           unassignDaySlot,
