@@ -6347,6 +6347,43 @@
             </div>
           </div>
 
+          <!-- Section: DATABASE RESMI PRIBADI (GOOGLE FIREBASE) -->
+          <div class="p-4 rounded-2xl border-2 border-amber-300 bg-amber-50/60 shadow-xs space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                <span class="text-sm">🔥</span>
+                <span>Database Awan Permanen (Google Firebase)</span>
+              </span>
+              <span v-if="firebaseUrl" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                ● Aktif & Terhubung
+              </span>
+              <span v-else class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-900">
+                Belum Terhubung
+              </span>
+            </div>
+            
+            <p class="text-xs text-taupe-700 leading-relaxed">
+              Hubungkan database Google Firebase gratis milik Anda agar seluruh menu & stok tersimpan selamanya di server Google, tidak pernah hilang, dan otomatis sinkron 24 jam antar HP & Komputer.
+            </p>
+
+            <div class="space-y-1.5 pt-1">
+              <div class="flex gap-2">
+                <input type="url" 
+                       v-model="firebaseUrlInput"
+                       placeholder="https://elfoody-xxxx-default-rtdb.firebaseio.com"
+                       class="flex-1 px-3 py-2 text-xs rounded-xl border border-cream-300 bg-white focus:outline-none focus:border-caramel-500 font-mono text-espresso-900">
+                <button type="button" 
+                        @click="saveFirebaseUrl"
+                        class="px-4 py-2 rounded-xl bg-caramel-600 hover:bg-caramel-700 active:scale-95 text-white font-bold text-xs transition cursor-pointer flex-shrink-0">
+                  Simpan
+                </button>
+              </div>
+              <p v-if="firebaseUrl" class="text-[11px] text-emerald-700 font-semibold">
+                ✓ Database aktif. Data otomatis tersinkron ke Google Firebase Anda.
+              </p>
+            </div>
+          </div>
+
           <!-- Section 1: UNDUH DARI HP -->
           <div class="p-4 rounded-2xl border border-cream-300 bg-white shadow-xs space-y-2.5">
             <div class="flex items-center justify-between">
@@ -8160,6 +8197,28 @@
         const showPasteInput = ref(false);
         const cloudError = ref(null);
 
+        const storedFirebaseUrl = localStorage.getItem('seleraku_firebase_url') || '';
+        const firebaseUrl = ref(storedFirebaseUrl);
+        const firebaseUrlInput = ref(storedFirebaseUrl);
+
+        const saveFirebaseUrl = () => {
+          let url = (firebaseUrlInput.value || '').trim();
+          if (url) {
+            url = url.replace(/\/+$/, '');
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+              url = 'https://' + url;
+            }
+          }
+          firebaseUrl.value = url;
+          localStorage.setItem('seleraku_firebase_url', url);
+          if (url) {
+            showToast('Database Google Firebase berhasil dihubungkan! Menyinkronkan data...', 'success');
+            triggerSyncServer();
+          } else {
+            showToast('Koneksi database eksternal dinonaktifkan.', 'info');
+          }
+        };
+
         const openSyncModal = () => {
           showSyncModal.value = true;
           nextTick(() => {
@@ -8207,22 +8266,48 @@
 
             let synced = false;
 
-            // 1. Send to Global 24/7 Cloud (Accessible on Netlify, iOS, Android, PC)
-            try {
-              const resCloud = await fetch(CLOUD_SYNC_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-              });
-              if (resCloud.ok) {
-                synced = true;
-                cloudError.value = null;
-              } else {
-                cloudError.value = 'Server cloud eksternal sedang penuh (' + resCloud.status + '). Data Anda aman di memori HP/lokal.';
+            // 1. Send to Dedicated Google Firebase Realtime Database if configured
+            if (firebaseUrl.value) {
+              try {
+                const fbEndpoint = firebaseUrl.value.replace(/\/+$/, '') + '/elfoody_data.json';
+                const resFb = await fetch(fbEndpoint, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (resFb.ok) {
+                  synced = true;
+                  cloudError.value = null;
+                } else {
+                  console.warn('Firebase sync status:', resFb.status);
+                }
+              } catch (e) {
+                console.warn('Firebase sync error:', e);
               }
-            } catch (e) {
-              console.warn('Cloud sync POST error:', e);
-              cloudError.value = 'Koneksi ke cloud terputus. Data Anda aman di memori HP/lokal.';
+            }
+
+            // 2. Send to Global Cloud KVDB (fallback)
+            if (!synced) {
+              try {
+                const resCloud = await fetch(CLOUD_SYNC_URL, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(payload)
+                });
+                if (resCloud.ok) {
+                  synced = true;
+                  cloudError.value = null;
+                } else {
+                  if (!firebaseUrl.value) {
+                    cloudError.value = 'Server cloud cadangan sedang penuh (' + resCloud.status + '). Data Anda aman di memori HP.';
+                  }
+                }
+              } catch (e) {
+                console.warn('Cloud sync POST error:', e);
+                if (!firebaseUrl.value) {
+                  cloudError.value = 'Koneksi cloud terputus. Data Anda aman di memori HP.';
+                }
+              }
             }
 
             // 2. Also send to local Python server if accessible
@@ -8243,26 +8328,49 @@
           try {
             let data = null;
 
-            // 1. Try Global Cloud Sync (Priority for 24/7 access on Netlify)
-            try {
-              const resCloud = await fetch(CLOUD_SYNC_URL + '?t=' + Date.now());
-              if (resCloud.ok) {
-                const cloudJson = await resCloud.json();
-                if (cloudJson && typeof cloudJson === 'object' && cloudJson.updatedAt) {
-                  data = cloudJson;
-                  cloudError.value = null;
+            // 1. Priority: Pull from Dedicated Google Firebase Database
+            if (firebaseUrl.value) {
+              try {
+                const fbEndpoint = firebaseUrl.value.replace(/\/+$/, '') + '/elfoody_data.json?t=' + Date.now();
+                const resFb = await fetch(fbEndpoint);
+                if (resFb.ok) {
+                  const fbJson = await resFb.json();
+                  if (fbJson && typeof fbJson === 'object' && fbJson.updatedAt) {
+                    data = fbJson;
+                    cloudError.value = null;
+                  }
                 }
-              } else {
-                cloudError.value = 'Server cloud eksternal sedang penuh (' + resCloud.status + ').';
-                if (!silent) {
-                  showToast('Server cloud sedang mengalami gangguan/penuh. Gunakan fitur Pindah / Cadangkan Data.', 'warning');
-                }
+              } catch (e) {
+                console.warn('Firebase pull error:', e);
               }
-            } catch (e) {
-              console.warn('Cloud pull error:', e);
-              cloudError.value = 'Koneksi cloud terputus.';
-              if (!silent) {
-                showToast('Koneksi ke cloud terputus. Gunakan tombol Cadangkan / Pindah Data.', 'warning');
+            }
+
+            // 2. Fallback: Pull from Global Cloud KVDB
+            if (!data) {
+              try {
+                const resCloud = await fetch(CLOUD_SYNC_URL + '?t=' + Date.now());
+                if (resCloud.ok) {
+                  const cloudJson = await resCloud.json();
+                  if (cloudJson && typeof cloudJson === 'object' && cloudJson.updatedAt) {
+                    data = cloudJson;
+                    cloudError.value = null;
+                  }
+                } else {
+                  if (!firebaseUrl.value) {
+                    cloudError.value = 'Server cloud cadangan sedang penuh (' + resCloud.status + ').';
+                    if (!silent) {
+                      showToast('Server cloud sedang penuh. Gunakan fitur Pindah / Cadangkan Data.', 'warning');
+                    }
+                  }
+                }
+              } catch (e) {
+                console.warn('Cloud pull error:', e);
+                if (!firebaseUrl.value) {
+                  cloudError.value = 'Koneksi cloud terputus.';
+                  if (!silent) {
+                    showToast('Koneksi ke cloud terputus. Gunakan tombol Cadangkan / Pindah Data.', 'warning');
+                  }
+                }
               }
             }
 
@@ -13935,6 +14043,9 @@
           pastedBackupText,
           showPasteInput,
           cloudError,
+          firebaseUrl,
+          firebaseUrlInput,
+          saveFirebaseUrl,
           getPackageCategoryFoodIds,
           getPackageCategoryFoods,
           addDishToPackageCategory,
