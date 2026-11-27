@@ -256,6 +256,16 @@
 
           <!-- Header Right Quick Actions (Touch friendly min 44px) -->
           <div class="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
+            <!-- Backup & Sync Modal Trigger -->
+            <button type="button"
+                    @click="openSyncModal"
+                    title="Cadangkan & Pindah Data Antar Perangkat"
+                    class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition border cursor-pointer active:scale-95 bg-cream-100 hover:bg-cream-200 text-espresso-800 border-cream-300 shadow-xs">
+              <span class="text-sm">📦</span>
+              <span class="hidden sm:inline">Pindah / Backup</span>
+              <span class="sm:hidden text-[11px]">Backup</span>
+            </button>
+
             <!-- Current Date Badge (Desktop) -->
             <div class="hidden xl:flex flex-col items-end text-right">
               <div class="text-[10px] uppercase tracking-wider text-espresso-500 font-semibold">Hari Ini</div>
@@ -6289,6 +6299,142 @@
       </div>
     </div>
 
+    <!-- ======================================================== -->
+    <!-- MODAL 16: SINKRONISASI & CADANGKAN / PINDAH DATA (BACKUP)-->
+    <!-- ======================================================== -->
+    <div v-if="showSyncModal" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-fade-in no-print"
+         @click.self="showSyncModal = false">
+      <div class="bg-white rounded-3xl max-w-lg w-full max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-cream-300">
+        
+        <!-- Header Modal -->
+        <div class="p-4 sm:p-5 border-b border-cream-200 flex items-center justify-between bg-cream-50/60">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-200 flex items-center justify-center text-lg flex-shrink-0 shadow-xs">
+              📦
+            </div>
+            <div>
+              <h3 class="font-serif font-bold text-base sm:text-lg text-espresso-900 leading-tight">Cadangkan & Pindah Data</h3>
+              <p class="text-[11px] sm:text-xs text-taupe-500">Pindahkan data menu & stok antar HP dan Komputer dengan aman</p>
+            </div>
+          </div>
+          <button type="button" @click="showSyncModal = false" 
+                  class="w-8 h-8 rounded-full bg-cream-100 hover:bg-cream-200 text-taupe-600 flex items-center justify-center transition cursor-pointer">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Body Modal (Scrollable) -->
+        <div class="p-4 sm:p-5 overflow-y-auto space-y-4 ios-scroll text-espresso-900">
+          
+          <!-- Status Ringkasan Data Lokal -->
+          <div class="p-3.5 rounded-2xl bg-cream-50 border border-cream-200 text-xs space-y-1.5">
+            <div class="flex items-center justify-between font-bold text-espresso-900">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                Data Tersimpan di Perangkat Ini
+              </span>
+              <span class="text-[10px] text-taupe-500 font-medium">Lokal</span>
+            </div>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-taupe-600 text-[11px] pt-1">
+              <span>🥕 Stok Dapur: <strong>{{ Object.keys(pantryStocks || {}).length }} bahan</strong></span>
+              <span>🍱 Menu Pekan Ini: <strong>{{ (weeklyMenuPool || []).length }} paket</strong></span>
+              <span>🍲 Resep: <strong>{{ (foodItems || []).length }} menu</strong></span>
+            </div>
+            <div v-if="cloudError" class="mt-2 p-2 rounded-xl bg-amber-50/90 border border-amber-200 text-[11px] text-amber-900 flex items-start gap-1.5">
+              <span class="text-xs">⚠️</span>
+              <p class="leading-relaxed">Koneksi cloud otomatis eksternal sedang sibuk. Gunakan tombol unduh/impor di bawah untuk memindahkan data antar HP & Komputer dengan 100% aman.</p>
+            </div>
+          </div>
+
+          <!-- Section 1: UNDUH DARI HP -->
+          <div class="p-4 rounded-2xl border border-cream-300 bg-white shadow-xs space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-caramel-800 flex items-center gap-1.5">
+                <span>📱 1. Dari Ponsel (Ekspor Data)</span>
+              </span>
+              <span class="text-[10px] font-semibold text-taupe-400 uppercase tracking-wider">Langkah 1</span>
+            </div>
+            <p class="text-xs text-taupe-600 leading-relaxed">
+              Klik tombol di bawah di HP Anda untuk menyimpan seluruh stok dapur dan menu terpilih ke dalam 1 file cadangan.
+            </p>
+            <div class="pt-1 flex flex-col gap-2">
+              <button type="button" @click="exportDataBackup"
+                      class="w-full py-3 px-4 rounded-2xl bg-caramel-600 hover:bg-caramel-700 active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Unduh File Cadangan Data (.json)</span>
+              </button>
+              
+              <button type="button" @click="copyDataToClipboard"
+                      class="w-full py-2.5 px-3 rounded-xl bg-cream-100 hover:bg-cream-200 active:scale-98 text-espresso-800 border border-cream-300 font-semibold text-xs flex items-center justify-center gap-2 transition cursor-pointer">
+                <i data-lucide="copy" class="w-3.5 h-3.5 text-caramel-600"></i>
+                <span>Atau Salin Teks Data (Untuk WhatsApp)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 2: MASUKKAN KE KOMPUTER -->
+          <div class="p-4 rounded-2xl border border-cream-300 bg-white shadow-xs space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-espresso-900 flex items-center gap-1.5">
+                <span>💻 2. Di Komputer / Laptop (Impor Data)</span>
+              </span>
+              <span class="text-[10px] font-semibold text-taupe-400 uppercase tracking-wider">Langkah 2</span>
+            </div>
+            <p class="text-xs text-taupe-600 leading-relaxed">
+              Kirim file atau teks dari HP ke Komputer (via WhatsApp Web atau Email). Lalu klik tombol di bawah untuk memasukkan data.
+            </p>
+            <div class="pt-1 flex flex-col gap-2">
+              <button type="button" @click="triggerImportBackup"
+                      class="w-full py-3 px-4 rounded-2xl bg-espresso-900 hover:bg-espresso-800 active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4 text-caramel-400"></i>
+                <span>Pilih & Masukkan File Cadangan</span>
+              </button>
+              <input type="file" id="backup-file-input" @change="handleBackupFile" accept=".json,application/json" class="hidden">
+
+              <!-- Toggle Paste Text -->
+              <button type="button" @click="showPasteInput = !showPasteInput"
+                      class="text-xs text-caramel-700 hover:text-caramel-800 font-bold flex items-center justify-center gap-1 py-1 cursor-pointer">
+                <span>{{ showPasteInput ? '▲ Tutup Kolom Tempel Teks' : '▼ Atau Tempel Teks dari WhatsApp' }}</span>
+              </button>
+              <div v-if="showPasteInput" class="p-3 rounded-2xl bg-cream-50 border border-cream-300 space-y-2 animate-fade-in">
+                <textarea v-model="pastedBackupText" rows="3" 
+                          placeholder="Tempel / Paste teks cadangan di sini..."
+                          class="w-full p-2.5 text-xs rounded-xl border border-cream-300 bg-white font-mono focus:outline-none focus:border-caramel-500"></textarea>
+                <button type="button" @click="applyPastedBackup"
+                        class="w-full py-2.5 rounded-xl bg-caramel-600 hover:bg-caramel-700 text-white font-bold text-xs transition cursor-pointer">
+                  Terapkan Data dari Teks
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: COBA CLOUD SYNC -->
+          <div class="p-3.5 rounded-2xl bg-cream-50/70 border border-cream-200 flex items-center justify-between gap-3 text-xs">
+            <div>
+              <span class="font-bold text-espresso-900 block text-xs">Sinkronisasi Cloud Otomatis</span>
+              <span class="text-[11px] text-taupe-500">{{ syncStatus === 'synced' ? 'Tersambung ke server awan' : 'Sedang dalam mode penyimpanan lokal' }}</span>
+            </div>
+            <button type="button" @click="pullSyncFromServer(false)"
+                    class="flex-shrink-0 px-3 py-2 rounded-xl bg-white hover:bg-cream-100 border border-cream-300 text-espresso-800 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-caramel-600"></i>
+              <span>Coba Cloud</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Footer Modal -->
+        <div class="p-4 border-t border-cream-200 bg-cream-50/40 flex items-center justify-end">
+          <button type="button" @click="showSyncModal = false"
+                  class="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-espresso-800 hover:bg-espresso-900 shadow-card transition cursor-pointer">
+            Tutup
+          </button>
+        </div>
+
+      </div>
+    </div>
+
     <!-- iOS NATIVE-STYLE BOTTOM TAB BAR (Optimized for iPhone 11 & 11 Pro) -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-cream-200 ios-safe-bottom-nav shadow-ios-bottom">
       <div class="grid grid-cols-6 items-center h-14 px-0.5 max-w-md mx-auto">
@@ -8009,6 +8155,17 @@
         };
 
         const syncStatus = ref('local'); // 'local' | 'syncing' | 'synced'
+        const showSyncModal = ref(false);
+        const pastedBackupText = ref('');
+        const showPasteInput = ref(false);
+        const cloudError = ref(null);
+
+        const openSyncModal = () => {
+          showSyncModal.value = true;
+          nextTick(() => {
+            if (window.lucide) window.lucide.createIcons();
+          });
+        };
 
         // 24/7 Global Cloud Database (Works anywhere on Netlify, iPhone, Husband's phone, PC)
         const CLOUD_SYNC_URL = 'https://kvdb.io/KHq6qXC8FpLdPUZ1F8CCbm/elfoody_data';
@@ -8057,9 +8214,15 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
               });
-              if (resCloud.ok) synced = true;
+              if (resCloud.ok) {
+                synced = true;
+                cloudError.value = null;
+              } else {
+                cloudError.value = 'Server cloud eksternal sedang penuh (' + resCloud.status + '). Data Anda aman di memori HP/lokal.';
+              }
             } catch (e) {
               console.warn('Cloud sync POST error:', e);
+              cloudError.value = 'Koneksi ke cloud terputus. Data Anda aman di memori HP/lokal.';
             }
 
             // 2. Also send to local Python server if accessible
@@ -8087,10 +8250,20 @@
                 const cloudJson = await resCloud.json();
                 if (cloudJson && typeof cloudJson === 'object' && cloudJson.updatedAt) {
                   data = cloudJson;
+                  cloudError.value = null;
+                }
+              } else {
+                cloudError.value = 'Server cloud eksternal sedang penuh (' + resCloud.status + ').';
+                if (!silent) {
+                  showToast('Server cloud sedang mengalami gangguan/penuh. Gunakan fitur Pindah / Cadangkan Data.', 'warning');
                 }
               }
             } catch (e) {
               console.warn('Cloud pull error:', e);
+              cloudError.value = 'Koneksi cloud terputus.';
+              if (!silent) {
+                showToast('Koneksi ke cloud terputus. Gunakan tombol Cadangkan / Pindah Data.', 'warning');
+              }
             }
 
             // 2. Fallback to local server if cloud failed
@@ -11946,8 +12119,8 @@
           showToast(`${newPkgs.length > 0 ? newPkgs.length : 3} Contoh paket menu berhasil dimuat!`, 'success');
         };
 
-        const exportDataBackup = () => {
-          const exportPayload = {
+        const getFullBackupPayload = () => {
+          return {
             version: DATA_VERSION,
             exportedAt: new Date().toISOString(),
             foodItems: foodItems.value,
@@ -11956,15 +12129,138 @@
             masterIngredients: masterIngredients.value,
             pantryStocks: pantryStocks.value,
             manualStocks: manualStocks.value,
-              snackList: snackList.value,
-              cycleFruits: cycleFruits.value
+            snackList: snackList.value,
+            cycleFruits: cycleFruits.value,
+            weeklyMenuPool: weeklyMenuPool.value,
+            weeklyMenuTarget: weeklyMenuTarget.value,
+            actualProteinWeights: actualProteinWeights.value,
+            nutritionTargets: nutritionTargets.value,
+            manualShoppingItems: manualShoppingItems.value,
+            checkedItems: checkedItems.value
           };
-          const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportPayload, null, 2));
+        };
+
+        const exportDataBackup = () => {
+          const payload = getFullBackupPayload();
+          const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(payload, null, 2));
           const dlAnchorElem = document.createElement('a');
           dlAnchorElem.setAttribute('href', dataStr);
           dlAnchorElem.setAttribute('download', `elfoody_backup_${new Date().toISOString().slice(0, 10)}.json`);
           dlAnchorElem.click();
-          showToast('File cadangan data berhasil diunduh!');
+          showToast('File cadangan data berhasil diunduh!', 'success');
+        };
+
+        const copyDataToClipboard = async () => {
+          try {
+            const payload = getFullBackupPayload();
+            const str = JSON.stringify(payload);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              await navigator.clipboard.writeText(str);
+              showToast('Teks cadangan disalin ke papan klip! Siap dikirim via WhatsApp.', 'success');
+            } else {
+              const ta = document.createElement('textarea');
+              ta.value = str;
+              document.body.appendChild(ta);
+              ta.select();
+              document.execCommand('copy');
+              document.body.removeChild(ta);
+              showToast('Teks cadangan disalin ke papan klip! Siap dikirim via WhatsApp.', 'success');
+            }
+          } catch (err) {
+            showToast('Gagal menyalin: ' + err.message, 'error');
+          }
+        };
+
+        const applyImportedData = (imported) => {
+          if (!imported || typeof imported !== 'object') {
+            throw new Error('Format data tidak valid');
+          }
+          let countItems = 0;
+
+          if (Array.isArray(imported.foodItems)) {
+            foodItems.value = migrateFoodIngredientsGroups(imported.foodItems);
+            localStorage.setItem('seleraku_food_items', JSON.stringify(foodItems.value));
+            countItems++;
+          }
+          if (Array.isArray(imported.packages)) {
+            packages.value = imported.packages;
+            localStorage.setItem('seleraku_packages', JSON.stringify(packages.value));
+            countItems++;
+          }
+          if (imported.mealPlans && typeof imported.mealPlans === 'object') {
+            mealPlans.value = imported.mealPlans;
+            localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
+            countItems++;
+          }
+          if (Array.isArray(imported.masterIngredients)) {
+            masterIngredients.value = migrateMasterIngredientsGroups(imported.masterIngredients);
+            localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
+            countItems++;
+          }
+          if (imported.manualStocks && typeof imported.manualStocks === 'object') {
+            manualStocks.value = imported.manualStocks;
+            localStorage.setItem('seleraku_manual_stocks', JSON.stringify(manualStocks.value));
+            countItems++;
+          }
+          if (imported.pantryStocks && typeof imported.pantryStocks === 'object') {
+            pantryStocks.value = migratePantryStocksGroups(imported.pantryStocks);
+            localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
+            countItems++;
+          }
+          if (Array.isArray(imported.weeklyMenuPool)) {
+            weeklyMenuPool.value = imported.weeklyMenuPool;
+            localStorage.setItem('seleraku_weekly_menu_pool', JSON.stringify(weeklyMenuPool.value));
+            countItems++;
+          }
+          if (imported.weeklyMenuTarget && !isNaN(Number(imported.weeklyMenuTarget))) {
+            weeklyMenuTarget.value = Math.max(1, Math.min(28, Number(imported.weeklyMenuTarget)));
+            localStorage.setItem('seleraku_weekly_menu_target', String(weeklyMenuTarget.value));
+          }
+          if (imported.actualProteinWeights && typeof imported.actualProteinWeights === 'object') {
+            actualProteinWeights.value = imported.actualProteinWeights;
+            localStorage.setItem('seleraku_actual_protein_weights', JSON.stringify(actualProteinWeights.value));
+          }
+          if (imported.nutritionTargets && typeof imported.nutritionTargets === 'object') {
+            nutritionTargets.value = { ...DEFAULT_NUTRITION_TARGETS, ...imported.nutritionTargets };
+            localStorage.setItem('seleraku_nutrition_targets', JSON.stringify(nutritionTargets.value));
+          }
+          if (Array.isArray(imported.manualShoppingItems)) {
+            manualShoppingItems.value = imported.manualShoppingItems;
+            localStorage.setItem('seleraku_manual_shopping', JSON.stringify(manualShoppingItems.value));
+          }
+          if (imported.checkedItems && typeof imported.checkedItems === 'object') {
+            checkedItems.value = imported.checkedItems;
+            localStorage.setItem('seleraku_checked_items', JSON.stringify(checkedItems.value));
+          }
+          if (Array.isArray(imported.snackList)) {
+            snackList.value = imported.snackList;
+            localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
+          }
+          if (imported.cycleFruits && typeof imported.cycleFruits === 'object') {
+            cycleFruits.value = imported.cycleFruits;
+            localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
+          }
+
+          // Clear deletion tombstones
+          deletedFoodIds.value = [];
+          deletedPackageIds.value = [];
+          deletedMasterIds.value = [];
+          deletedPantryIds.value = [];
+          deletedManualStockIds.value = [];
+          deletedMealDates.value = [];
+          localStorage.removeItem('seleraku_deleted_foods');
+          localStorage.removeItem('seleraku_deleted_packages');
+          localStorage.removeItem('seleraku_deleted_masters');
+          localStorage.removeItem('seleraku_deleted_pantry_stocks');
+          localStorage.removeItem('seleraku_deleted_manual_stocks');
+          localStorage.removeItem('seleraku_deleted_meals');
+
+          const nowIso = new Date().toISOString();
+          lastLocalUpdate = nowIso;
+          localStorage.setItem('seleraku_last_updated', nowIso);
+
+          triggerSyncServer();
+          return countItems > 0;
         };
 
         const triggerImportBackup = () => {
@@ -11979,62 +12275,39 @@
           reader.onload = (e) => {
             try {
               const imported = JSON.parse(e.target.result);
-              if (imported && (imported.foodItems || imported.packages)) {
-                if (Array.isArray(imported.foodItems)) {
-                  foodItems.value = migrateFoodIngredientsGroups(imported.foodItems);
-                  localStorage.setItem('seleraku_food_items', JSON.stringify(foodItems.value));
-                }
-                if (Array.isArray(imported.packages)) {
-                  packages.value = imported.packages;
-                  localStorage.setItem('seleraku_packages', JSON.stringify(packages.value));
-                }
-                if (imported.mealPlans && typeof imported.mealPlans === 'object') {
-                  mealPlans.value = imported.mealPlans;
-                  localStorage.setItem('seleraku_meal_plans', JSON.stringify(mealPlans.value));
-                }
-                if (Array.isArray(imported.masterIngredients)) {
-                  masterIngredients.value = migrateMasterIngredientsGroups(imported.masterIngredients);
-                  localStorage.setItem('seleraku_master_ingredients', JSON.stringify(masterIngredients.value));
-                }
-                if (imported.manualStocks && typeof imported.manualStocks === 'object') {
-                  manualStocks.value = imported.manualStocks;
-                  localStorage.setItem('seleraku_manual_stocks', JSON.stringify(manualStocks.value));
-                }
-                if (imported.pantryStocks && typeof imported.pantryStocks === 'object') {
-                  pantryStocks.value = migratePantryStocksGroups(imported.pantryStocks);
-                  localStorage.setItem('seleraku_pantry_stocks', JSON.stringify(pantryStocks.value));
-                }
-                if (Array.isArray(imported.snackList)) {
-                  snackList.value = imported.snackList;
-                  localStorage.setItem('seleraku_snack_list', JSON.stringify(snackList.value));
-                }
-                  if (imported.cycleFruits && typeof imported.cycleFruits === 'object') {
-                    cycleFruits.value = imported.cycleFruits;
-                    localStorage.setItem('seleraku_cycle_fruits', JSON.stringify(cycleFruits.value));
-                  }
-                deletedFoodIds.value = [];
-                deletedPackageIds.value = [];
-                deletedMasterIds.value = [];
-                deletedPantryIds.value = [];
-                deletedManualStockIds.value = [];
-                deletedMealDates.value = [];
-                localStorage.removeItem('seleraku_deleted_foods');
-                localStorage.removeItem('seleraku_deleted_packages');
-                localStorage.removeItem('seleraku_deleted_masters');
-                localStorage.removeItem('seleraku_deleted_pantry_stocks');
-                localStorage.removeItem('seleraku_deleted_manual_stocks');
-                localStorage.removeItem('seleraku_deleted_meals');
-                triggerSyncServer();
-                showToast('Cadangan berhasil dipulihkan & disinkronkan!', 'success');
-                event.target.value = '';
+              const success = applyImportedData(imported);
+              if (success) {
+                showToast('Cadangan berhasil dipulihkan! Semua data telah sinkron.', 'success');
+                showSyncModal.value = false;
               } else {
                 showToast('Format file cadangan tidak valid.', 'error');
               }
             } catch (err) {
               showToast('Gagal membaca file cadangan: ' + err.message, 'error');
             }
+            event.target.value = '';
           };
           reader.readAsText(file);
+        };
+
+        const applyPastedBackup = () => {
+          if (!pastedBackupText.value || !pastedBackupText.value.trim()) {
+            showToast('Silakan tempel teks cadangan terlebih dahulu.', 'warning');
+            return;
+          }
+          try {
+            const imported = JSON.parse(pastedBackupText.value.trim());
+            const success = applyImportedData(imported);
+            if (success) {
+              showToast('Data berhasil dipulihkan dari teks!', 'success');
+              pastedBackupText.value = '';
+              showSyncModal.value = false;
+            } else {
+              showToast('Format data tidak valid.', 'error');
+            }
+          } catch (err) {
+            showToast('Teks cadangan tidak valid: ' + err.message, 'error');
+          }
         };
 
         const applyPackageDirectly = (pkg) => {
@@ -13652,8 +13925,16 @@
           applyPackageDirectly,
           seedSamplePackages,
           exportDataBackup,
+          copyDataToClipboard,
+          applyImportedData,
           triggerImportBackup,
           handleBackupFile,
+          applyPastedBackup,
+          showSyncModal,
+          openSyncModal,
+          pastedBackupText,
+          showPasteInput,
+          cloudError,
           getPackageCategoryFoodIds,
           getPackageCategoryFoods,
           addDishToPackageCategory,
